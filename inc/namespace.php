@@ -17,8 +17,12 @@ function bootstrap() {
 	if ( ! defined( 'EP_HOST' ) ) {
 		define( 'EP_HOST', sprintf( '%s://%s:%d', ELASTICSEARCH_PORT === 443 ? 'https' : 'http', ELASTICSEARCH_HOST, ELASTICSEARCH_PORT ) );
 	}
+
+	if ( ! defined( 'EP_IS_NETWORK' ) ) {
+		define( 'EP_IS_NETWORK', true );
+	}
 	add_filter( 'http_request_args', __NAMESPACE__ . '\\on_http_request_args', 10, 2 );
-	add_filter( 'ep_pre_request_url', function( $url ) {
+	add_filter( 'ep_pre_request_url', function ( $url ) {
 		return set_url_scheme( $url, ELASTICSEARCH_PORT === 443 ? 'https' : 'http' );
 	});
 	add_action( 'ep_remote_request', __NAMESPACE__ . '\\log_remote_request_errors' );
