@@ -2,10 +2,12 @@
 
 namespace HM\Platform\Enhanced_Search;
 
-use Aws\Signature\SignatureV4;
+use function HM\Platform\get_environment_type;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
+use Aws\Signature\SignatureV4;
 use GuzzleHttp\Psr7\Request;
+use WP_Error;
 use WP_Query;
 
 function bootstrap() {
@@ -17,11 +19,13 @@ function bootstrap() {
 	}
 	add_filter( 'http_request_args', __NAMESPACE__ . '\\on_http_request_args', 10, 2 );
 	add_filter( 'ep_pre_request_url', function( $url ) {
-		return set_url_scheme( $url, 'https' );
+		return set_url_scheme( $url, ELASTICSEARCH_PORT === 443 ? 'https' : 'http' );
 	});
 	add_action( 'ep_remote_request', __NAMESPACE__ . '\\log_remote_request_errors' );
 	add_filter( 'posts_request', __NAMESPACE__ . '\\noop_wp_query_on_failed_ep_request', 11, 2 );
 	add_filter( 'found_posts_query', __NAMESPACE__ . '\\noop_wp_query_on_failed_ep_request', 6, 2 );
+
+	require_once dirname( __DIR__ ) . '/vendor/10up/elasticpress/elasticpress.php';
 }
 
 function on_http_request_args( $args, $url ) {
@@ -31,9 +35,20 @@ function on_http_request_args( $args, $url ) {
 		return $args;
 	}
 
+	if ( get_environment_type() === 'local' ) {
+		return $args;
+	}
+
 	return sign_wp_request( $args, $url );
 }
 
+/**
+ * Sign requests made to Elasticsearch
+ *
+ * @param array $args
+ * @param string $url
+ * @return array
+ */
 function sign_wp_request( array $args, string $url ) : array {
 	if ( isset( $args['headers']['Host'] ) ) {
 		unset( $args['headers']['Host'] );
@@ -87,4 +102,33 @@ function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $q
 		return $sql;
 	}
 	return '';
+}
+
+/**
+ * Add the elasticsearch check to the Platform healthchecks.
+ *
+ * @param array $checks
+ * @return array
+ */
+function add_elasticsearch_healthcheck( array $checks ) : array {
+	$checks['elasticsearch'] = run_elasticsearch_healthcheck();
+	return $checks;
+}
+
+/**
+ * Run ElasticSearch health check.
+ */
+function run_elasticsearch_healthcheck() {
+	$host = sprintf( '%s://%s:%d', ELASTICSEARCH_PORT === 443 ? 'https' : 'http', ELASTICSEARCH_HOST, ELASTICSEARCH_PORT );
+	$response = wp_remote_get( $host . '/_cluster/health' );
+	if ( is_wp_error( $response ) ) {
+		return new WP_Error( 'elasticsearch-unhealthy', $response->get_error_message() );
+	}
+
+	$body = wp_remote_retrieve_body( $response );
+	if ( is_wp_error( $body ) ) {
+		return new WP_Error( 'elasticsearch-unhealthy', $body->get_error_message() );
+	}
+
+	return true;
 }
