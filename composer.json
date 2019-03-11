@@ -1,0 +1,22 @@
+{
+	"name": "humanmade/enhanced-search",
+	"description": "Enhanced Search Module for Platform",
+	"type": "library",
+	"license": "GPL-2.0-or-later",
+	"authors": [
+		{
+			"name": "Human Made",
+			"email": "hello@humanmade.com"
+		}
+	],
+	"require-dev": {
+		"10up/elasticpress": "^2.8.1"
+	},
+	"autoload" : {
+		"files": [
+			"load.php",
+			"inc/namespace.php",
+			"vendor/autoload.php"
+		]
+	}
+}
