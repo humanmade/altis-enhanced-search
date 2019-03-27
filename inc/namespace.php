@@ -28,6 +28,9 @@ function bootstrap() {
 	add_action( 'ep_remote_request', __NAMESPACE__ . '\\log_remote_request_errors' );
 	add_filter( 'posts_request', __NAMESPACE__ . '\\noop_wp_query_on_failed_ep_request', 11, 2 );
 	add_filter( 'found_posts_query', __NAMESPACE__ . '\\noop_wp_query_on_failed_ep_request', 6, 2 );
+	add_filter( 'ep_admin_wp_query_integration', '__return_true' );
+	add_filter( 'ep_indexable_post_status', __NAMESPACE__ . '\\get_elasticpress_indexable_post_statuses' );
+	add_filter( 'ep_indexable_post_types', __NAMESPACE__ . '\\get_elasticpress_indexable_post_types' );
 
 	require_once dirname( __DIR__ ) . '/vendor/10up/elasticpress/elasticpress.php';
 }
@@ -135,4 +138,32 @@ function run_elasticsearch_healthcheck() {
 	}
 
 	return true;
+}
+
+/**
+ * Override the indexed post statuses from ElasticPress.
+ *
+ * By default, ElasticPress only indexes public content, but
+ * we want to index all content as we are using ElasticPress
+ * in the WordPress admin too.
+ *
+ * @param array $statuses
+ * @return array
+ */
+function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
+	return [ 'any' ];
+}
+
+/**
+ * Override the indexed post types from ElasticPress.
+ *
+ * By default, ElasticPress only indexes public content, but
+ * we want to index all content as we are using ElasticPress
+ * in the WordPress admin too.
+ *
+ * @param array $statuses
+ * @return array
+ */
+function get_elasticpress_indexable_post_types( array $types ) : array {
+	return [ 'any' ];
 }
