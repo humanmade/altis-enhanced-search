@@ -16,6 +16,18 @@ Content that is indexed in the search index by default:
 
 When used in conjunction with the Media Rekognition feature, all images are processed for automatic keyword detection and stored in the search index too.
 
+All documents that are uploaded to the media library are also parsed and indexed. For example, if you upload a PDF file, the PDF content will be read and included in the search index. Searches for keywords and phrases that are included in the document will be then be included in search results.
+
+The follow document types are parsed and their content is added to the search index:
+
+- PDF
+- PPT
+- PPTX
+- XLS
+- XLSX
+- DOC
+- DOCX
+
 It is also possible to modify the specific fields stored for each post to provide extra search data that is not included by default. See [Search Index Modification](posts-index-modification.md) for details.
 
 Elasticsearch is used to provide the search index, as such as a developer you can make direct use of Elasticsearch for advanced feature development. See [Using Elasticsearch](using-elasticsearch.md) for details.
