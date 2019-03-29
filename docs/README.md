@@ -28,6 +28,8 @@ The follow document types are parsed and their content is added to the search in
 - DOC
 - DOCX
 
+To disable the indexing of document content, set the `modules.search.index-documents` settings to `false`.
+
 It is also possible to modify the specific fields stored for each post to provide extra search data that is not included by default. See [Search Index Modification](posts-index-modification.md) for details.
 
 Elasticsearch is used to provide the search index, as such as a developer you can make direct use of Elasticsearch for advanced feature development. See [Using Elasticsearch](using-elasticsearch.md) for details.

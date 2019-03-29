@@ -2,10 +2,12 @@
 
 namespace HM\Platform\Enhanced_Search;
 
-use function HM\Platform\get_environment_type;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
+use EP_Feature;
+use function HM\Platform\get_config;
+use function HM\Platform\get_environment_type;
 use GuzzleHttp\Psr7\Request;
 use WP_Error;
 use WP_Query;
@@ -31,6 +33,7 @@ function bootstrap() {
 	add_filter( 'ep_admin_wp_query_integration', '__return_true' );
 	add_filter( 'ep_indexable_post_status', __NAMESPACE__ . '\\get_elasticpress_indexable_post_statuses' );
 	add_filter( 'ep_indexable_post_types', __NAMESPACE__ . '\\get_elasticpress_indexable_post_types' );
+	add_filter( 'ep_feature_active', __NAMESPACE__ . '\\override_elasticpress_feature_activation', 10, 3 );
 
 	require_once dirname( __DIR__ ) . '/vendor/10up/elasticpress/elasticpress.php';
 }
@@ -166,4 +169,20 @@ function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
  */
 function get_elasticpress_indexable_post_types( array $types ) : array {
 	return [ 'any' ];
+}
+
+/**
+ * Override the elasticpress features should be enabled.
+ *
+ * @param boolean $is_active
+ * @param array $settings
+ * @param EP_Feature $feature
+ * @return void
+ */
+function override_elasticpress_feature_activation( bool $is_active, array $settings, EP_Feature $feature ) {
+	if ( $feature->slug !== 'documents' ) {
+		return $is_active;
+	}
+
+	return get_config()['modules']['search']['index-documents'];
 }
