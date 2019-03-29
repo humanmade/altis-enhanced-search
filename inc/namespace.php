@@ -136,6 +136,7 @@ function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $q
 function add_elasticsearch_healthcheck( array $checks ) : array {
 	$checks['elasticsearch'] = run_elasticsearch_healthcheck();
 	$checks['elasticpress-index'] = run_elasticpress_indexed_healthcheck();
+
 	return $checks;
 }
 
