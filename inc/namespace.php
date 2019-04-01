@@ -2,10 +2,13 @@
 
 namespace HM\Platform\Enhanced_Search;
 
-use function HM\Platform\get_environment_type;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
+use EP_Dashboard;
+use EP_Feature;
+use function HM\Platform\get_config;
+use function HM\Platform\get_environment_type;
 use GuzzleHttp\Psr7\Request;
 use WP_Error;
 use WP_Query;
@@ -21,6 +24,11 @@ function bootstrap() {
 	if ( ! defined( 'EP_IS_NETWORK' ) ) {
 		define( 'EP_IS_NETWORK', true );
 	}
+
+	// Disable being able to use the admin to run a full data sync.
+	if ( ! defined( 'EP_DASHBOARD_SYNC' ) ) {
+		define( 'EP_DASHBOARD_SYNC', false );
+	}
 	add_filter( 'http_request_args', __NAMESPACE__ . '\\on_http_request_args', 10, 2 );
 	add_filter( 'ep_pre_request_url', function ( $url ) {
 		return set_url_scheme( $url, ELASTICSEARCH_PORT === 443 ? 'https' : 'http' );
@@ -31,8 +39,16 @@ function bootstrap() {
 	add_filter( 'ep_admin_wp_query_integration', '__return_true' );
 	add_filter( 'ep_indexable_post_status', __NAMESPACE__ . '\\get_elasticpress_indexable_post_statuses' );
 	add_filter( 'ep_indexable_post_types', __NAMESPACE__ . '\\get_elasticpress_indexable_post_types' );
+	add_filter( 'ep_feature_active', __NAMESPACE__ . '\\override_elasticpress_feature_activation', 10, 3 );
 
 	require_once dirname( __DIR__ ) . '/vendor/10up/elasticpress/elasticpress.php';
+
+	// Now ElasticPress has been included, we can remove some of it's filters.
+
+	// Remove Admin UI for ElasticPress
+	remove_action( 'network_admin_menu', [ EP_Dashboard::factory(), 'action_admin_menu' ] );
+	remove_action( 'admin_bar_menu', [ EP_Dashboard::factory(), 'action_network_admin_bar_menu' ], 50 );
+
 }
 
 function on_http_request_args( $args, $url ) {
@@ -119,6 +135,8 @@ function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $q
  */
 function add_elasticsearch_healthcheck( array $checks ) : array {
 	$checks['elasticsearch'] = run_elasticsearch_healthcheck();
+	$checks['elasticpress-index'] = run_elasticpress_indexed_healthcheck();
+
 	return $checks;
 }
 
@@ -135,6 +153,18 @@ function run_elasticsearch_healthcheck() {
 	$body = wp_remote_retrieve_body( $response );
 	if ( is_wp_error( $body ) ) {
 		return new WP_Error( 'elasticsearch-unhealthy', $body->get_error_message() );
+	}
+
+	return true;
+}
+
+/**
+ * Check if ElasticPress has been indexed.
+ */
+function run_elasticpress_indexed_healthcheck() {
+	$last_sync = get_site_option( 'ep_last_sync', false );
+	if ( ! $last_sync ) {
+		return new WP_Error( 'elasticsearch-index-not-populated', 'ElasticPress last sync is not set.' );
 	}
 
 	return true;
@@ -166,4 +196,20 @@ function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
  */
 function get_elasticpress_indexable_post_types( array $types ) : array {
 	return [ 'any' ];
+}
+
+/**
+ * Override the elasticpress features should be enabled.
+ *
+ * @param boolean $is_active
+ * @param array $settings
+ * @param EP_Feature $feature
+ * @return void
+ */
+function override_elasticpress_feature_activation( bool $is_active, array $settings, EP_Feature $feature ) {
+	if ( $feature->slug !== 'documents' ) {
+		return $is_active;
+	}
+
+	return get_config()['modules']['search']['index-documents'];
 }
