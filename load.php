@@ -4,6 +4,11 @@ namespace HM\Platform\Enhanced_Search;
 
 use function HM\Platform\register_module;
 
+// Don't self-initialize if this is not a Platform execution.
+if ( ! function_exists( 'add_action' ) ) {
+	return;
+}
+
 add_action( 'hm-platform.modules.init', function () {
 	$default_settings = [
 		'enabled' => true,
