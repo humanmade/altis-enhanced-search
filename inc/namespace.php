@@ -207,9 +207,17 @@ function get_elasticpress_indexable_post_types( array $types ) : array {
  * @return void
  */
 function override_elasticpress_feature_activation( bool $is_active, array $settings, EP_Feature $feature ) {
-	if ( $feature->slug !== 'documents' ) {
+	$config = get_config()['modules']['search'];
+	$features_activated = [
+		'search'        => true,
+		'related_posts' => false,
+		'documents'     => $config['index-documents'],
+		'facets'        => false,
+	];
+
+	if ( ! isset( $features_activated[ $feature->slug ] ) ) {
 		return $is_active;
 	}
 
-	return get_config()['modules']['search']['index-documents'];
+	return $features_activated[ $feature->slug ];
 }
