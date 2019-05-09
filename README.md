@@ -2,7 +2,7 @@
 	<tr>
 		<td align="left" width="70">
 			<strong>Core</strong><br />
-			Enhanced Search module for Platform.
+			Enhanced Search module for Altis.
 		</td>
 		<td align="right" width="20%">
 		</td>
@@ -19,4 +19,4 @@
 
 # Enhanced Search
 
-A better default search experience for Platform. Building off the [ElasticPress](https://github.com/10up/ElasticPress) plugin.
+A better default search experience for Altis. Building off the [ElasticPress](https://github.com/10up/ElasticPress) plugin.

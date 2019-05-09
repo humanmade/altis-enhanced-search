@@ -1,6 +1,6 @@
 {
 	"name": "humanmade/enhanced-search",
-	"description": "Enhanced Search Module for Platform",
+	"description": "Enhanced Search module for Altis",
 	"type": "library",
 	"license": "GPL-2.0-or-later",
 	"authors": [

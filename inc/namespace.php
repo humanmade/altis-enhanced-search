@@ -1,14 +1,14 @@
 <?php
 
-namespace HM\Platform\Enhanced_Search;
+namespace Altis\Enhanced_Search;
 
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
 use EP_Dashboard;
 use EP_Feature;
-use function HM\Platform\get_config;
-use function HM\Platform\get_environment_type;
+use function Altis\get_config;
+use function Altis\get_environment_type;
 use GuzzleHttp\Psr7\Request;
 use WP_Error;
 use WP_Query;
@@ -128,7 +128,7 @@ function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $q
 }
 
 /**
- * Add the elasticsearch check to the Platform healthchecks.
+ * Add the elasticsearch check to the Altis healthchecks.
  *
  * @param array $checks
  * @return array
