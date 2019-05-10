@@ -98,8 +98,13 @@ function sign_wp_request( array $args, string $url ) : array {
 
 
 function log_remote_request_errors( array $request ) {
+	$request_response_code = (int) wp_remote_retrieve_response_code( $request['request'] );
+	$is_valid_res = ( $request_response_code >= 200 && $request_response_code <= 299 );
+
 	if ( is_wp_error( $request['request'] ) ) {
 		trigger_error( sprintf( 'Error in ElasticPress request: %s (%s)', $request['request']->get_error_message(), $request['request']->get_error_code() ), E_USER_WARNING );
+	} elseif ( ! $is_valid_res ) {
+		trigger_error( sprintf( 'Error in ElasticPress request: %s (%s)', wp_remote_retrieve_body( $request['request'] ), $request_response_code ), E_USER_WARNING );
 	}
 }
 
