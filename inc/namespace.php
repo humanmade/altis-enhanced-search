@@ -93,7 +93,7 @@ function sign_wp_request( array $args, string $url ) : array {
 /**
  * Sign a request object with authentication headers for sending to Elasticsearch.
  *
- * @param RequestInterface $request
+ * @param RequestInterface $request The request object to sign.
  * @return RequestInterface
  */
 function sign_psr7_request( RequestInterface $request ) : RequestInterface {
