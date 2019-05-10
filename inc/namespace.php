@@ -10,6 +10,7 @@ use EP_Feature;
 use function HM\Platform\get_config;
 use function HM\Platform\get_environment_type;
 use GuzzleHttp\Psr7\Request;
+use Psr\Http\Message\RequestInterface;
 use WP_Error;
 use WP_Query;
 
@@ -80,6 +81,26 @@ function sign_wp_request( array $args, string $url ) : array {
 		$args['body'] = http_build_query( $args['body'], null, '&' );
 	}
 	$request = new Request( $args['method'], $url, $args['headers'], $args['body'] );
+	$signed_request = sign_psr7_request( $request );
+	$args['headers']['Authorization'] = $signed_request->getHeader( 'Authorization' )[0];
+	$args['headers']['X-Amz-Date'] = $signed_request->getHeader( 'X-Amz-Date' )[0];
+	if ( $signed_request->getHeader( 'X-Amz-Security-Token' ) ) {
+		$args['headers']['X-Amz-Security-Token'] = $signed_request->getHeader( 'X-Amz-Security-Token' )[0];
+	}
+	return $args;
+}
+
+/**
+ * Sign a request object with authentication headers for sending to Elasticsearch.
+ *
+ * @param RequestInterface $request
+ * @return RequestInterface
+ */
+function sign_psr7_request( RequestInterface $request ) : RequestInterface {
+	if ( get_environment_type() === 'local' ) {
+		return $request;
+	}
+
 	$signer = new SignatureV4( 'es', HM_ENV_REGION );
 	if ( defined( 'ELASTICSEARCH_AWS_KEY' ) ) {
 		$credentials = new Credentials\Credentials( ELASTICSEARCH_AWS_KEY, ELASTICSEARCH_AWS_SECRET );
@@ -88,12 +109,8 @@ function sign_wp_request( array $args, string $url ) : array {
 		$credentials = call_user_func( $provider )->wait();
 	}
 	$signed_request = $signer->signRequest( $request, $credentials );
-	$args['headers']['Authorization'] = $signed_request->getHeader( 'Authorization' )[0];
-	$args['headers']['X-Amz-Date'] = $signed_request->getHeader( 'X-Amz-Date' )[0];
-	if ( $signed_request->getHeader( 'X-Amz-Security-Token' ) ) {
-		$args['headers']['X-Amz-Security-Token'] = $signed_request->getHeader( 'X-Amz-Security-Token' )[0];
-	}
-	return $args;
+
+	return $signed_request;
 }
 
 
@@ -144,7 +161,7 @@ function add_elasticsearch_healthcheck( array $checks ) : array {
  * Run ElasticSearch health check.
  */
 function run_elasticsearch_healthcheck() {
-	$host = sprintf( '%s://%s:%d', ELASTICSEARCH_PORT === 443 ? 'https' : 'http', ELASTICSEARCH_HOST, ELASTICSEARCH_PORT );
+	$host = get_elasticsearch_url();
 	$response = wp_remote_get( $host . '/_cluster/health' );
 	if ( is_wp_error( $response ) ) {
 		return new WP_Error( 'elasticsearch-unhealthy', $response->get_error_message() );
@@ -220,4 +237,16 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 	}
 
 	return $features_activated[ $feature->slug ];
+}
+
+/**
+ * Get the URL to the elasticsearch cluster.
+ *
+ * The URL will have no trailing slash.
+ *
+ * @return string
+ */
+function get_elasticsearch_url() : string {
+	$host = sprintf( '%s://%s:%d', ELASTICSEARCH_PORT === 443 ? 'https' : 'http', ELASTICSEARCH_HOST, ELASTICSEARCH_PORT );
+	return $host;
 }
