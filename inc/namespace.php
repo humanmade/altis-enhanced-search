@@ -5,12 +5,14 @@ namespace Altis\Enhanced_Search;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
+use ElasticPress_CLI_Command;
 use EP_Dashboard;
 use EP_Feature;
 use function Altis\get_config;
 use function Altis\get_environment_type;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
+use WP_CLI;
 use WP_Error;
 use WP_Query;
 
@@ -50,6 +52,9 @@ function bootstrap() {
 	remove_action( 'network_admin_menu', [ EP_Dashboard::factory(), 'action_admin_menu' ] );
 	remove_action( 'admin_bar_menu', [ EP_Dashboard::factory(), 'action_network_admin_bar_menu' ], 50 );
 
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		WP_CLI::add_hook( 'after_invoke:core multisite-install', __NAMESPACE__ . '\\setup_elasticpress_on_install' );
+	}
 }
 
 function on_http_request_args( $args, $url ) {
@@ -254,4 +259,13 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 function get_elasticsearch_url() : string {
 	$host = sprintf( '%s://%s:%d', ELASTICSEARCH_PORT === 443 ? 'https' : 'http', ELASTICSEARCH_HOST, ELASTICSEARCH_PORT );
 	return $host;
+}
+
+/**
+ * When WordPress is installed via WP-CLI, run the ElasticPress setup.
+ */
+function setup_elasticpress_on_install() {
+	$ep = new ElasticPress_CLI_Command();
+	WP_CLI::line( 'Setting up ElasticPress...' );
+	$ep->index( [], [ 'setup' => true, 'network-wide' => true ] );
 }
