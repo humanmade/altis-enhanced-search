@@ -262,7 +262,7 @@ function get_elasticsearch_url() : string {
 }
 
 /**
- * When WordPress is installed via WP-CLI, run the ElasticPress setup
+ * When WordPress is installed via WP-CLI, run the ElasticPress setup.
  */
 function setup_elasticpress_on_install() {
 	$ep = new ElasticPress_CLI_Command();
