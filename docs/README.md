@@ -14,7 +14,7 @@ Content that is indexed in the search index by default:
 - Post's Terms
 - Post's Author
 
-When used in conjunction with the Media Rekognition feature, all images are processed for automatic keyword detection and stored in the search index too.
+When used in conjunction with the [Media Rekognition](docs://media/image-recognition.md) feature, all images are processed for automatic keyword detection and stored in the search index too.
 
 All documents that are uploaded to the media library are also parsed and indexed. For example, if you upload a PDF file, the PDF content will be read and included in the search index. Searches for keywords and phrases that are included in the document will be then be included in search results.
 
