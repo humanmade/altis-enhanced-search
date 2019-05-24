@@ -17,6 +17,14 @@ use WP_Error;
 use WP_Query;
 
 function bootstrap() {
+	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress' );
+	add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
+}
+
+/**
+ * Load and configure Elasticpress.
+ */
+function load_elasticpress() {
 	if ( ! defined( 'ELASTICSEARCH_HOST' ) ) {
 		return;
 	}
