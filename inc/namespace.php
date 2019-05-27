@@ -17,6 +17,14 @@ use WP_Error;
 use WP_Query;
 
 function bootstrap() {
+	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress' );
+	add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
+}
+
+/**
+ * Load and configure Elasticpress.
+ */
+function load_elasticpress() {
 	if ( ! defined( 'ELASTICSEARCH_HOST' ) ) {
 		return;
 	}
@@ -61,6 +69,7 @@ function bootstrap() {
 }
 
 function on_http_request_args( $args, $url ) {
+	// @codingStandardsIgnoreLine
 	$host = parse_url( $url, PHP_URL_HOST );
 
 	if ( ELASTICSEARCH_HOST !== $host ) {
@@ -270,7 +279,10 @@ function get_elasticsearch_url() : string {
 function setup_elasticpress_on_install() {
 	$ep = new ElasticPress_CLI_Command();
 	WP_CLI::line( 'Setting up ElasticPress...' );
-	$ep->index( [], [ 'setup' => true, 'network-wide' => true ] );
+	$ep->index( [], [
+		'setup' => true,
+		'network-wide' => true,
+	] );
 }
 
 /**
