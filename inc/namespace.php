@@ -175,6 +175,7 @@ function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $q
 function add_elasticsearch_healthcheck( array $checks ) : array {
 	$checks['elasticsearch'] = run_elasticsearch_healthcheck();
 	$checks['elasticpress-index'] = run_elasticpress_indexed_healthcheck();
+	$checks['elasticpress-synced'] = run_elasticpress_synced_healthcheck();
 
 	return $checks;
 }
@@ -198,9 +199,21 @@ function run_elasticsearch_healthcheck() {
 }
 
 /**
- * Check if ElasticPress has been indexed.
+ * Check if ElasticPress index exists.
  */
 function run_elasticpress_indexed_healthcheck() {
+	$status = ep_index_exists();
+	if ( ! $status ) {
+		return new WP_Error( 'elasticsearch-index-not-found', 'ElasticPress Index does not exist.' );
+	}
+
+	return true;
+}
+
+/**
+ * Check if ElasticPress is synced with the index.
+ */
+function run_elasticpress_synced_healthcheck() {
 	$last_sync = get_site_option( 'ep_last_sync', false );
 	if ( ! $last_sync ) {
 		return new WP_Error( 'elasticsearch-index-not-populated', 'ElasticPress last sync is not set.' );
