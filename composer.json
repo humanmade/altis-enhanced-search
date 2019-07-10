@@ -11,7 +11,7 @@
 	],
 	"require": {
 		"php": ">=7.1",
-		"10up/elasticpress": "^2.8.1"
+		"10up/elasticpress": "3.0.3"
 	},
 	"autoload" : {
 		"files": [

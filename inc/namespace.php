@@ -6,9 +6,9 @@ use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
 use const Altis\ROOT_DIR;
-use ElasticPress_CLI_Command;
-use EP_Dashboard;
-use EP_Feature;
+use ElasticPress\Command as ElasticPress_CLI_Command;
+use ElasticPress\Feature;
+use ElasticPress\Indexables as ElasticPress_Indexables;
 use function Altis\get_config;
 use function Altis\get_environment_type;
 use GuzzleHttp\Psr7\Request;
@@ -58,8 +58,8 @@ function load_elasticpress() {
 	// Now ElasticPress has been included, we can remove some of it's filters.
 
 	// Remove Admin UI for ElasticPress
-	remove_action( 'network_admin_menu', [ EP_Dashboard::factory(), 'action_admin_menu' ] );
-	remove_action( 'admin_bar_menu', [ EP_Dashboard::factory(), 'action_network_admin_bar_menu' ], 50 );
+	remove_action( 'network_admin_menu', 'ElasticPress\\Dashboard\\action_admin_menu' );
+	remove_action( 'admin_bar_menu', 'ElasticPress\\Dashboard\\action_network_admin_bar_menu', 50 );
 
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		WP_CLI::add_hook( 'after_invoke:core multisite-install', __NAMESPACE__ . '\\setup_elasticpress_on_install' );
@@ -203,9 +203,19 @@ function run_elasticsearch_healthcheck() {
  * Check if ElasticPress index exists.
  */
 function run_elasticpress_indexed_healthcheck() {
-	$status = ep_index_exists();
-	if ( ! $status ) {
-		return new WP_Error( 'elasticsearch-index-not-found', 'ElasticPress Index does not exist.' );
+	$sites = get_sites();
+	$not_exists = [];
+	foreach ( $sites as $site ) {
+		if ( ! ElasticPress_Indexables::factory()->get( 'post' )->index_exists( $site->blog_id ) ) {
+			$not_exists[] = $site->domain . $site->path;
+		}
+	}
+
+	if ( $not_exists ) {
+		return new WP_Error(
+			'elasticsearch-index-not-found',
+			sprintf( 'ElasticPress Index does not exist for site(s) %s', implode( ', ', $not_exists ) )
+		);
 	}
 
 	return true;
@@ -259,7 +269,7 @@ function get_elasticpress_indexable_post_types( array $types ) : array {
  * @param EP_Feature $feature
  * @return void
  */
-function override_elasticpress_feature_activation( bool $is_active, array $settings, EP_Feature $feature ) {
+function override_elasticpress_feature_activation( bool $is_active, array $settings, Feature $feature ) {
 	$config = get_config()['modules']['search'];
 	$features_activated = [
 		'search'        => true,
