@@ -5,6 +5,7 @@ namespace Altis\Enhanced_Search;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
+use const Altis\ROOT_DIR;
 use ElasticPress_CLI_Command;
 use EP_Dashboard;
 use EP_Feature;
@@ -52,7 +53,7 @@ function load_elasticpress() {
 	add_filter( 'ep_indexable_post_types', __NAMESPACE__ . '\\get_elasticpress_indexable_post_types' );
 	add_filter( 'ep_feature_active', __NAMESPACE__ . '\\override_elasticpress_feature_activation', 10, 3 );
 
-	require_once dirname( __DIR__ ) . '/vendor/10up/elasticpress/elasticpress.php';
+	require_once ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
 

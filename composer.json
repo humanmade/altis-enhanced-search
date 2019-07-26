@@ -9,15 +9,14 @@
 			"email": "hello@humanmade.com"
 		}
 	],
-	"require-dev": {
+	"require": {
 		"php": ">=7.1",
 		"10up/elasticpress": "^2.8.1"
 	},
 	"autoload" : {
 		"files": [
 			"load.php",
-			"inc/namespace.php",
-			"vendor/autoload.php"
+			"inc/namespace.php"
 		]
 	}
 }
