@@ -52,6 +52,7 @@ function load_elasticpress() {
 	add_filter( 'ep_indexable_post_status', __NAMESPACE__ . '\\get_elasticpress_indexable_post_statuses' );
 	add_filter( 'ep_indexable_post_types', __NAMESPACE__ . '\\get_elasticpress_indexable_post_types' );
 	add_filter( 'ep_feature_active', __NAMESPACE__ . '\\override_elasticpress_feature_activation', 10, 3 );
+	add_filter( 'ep_post_sync_args_post_prepare_meta', __NAMESPACE__ . '\\remove_meta_from_indexed_posts' );
 
 	require_once ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
@@ -388,4 +389,15 @@ function elasticpress_analyzer_language( string $language, string $filter ) : st
 	}
 
 	return $language;
+}
+
+/**
+ * Remove post meta from being indexed. We instead ask developers to specifically index their data.
+ *
+ * @param array $data
+ * @return array
+ */
+function remove_meta_from_indexed_posts( array $data ) : array {
+	unset( $data['meta'] );
+	return $data;
 }
