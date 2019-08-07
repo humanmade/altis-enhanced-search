@@ -20,7 +20,7 @@ When used in conjunction with the [Media Rekognition](docs://media/image-recogni
 
 All documents that are uploaded to the media library are also parsed and indexed. For example, if you upload a PDF file, the PDF content will be read and included in the search index. Searches for keywords and phrases that are included in the document will be then be included in search results.
 
-The follow document types are parsed and their content is added to the search index:
+The following document types are parsed and their content is added to the search index:
 
 - PDF
 - PPT
