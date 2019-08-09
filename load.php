@@ -1,5 +1,6 @@
 <?php
 
+// phpcs:ignore
 namespace Altis\Enhanced_Search;
 
 use function Altis\register_module;
