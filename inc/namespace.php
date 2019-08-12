@@ -285,8 +285,10 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 function enable_slowlog_thresholds( array $mapping ) : array {
 	$config = get_config()['modules']['search'];
 	if ( isset( $config['slowlog_thresholds'] ) && (bool) $config['slowlog_thresholds'] ) {
-		$mapping['settings']['index.search.slowlog.threshold.query.info'] = '500ms';
-		$mapping['settings']['index.search.slowlog.threshold.query.warn'] = '2s';
+		$mapping['settings']['index.search.slowlog.threshold.query.info'] = '2s';
+		$mapping['settings']['index.search.slowlog.threshold.query.warn'] = '5s';
+		$mapping['settings']['index.search.slowlog.threshold.fetch.info'] = '2s';
+		$mapping['settings']['index.search.slowlog.threshold.fetch.warn'] = '5s';
 	}
 	return $mapping;
 }
