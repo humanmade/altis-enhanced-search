@@ -52,6 +52,7 @@ function load_elasticpress() {
 	add_filter( 'ep_indexable_post_status', __NAMESPACE__ . '\\get_elasticpress_indexable_post_statuses' );
 	add_filter( 'ep_indexable_post_types', __NAMESPACE__ . '\\get_elasticpress_indexable_post_types' );
 	add_filter( 'ep_feature_active', __NAMESPACE__ . '\\override_elasticpress_feature_activation', 10, 3 );
+	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\enable_slowlog_thresholds' );
 
 	require_once ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
@@ -273,6 +274,23 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 	}
 
 	return $features_activated[ $feature->slug ];
+}
+
+/**
+ * Enables the required settings for slowlog queries to be captured.
+ *
+ * @param array $mapping
+ * @return array
+ */
+function enable_slowlog_thresholds( array $mapping ) : array {
+	$config = get_config()['modules']['search'];
+	if ( isset( $config['slowlog_thresholds'] ) && (bool) $config['slowlog_thresholds'] ) {
+		$mapping['settings']['index.search.slowlog.threshold.query.info'] = '2s';
+		$mapping['settings']['index.search.slowlog.threshold.query.warn'] = '5s';
+		$mapping['settings']['index.search.slowlog.threshold.fetch.info'] = '2s';
+		$mapping['settings']['index.search.slowlog.threshold.fetch.warn'] = '5s';
+	}
+	return $mapping;
 }
 
 /**
