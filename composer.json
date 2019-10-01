@@ -15,8 +15,10 @@
 	},
 	"autoload" : {
 		"files": [
-			"load.php",
 			"inc/namespace.php"
 		]
+	},
+	"extra": {
+		"altis": {}
 	}
 }
