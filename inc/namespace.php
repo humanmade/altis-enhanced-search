@@ -53,6 +53,7 @@ function load_elasticpress() {
 	add_filter( 'ep_indexable_post_types', __NAMESPACE__ . '\\get_elasticpress_indexable_post_types' );
 	add_filter( 'ep_feature_active', __NAMESPACE__ . '\\override_elasticpress_feature_activation', 10, 3 );
 	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\enable_slowlog_thresholds' );
+	add_filter( 'ep_admin_notice_type', __NAMESPACE__ . '\\remove_ep_dashboard_notices', 20 );
 
 	require_once ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
@@ -396,4 +397,24 @@ function elasticpress_analyzer_language( string $language, string $filter ) : st
 	}
 
 	return $language;
+}
+
+/**
+ * Filter the ElasticPress dashboard notices.
+ *
+ * @param string $notice The notice ID.
+ * @return string
+ */
+function remove_ep_dashboard_notices( string $notice ) : string {
+	$hidden = [
+		'sync-disabled-auto-activate',
+		'sync-disabled-no-sync',
+		'sync-disabled-upgrade',
+	];
+
+	if ( in_array( $notice, $hidden, true ) ) {
+		return '';
+	}
+
+	return $notice;
 }
