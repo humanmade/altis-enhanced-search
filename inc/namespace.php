@@ -9,6 +9,8 @@ use const Altis\ROOT_DIR;
 use ElasticPress_CLI_Command;
 use EP_Dashboard;
 use EP_Feature;
+use EP_Features;
+
 use function Altis\get_config;
 use function Altis\get_environment_type;
 use GuzzleHttp\Psr7\Request;
@@ -62,6 +64,12 @@ function load_elasticpress() {
 	// Remove Admin UI for ElasticPress
 	remove_action( 'network_admin_menu', [ EP_Dashboard::factory(), 'action_admin_menu' ] );
 	remove_action( 'admin_bar_menu', [ EP_Dashboard::factory(), 'action_network_admin_bar_menu' ], 50 );
+
+	// Don't set up features during install.
+	if ( defined( 'WP_INSTALLING' ) && WP_INSTALLING ) {
+		remove_action( 'init', [ EP_Features::factory(), 'handle_feature_activation' ], 0 );
+		remove_action( 'init', [ EP_Features::factory(), 'setup_features' ], 0 );
+	}
 
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		WP_CLI::add_hook( 'after_invoke:core multisite-install', __NAMESPACE__ . '\\setup_elasticpress_on_install' );
