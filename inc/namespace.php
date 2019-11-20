@@ -325,10 +325,19 @@ function get_elasticsearch_url() : string {
 function setup_elasticpress_on_install() {
 	$ep = new ElasticPress_CLI_Command();
 	WP_CLI::line( 'Setting up ElasticPress...' );
+
+	// Elevate error reporting level as there's a benign warning thrown on first index.
+	$error_reporting_level = error_reporting();
+	error_reporting( E_ERROR );
+
+	// Create the index.
 	$ep->index( [], [
 		'setup' => true,
 		'network-wide' => true,
 	] );
+
+	// Reset error reporting level.
+	error_reporting( $error_reporting_level );
 }
 
 /**
