@@ -39,6 +39,11 @@ function load_elasticpress() {
 		define( 'EP_IS_NETWORK', true );
 	}
 
+	// Set index prefix from env if found. Used for separating test indexes.
+	if ( getenv( 'EP_INDEX_PREFIX' ) && ! defined( 'EP_INDEX_PREFIX' ) ) {
+		define( 'EP_INDEX_PREFIX', getenv( 'EP_INDEX_PREFIX' ) );
+	}
+
 	// Disable being able to use the admin to run a full data sync.
 	if ( ! defined( 'EP_DASHBOARD_SYNC' ) ) {
 		define( 'EP_DASHBOARD_SYNC', false );
