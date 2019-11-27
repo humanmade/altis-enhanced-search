@@ -77,6 +77,12 @@ function load_elasticpress() {
 	}
 
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		// Raise error reporting level for the index command as it will generate
+		// a benign warning when the index doesn't alreaddy exist.
+		WP_CLI::add_hook( 'before_invoke:elasticpress index', function () {
+			error_reporting( E_ERROR );
+		} );
+		// Index after install.
 		WP_CLI::add_hook( 'after_invoke:core multisite-install', __NAMESPACE__ . '\\setup_elasticpress_on_install' );
 	}
 
