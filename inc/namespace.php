@@ -77,7 +77,7 @@ function load_elasticpress() {
 	}
 
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
-		// Raise error reporting level for the index command as it will generate
+		// Raise error reporting threshold for the index command as it will generate
 		// a benign warning when the index doesn't already exist.
 		WP_CLI::add_hook( 'before_invoke:elasticpress index', function () {
 			error_reporting( E_ERROR );
