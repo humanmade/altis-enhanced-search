@@ -17,7 +17,7 @@ use WP_Error;
 use WP_Query;
 
 function bootstrap() {
-	if ( ! defined( 'ELASTICSEARCH_HOST' ) ) {
+	if ( ! defined( 'ELASTICSEARCH_HOST' ) || ! ELASTICSEARCH_HOST ) {
 		return;
 	}
 	if ( ! defined( 'EP_HOST' ) ) {
