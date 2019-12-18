@@ -26,7 +26,7 @@ function bootstrap() {
  * Load and configure Elasticpress.
  */
 function load_elasticpress() {
-	if ( ! defined( 'ELASTICSEARCH_HOST' ) ) {
+	if ( ! defined( 'ELASTICSEARCH_HOST' ) || ! ELASTICSEARCH_HOST ) {
 		return;
 	}
 	if ( ! defined( 'EP_HOST' ) ) {
