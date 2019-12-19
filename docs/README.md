@@ -6,7 +6,7 @@ The Search module provides a mirrored index of all CMS content that is optimized
 
 The default Search index and related functionality is provided by the [ElasticPress plugin](https://github.com/10up/ElasticPress).
 
-If you do not wish to use the search it can be deactivated via your config:
+If you do not wish to use the search module it can be deactivated via your config:
 
 ```json
 {
