@@ -6,6 +6,22 @@ The Search module provides a mirrored index of all CMS content that is optimized
 
 The default Search index and related functionality is provided by the [ElasticPress plugin](https://github.com/10up/ElasticPress).
 
+If you do not wish to use the search module it can be deactivated via your config:
+
+```json
+{
+	"extra": {
+		"altis": {
+			"modules": {
+				"search": {
+					"enabled": false
+				}
+			}
+		}
+	}
+}
+```
+
 Content that is indexed in the search index by default:
 
 - Posts
