@@ -21,12 +21,8 @@ use WP_Query;
 
 function bootstrap() {
 	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress' );
+	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_debug_bar_elasticpress' );
 	add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
-
-	// Load debug bar for ElasticPress if enabled in the config.
-	if ( get_config()['modules']['search']['enabled'] ?? false ) {
-		add_action( 'muplugins_loaded', __NAMESPACE__ . '\\load_debug_bar_elasticpress', 0 );
-	}
 }
 
 /**
