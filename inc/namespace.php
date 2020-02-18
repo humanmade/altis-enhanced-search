@@ -25,6 +25,11 @@ function bootstrap() {
 
 	// Load debug bar for ElasticPress if Query Monitor is enabled in the config.
 	if ( get_config()['modules']['dev-tools']['query-monitor'] ?? false ) {
+
+		// Enable debugging for Elastic Press Debug Bar to display query logs.
+		if ( ! defined( 'WP_EP_DEBUG' ) || ! WP_EP_DEBUG ) {
+			define( 'WP_EP_DEBUG', true );
+		}
 		add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_debug_bar_elasticpress', 0 );
 	}
 }
@@ -99,7 +104,7 @@ function load_elasticpress() {
  * Load Debug Bar for ElasticPress.
  */
 function load_debug_bar_elasticpress() {
-	require_once ROOT_DIR . '/vendor/10up/debug-bar-elasticpress/debug-bar-elasticpress.php';
+	require_once ROOT_DIR . '/vendor/humanmade/debug-bar-elasticpress/debug-bar-elasticpress.php';
 }
 
 function on_http_request_args( $args, $url ) {
