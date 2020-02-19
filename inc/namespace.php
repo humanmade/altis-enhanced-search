@@ -27,7 +27,7 @@ function bootstrap() {
 	if ( get_config()['modules']['dev-tools']['query-monitor'] ?? false ) {
 
 		// Enable debugging for Elastic Press Debug Bar to display query logs.
-		if ( ! defined( 'WP_EP_DEBUG' ) || ! WP_EP_DEBUG ) {
+		if ( ! defined( 'WP_EP_DEBUG' ) ) {
 			define( 'WP_EP_DEBUG', true );
 		}
 		add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_debug_bar_elasticpress', 0 );
