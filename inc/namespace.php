@@ -22,6 +22,16 @@ use WP_Query;
 function bootstrap() {
 	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress' );
 	add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
+
+	// Load debug bar for ElasticPress if Query Monitor is enabled in the config.
+	if ( get_config()['modules']['dev-tools']['query-monitor'] ?? false ) {
+
+		// Enable debugging for Elastic Press Debug Bar to display query logs.
+		if ( ! defined( 'WP_EP_DEBUG' ) ) {
+			define( 'WP_EP_DEBUG', true );
+		}
+		add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_debug_bar_elasticpress', 0 );
+	}
 }
 
 /**
@@ -88,6 +98,13 @@ function load_elasticpress() {
 
 	// Map site language to Elasticsearch analyzer.
 	add_filter( 'ep_analyzer_language', __NAMESPACE__ . '\\elasticpress_analyzer_language', 10, 2 );
+}
+
+/**
+ * Load Debug Bar for ElasticPress.
+ */
+function load_debug_bar_elasticpress() {
+	require_once ROOT_DIR . '/vendor/humanmade/debug-bar-elasticpress/debug-bar-elasticpress.php';
 }
 
 function on_http_request_args( $args, $url ) {
