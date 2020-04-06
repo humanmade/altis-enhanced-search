@@ -351,6 +351,7 @@ function elasticpress_analyzer_language( string $language, string $filter ) : st
 		'fr_ca'          => 'french',
 		'fr_fr'          => 'french',
 		'gl_es'          => 'galician',
+		'de_at'          => 'german',
 		'de_ch'          => 'german',
 		'de_ch_informal' => 'german',
 		'de_de'          => 'german',
