@@ -51,3 +51,28 @@ To disable the indexing of document content, set the `modules.search.index-docum
 It is also possible to modify the specific fields stored for each post to provide extra search data that is not included by default. See [Search Index Modification](posts-index-modification.md) for details.
 
 Elasticsearch is used to provide the search index, as such as a developer you can make direct use of Elasticsearch for advanced feature development. See [Using Elasticsearch](using-elasticsearch.md) for details.
+
+## Additional Configuration Options
+The following options can be enabled/disabled via the search configuration.
+
+- `"related-posts": true|false (default)`
+- `"facets": true|false|['match-type' => "all" (default)|...]`
+- `"woocommerce": true|false (default)`
+- `"autosuggest": true|false (default)`
+- `"index-documents": true (default) |false`
+- `"protected-content": true (default) |false`
+
+### Related Posts
+To find related posts leveraging Elastic Search use the `ep_find_related()` function. The function requires a single parameter ( `$post_id` ) with another optional parameter ( `$return` ). The `$post_id` will be used to find the posts that are related to it, with `$return` specifying the number of related posts to return, which defaults to 5.
+
+If an out of the box solution is desired, a widget `ElasticPress - Related Posts` is created that can be added to your site's sidebar. In order for the widget to work correctly it needs to be added to the sidebar which will be displayed for a single post. 
+
+### Facets
+Facets are a feature in ElasticPress which add control to filter content by one or more taxonomies. A widget can be added so when viewing a content list (archive), the taxonomy and all of its terms will be displayed. This will allow a vistors to further filter content.
+
+Depending on the configuration specified for `facets`, if the `match-type` property is set to `any`, it will force the results to match any selected taxonomy term. If set to `all`, it will match to results with all of the selected terms.
+
+### Auto Suggest
+The default auto suggest functionality has been modified but does not effect the default WP search form template.
+
+In addition to the default auto suggest endpoint, an additional endpoint was added (`/autosuggest/`). This endpoint accepts as json object to modify the parameters that are forwarded to ElasticPress for suggesting posts.  

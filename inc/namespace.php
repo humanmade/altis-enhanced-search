@@ -98,6 +98,10 @@ function load_elasticpress() {
 
 	// Map site language to Elasticsearch analyzer.
 	add_filter( 'ep_analyzer_language', __NAMESPACE__ . '\\elasticpress_analyzer_language', 10, 2 );
+
+	// Filter Options for Facet component settings.
+	add_filter( 'site_option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
+	add_filter( 'option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
 }
 
 /**
@@ -300,10 +304,13 @@ function get_elasticpress_indexable_post_types( array $types ) : array {
 function override_elasticpress_feature_activation( bool $is_active, array $settings, EP_Feature $feature ) {
 	$config = get_config()['modules']['search'];
 	$features_activated = [
-		'search'        => true,
-		'related_posts' => false,
-		'documents'     => $config['index-documents'],
-		'facets'        => false,
+		'search'            => true,
+		'related_posts'     => (bool) $config['related-posts'] ?? false,
+		'documents'         => (bool) $config['index-documents'] ?? true,
+		'facets'            => $config['facets'] ?? false,
+		'woocommerce'       => (bool) $config['woocommerce'] ?? false,
+		'autosuggest'       => (bool) $config['autosuggest'] ?? false,
+		'protected_content' => (bool) $config['protected-content'] ?? true,
 	];
 
 	if ( ! isset( $features_activated[ $feature->slug ] ) ) {
@@ -311,6 +318,20 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 	}
 
 	return $features_activated[ $feature->slug ];
+}
+
+/**
+ * Helper function to retrieve an option from the search config.
+ *
+ * @param $option_key
+ * @param null $default_value
+ *
+ * @return mixed|null
+ */
+function get_search_config_option( string $option_key, $default_value = null ) {
+	$config = get_config()['modules']['search'];
+
+	return $config[ $option_key ] ?? $default_value;
 }
 
 /**
@@ -462,4 +483,30 @@ function remove_ep_dashboard_notices( string $notice ) : string {
 	}
 
 	return $notice;
+}
+
+/**
+ * Filter to inject the config setting in to the site options or options.
+ *
+ * @param $value mixed The option value.
+ *
+ * @return mixed
+ */
+function filter_facet_settings( $value ) {
+	$facet_settings = get_search_config_option( 'facets' );
+
+	// Setting is not specified or set to false.
+	if ( empty( $facet_settings ) ) {
+		return $value;
+	}
+
+	// Facet settings do not exist. Facets are disabled.
+	if ( empty( $value['facets'] ) ) {
+		return $value;
+	}
+
+	// Override match-type property.
+	$value['facets']['match_type'] = $facet_settings['match-type'] ?? 'all';
+
+	return $value;
 }
