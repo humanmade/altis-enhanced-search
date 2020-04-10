@@ -304,12 +304,12 @@ function get_elasticpress_indexable_post_types( array $types ) : array {
 function override_elasticpress_feature_activation( bool $is_active, array $settings, EP_Feature $feature ) {
 	$config = get_config()['modules']['search'];
 	$features_activated = [
-		'search'            => true,
-		'related_posts'     => (bool) $config['related-posts'] ?? false,
-		'documents'         => (bool) $config['index-documents'] ?? true,
-		'facets'            => $config['facets'] ?? false,
-		'woocommerce'       => (bool) $config['woocommerce'] ?? false,
-		'autosuggest'       => (bool) $config['autosuggest'] ?? false,
+		'search' => true,
+		'related_posts' => (bool) $config['related-posts'] ?? false,
+		'documents' => (bool) $config['index-documents'] ?? true,
+		'facets' => $config['facets'] ?? false,
+		'woocommerce' => (bool) $config['woocommerce'] ?? false,
+		'autosuggest' => (bool) $config['autosuggest'] ?? false,
 		'protected_content' => (bool) $config['protected-content'] ?? true,
 	];
 
