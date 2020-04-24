@@ -115,7 +115,7 @@ function on_http_request_args( $args, $url ) {
 		return $args;
 	}
 
-	if ( get_environment_type() === 'local' ) {
+	if ( ! in_array( get_environment_type(), [ 'development', 'staging', 'production' ], true ) ) {
 		return $args;
 	}
 
