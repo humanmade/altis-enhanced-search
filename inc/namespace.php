@@ -152,7 +152,7 @@ function sign_wp_request( array $args, string $url ) : array {
  * @return RequestInterface
  */
 function sign_psr7_request( RequestInterface $request ) : RequestInterface {
-	if ( get_environment_type() === 'local' ) {
+	if ( Altis\get_environment_type() === 'local' ) {
 		return $request;
 	}
 
