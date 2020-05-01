@@ -114,7 +114,6 @@ function on_http_request_args( $args, $url ) {
 		return $args;
 	}
 
-
 	if ( Altis\get_environment_type() === 'local' || ! in_array( Altis\get_environment_architecture(), [ 'ec2', 'ecs' ], true ) ) {
 		return $args;
 	}
