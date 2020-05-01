@@ -2,6 +2,7 @@
 
 namespace Altis\Enhanced_Search;
 
+use Altis;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
@@ -11,7 +12,6 @@ use EP_Dashboard;
 use EP_Feature;
 use EP_Features;
 
-use Altis;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use WP_CLI;
