@@ -11,8 +11,7 @@ use EP_Dashboard;
 use EP_Feature;
 use EP_Features;
 
-use function Altis\get_config;
-use function Altis\get_environment_type;
+use Altis;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use WP_CLI;
@@ -24,7 +23,7 @@ function bootstrap() {
 	add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
 
 	// Load debug bar for ElasticPress if Query Monitor is enabled in the config.
-	if ( get_config()['modules']['dev-tools']['query-monitor'] ?? false ) {
+	if ( Altis\get_config()['modules']['dev-tools']['query-monitor'] ?? false ) {
 
 		// Enable debugging for Elastic Press Debug Bar to display query logs.
 		if ( ! defined( 'WP_EP_DEBUG' ) ) {
@@ -115,7 +114,8 @@ function on_http_request_args( $args, $url ) {
 		return $args;
 	}
 
-	if ( ! in_array( get_environment_type(), [ 'development', 'staging', 'production' ], true ) ) {
+
+	if ( Altis\get_environment_type() === 'local' || ! in_array( Altis\get_environment_architecture(), [ 'ec2', 'ecs' ], true ) ) {
 		return $args;
 	}
 
@@ -298,7 +298,7 @@ function get_elasticpress_indexable_post_types( array $types ) : array {
  * @return void
  */
 function override_elasticpress_feature_activation( bool $is_active, array $settings, EP_Feature $feature ) {
-	$config = get_config()['modules']['search'];
+	$config = Altis\get_config()['modules']['search'];
 	$features_activated = [
 		'search'        => true,
 		'related_posts' => false,
@@ -320,7 +320,7 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
  * @return array
  */
 function enable_slowlog_thresholds( array $mapping ) : array {
-	$config = get_config()['modules']['search'];
+	$config = Altis\get_config()['modules']['search'];
 	if ( isset( $config['slowlog_thresholds'] ) && (bool) $config['slowlog_thresholds'] ) {
 		$mapping['settings']['index.search.slowlog.threshold.query.info'] = '2s';
 		$mapping['settings']['index.search.slowlog.threshold.query.warn'] = '5s';
