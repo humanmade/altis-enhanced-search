@@ -255,7 +255,7 @@ function run_elasticpress_synced_healthcheck() {
  * @return array
  */
 function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
-	return [ 'any' ];
+	return get_post_stati();
 }
 
 /**
@@ -269,7 +269,7 @@ function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
  * @return array
  */
 function get_elasticpress_indexable_post_types( array $types ) : array {
-	return [ 'any' ];
+	return get_post_types();
 }
 
 /**
