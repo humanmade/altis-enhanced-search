@@ -265,7 +265,7 @@ function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
  * we want to index all content as we are using ElasticPress
  * in the WordPress admin too.
  *
- * @param array $statuses
+ * @param array $types
  * @return array
  */
 function get_elasticpress_indexable_post_types( array $types ) : array {
