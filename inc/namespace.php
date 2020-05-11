@@ -328,7 +328,7 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
  * @return mixed|null
  */
 function get_search_config_option( string $option_key, $default_value = null ) {
-	$config = get_config()['modules']['search'];
+	$config = Altis\get_config()['modules']['search'];
 
 	return $config[ $option_key ] ?? $default_value;
 }
