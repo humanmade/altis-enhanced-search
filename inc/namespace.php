@@ -71,6 +71,9 @@ function load_elasticpress() {
 	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\enable_slowlog_thresholds' );
 	add_filter( 'ep_admin_notice_type', __NAMESPACE__ . '\\remove_ep_dashboard_notices', 20 );
 
+	// Modify the default search query to be less permissive.
+	add_filter( 'ep_formatted_args_query', __NAMESPACE__ . '\\enhance_search_query', 10, 2 );
+
 	require_once ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
@@ -509,4 +512,30 @@ function filter_facet_settings( $value ) {
 	$value['facets']['match_type'] = $facet_settings['match-type'] ?? 'all';
 
 	return $value;
+}
+
+/**
+ * Modify the default search query to less permissive of loose matches.
+ *
+ * Removes the fuzzy matching against single words in the search and
+ * adds automatic fuzziness to the match for all words based the search
+ * query length.
+ *
+ * @param array $query The ElasticSearch query.
+ * @param array $args The WP_Query args for the current query.
+ * @return array The modified ElasticSearch query.
+ */
+function enhance_search_query( array $query, array $args ) : array {
+	if ( ! isset( $args['s'] ) || empty( $args['s'] ) ) {
+		return $query;
+	}
+
+	// Remove the fuzzy matching of any word in the phrase.
+	unset( $query['bool']['should'][2] );
+
+	// Set the full phrase match fuzziness to auto, this will auto adjust
+	// the allowed Levenshtein distance depending on the query length.
+	$query['bool']['should'][1]['multi_match']['fuzziness'] = 'AUTO';
+
+	return $query;
 }
