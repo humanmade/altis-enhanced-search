@@ -2,7 +2,7 @@
 /**
  * Altis Search Module.
  *
- * @package altis-search
+ * @package altis/search
  */
 
 namespace Altis\Enhanced_Search; // phpcs:ignore

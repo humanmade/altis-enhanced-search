@@ -2,7 +2,7 @@
 /**
  * Altis Search.
  *
- * @package altis-search
+ * @package altis/search
  */
 
 namespace Altis\Enhanced_Search;
