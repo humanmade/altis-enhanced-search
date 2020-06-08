@@ -334,12 +334,12 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 	$config = Altis\get_config()['modules']['search'];
 	$features_activated = [
 		'search' => true,
-		'related_posts' => (bool) $config['related-posts'] ?? false,
-		'documents' => (bool) $config['index-documents'] ?? true,
-		'facets' => $config['facets'] ?? false,
-		'woocommerce' => (bool) $config['woocommerce'] ?? false,
-		'autosuggest' => (bool) $config['autosuggest'] ?? false,
-		'protected_content' => (bool) $config['protected-content'] ?? true,
+		'related_posts' => (bool) ( $config['related-posts'] ?? false ),
+		'documents' => (bool) ( $config['index-documents'] ?? true ),
+		'facets' => (bool) ( $config['facets'] ?? false ),
+		'woocommerce' => (bool) ( $config['woocommerce'] ?? false ),
+		'autosuggest' => (bool) ( $config['autosuggest'] ?? false ),
+		'protected_content' => (bool) ( $config['protected-content'] ?? true ),
 	];
 
 	if ( ! isset( $features_activated[ $feature->slug ] ) ) {
