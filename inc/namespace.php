@@ -89,14 +89,14 @@ function load_elasticpress() {
 		// Raise error reporting threshold for the index command as it will generate
 		// a benign warning when the index doesn't already exist.
 		WP_CLI::add_hook( 'before_invoke:elasticpress index', function () {
-			error_reporting( E_ERROR );
+			error_reporting( E_ALL );
 		} );
 		// Index after install.
 		WP_CLI::add_hook( 'after_invoke:core multisite-install', __NAMESPACE__ . '\\setup_elasticpress_on_install' );
 	}
 
-	// Map site language to Elasticsearch analyzer.
-	add_filter( 'ep_analyzer_language', __NAMESPACE__ . '\\elasticpress_analyzer_language', 10, 2 );
+	// Improve default analyzer with multilingual support.
+	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\elasticpress_mapping' );
 
 	// Filter Options for Facet component settings.
 	add_filter( 'site_option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
@@ -386,83 +386,166 @@ function setup_elasticpress_on_install() {
 /**
  * Return the correct analyzer language based on the sites configured language code.
  *
- * @param string $language THe current language.
- * @param string $filter The specific filter.
- *
  * @return string The language name to use.
  */
-function elasticpress_analyzer_language( string $language, string $filter ) : string {
+function elasticpress_analyzer_language() : string {
 
 	// All the languages supported by v5.3 of elastic search.
 	$supported_languages = [
-		'ar'             => 'arabic',
-		'hy'             => 'armenian',
-		'eu'             => 'basque',
-		'pt_br'          => 'brazilian',
-		'bg_bg'          => 'bulgarian',
-		'ca'             => 'catalan',
-		'cs_cz'          => 'czech',
-		'da_dk'          => 'danish',
-		'nl_be'          => 'dutch',
-		'nl_nl'          => 'dutch',
-		'nl_nl_formal'   => 'dutch',
-		'en_au'          => 'english',
-		'en_ca'          => 'english',
-		'en_gb'          => 'english',
-		'en_nz'          => 'english',
-		'en_us'          => 'english',
-		'en_za'          => 'english',
-		'fi'             => 'finnish',
-		'fr_be'          => 'french',
-		'fr_ca'          => 'french',
-		'fr_fr'          => 'french',
-		'gl_es'          => 'galician',
-		'de_at'          => 'german',
-		'de_ch'          => 'german',
-		'de_ch_informal' => 'german',
-		'de_de'          => 'german',
-		'de_de_formal'   => 'german',
-		'el'             => 'greek',
-		'hi_in'          => 'hindi',
-		'hu_hu'          => 'hungarian',
-		'id_id'          => 'indonesian',
-		'it_it'          => 'italian',
-		'lv'             => 'latvian',
-		'lt_lt'          => 'lithuanian',
-		'nb_no'          => 'norwegian',
-		'nn_no'          => 'norwegian',
-		'fa_ir'          => 'persian',
-		'pt_pt'          => 'portuguese',
-		'pt_pt_ao90'     => 'portuguese',
-		'ro_ro'          => 'romanian',
-		'ru_ru'          => 'russian',
-		'ckb'            => 'sorani',
-		'es_ar'          => 'spanish',
-		'es_cl'          => 'spanish',
-		'es_co'          => 'spanish',
-		'es_cr'          => 'spanish',
-		'es_es'          => 'spanish',
-		'es_gt'          => 'spanish',
-		'es_mx'          => 'spanish',
-		'es_pe'          => 'spanish',
-		'es_ve'          => 'spanish',
-		'sv_se'          => 'swedish',
-		'tr_tr'          => 'turkish',
-		'th'             => 'thai',
-		'zh_cn'          => 'cjk', // chinese (china).
-		'zh_hk'          => 'cjk', // chinese (hong kong).
-		'zh_tw'          => 'cjk', // chinese (taiwan).
-		'ja'             => 'cjk', // japanese.
-		'ko_kr'          => 'cjk', // korean.
+		'ar'             => 'ar', // arabic.
+		'hy'             => 'hy', // armenian.
+		'eu'             => 'eu', // basque.
+		'pt_br'          => 'pt', // brazilian portuguese.
+		'bg_bg'          => 'bg', // bulgarian.
+		'ca'             => 'ca', // catalan.
+		'cs_cz'          => 'cs', // czeh.
+		'da_dk'          => 'da', // danish.
+		'nl_be'          => 'nl', // dutch.
+		'nl_nl'          => 'nl',
+		'nl_nl_formal'   => 'nl',
+		'en_au'          => 'en', // english.
+		'en_ca'          => 'en',
+		'en_gb'          => 'en',
+		'en_nz'          => 'en',
+		'en_us'          => 'en',
+		'en_za'          => 'en',
+		'fi'             => 'fi', // finnish.
+		'fr_be'          => 'fr', // french.
+		'fr_ca'          => 'fr',
+		'fr_fr'          => 'fr',
+		'gl_es'          => 'gl', // galician.
+		'de_at'          => 'de', // german.
+		'de_ch'          => 'de',
+		'de_ch_informal' => 'de',
+		'de_de'          => 'de',
+		'de_de_formal'   => 'de',
+		'el'             => 'el', // greek.
+		'hi_in'          => 'hi', // hindi.
+		'hu_hu'          => 'hu', // hungarian.
+		'id_id'          => 'id', // indonesian.
+		'it_it'          => 'it', // italian.
+		'lv'             => 'lv', // latvian.
+		'lt_lt'          => 'lt', // lithuanian.
+		'nb_no'          => 'no', // norwegian.
+		'nn_no'          => 'no',
+		'fa_ir'          => 'fa', // persian.
+		'pl_pl'          => 'pl', // polish.
+		'pt_pt'          => 'pt', // portuguese.
+		'pt_pt_ao90'     => 'pt',
+		'ro_ro'          => 'ro', // romanian.
+		'ru_ru'          => 'ru', // russian.
+		'ru_ua'          => 'ua', // ukrainian.
+		'ckb'            => 'ckb', // sorani / kurdish.
+		'es_ar'          => 'es', // spanish.
+		'es_cl'          => 'es',
+		'es_co'          => 'es',
+		'es_cr'          => 'es',
+		'es_es'          => 'es',
+		'es_gt'          => 'es',
+		'es_mx'          => 'es',
+		'es_pe'          => 'es',
+		'es_ve'          => 'es',
+		'sv_se'          => 'sv', // swedish.
+		'tr_tr'          => 'tr', // turkish.
+		'th'             => 'th', // thai.
+		'zh_cn'          => 'zh', // chinese (china).
+		'zh_hk'          => 'zh', // chinese (hong kong).
+		'zh_tw'          => 'zh', // chinese (taiwan).
+		'ja'             => 'ja', // japanese.
+		'ko_kr'          => 'ko', // korean.
 	];
 
-	$lang_code = get_option( 'WPLANG' );
-	$lang_code = strtolower( $lang_code );
-	if ( isset( $supported_languages[ $lang_code ] ) ) {
-		return $supported_languages[ $lang_code ];
+	/**
+	 * Get value from db as get_locale() doesn't always return the current
+	 * value when using switch_to_blog().
+	 */
+	$locale = get_option( 'WPLANG', get_site_option( 'WPLANG', 'en_US' ) );
+	$locale = strtolower( $locale );
+	if ( isset( $supported_languages[ $locale ] ) ) {
+		return $supported_languages[ $locale ];
 	}
 
-	return $language;
+	return 'default';
+}
+
+/**
+ * Add multilingual analyzers to the ElasticPress index settings
+ * and override the default analyzer.
+ *
+ * @param array $mapping Mapping array.
+ * @return array
+ */
+function elasticpress_mapping( array $mapping ) : array {
+
+	// Merge JSON filters, tokenizers and analyzers.
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+	$settings_json = file_get_contents( __DIR__ . '/analyzers.json' );
+	$settings = json_decode( $settings_json, true );
+
+	// Ensure a sensible max shingle diff.
+	if ( ! isset( $mapping['settings']['index.max_shingle_diff'] ) ) {
+		$mapping['settings']['index.max_shingle_diff'] = 8;
+	}
+
+	$mapping['settings']['analysis']['filter'] = array_merge(
+		$mapping['settings']['analysis']['filter'] ?? [],
+		$settings['filter'] ?? []
+	);
+
+	$mapping['settings']['analysis']['char_filter'] = array_merge(
+		$mapping['settings']['analysis']['char_filter'] ?? [],
+		$settings['char_filter'] ?? []
+	);
+
+	$mapping['settings']['analysis']['analyzer'] = array_merge(
+		$mapping['settings']['analysis']['analyzer'] ?? [],
+		$settings['analyzer'] ?? []
+	);
+
+	$mapping['settings']['analysis']['tokenizer'] = array_merge(
+		$mapping['settings']['analysis']['tokenizer'] ?? [],
+		$settings['tokenizer'] ?? []
+	);
+
+	$mapping['settings']['analysis']['normalizer'] = array_merge(
+		$mapping['settings']['analysis']['normalizer'] ?? [],
+		$settings['normalizer'] ?? []
+	);
+
+	// Set the shingle analyzer to use icu tokenizer.
+	$mapping['settings']['analysis']['analyzer']['shingle_analyzer'] = [
+		'type' => 'custom',
+		'tokenizer' => 'icu_tokenizer',
+		'filter' => [ 'icu_normalizer', 'icu_folding', 'lowercase', 'shingle_filter' ],
+	];
+
+	// Get analyzer language.
+	$language = elasticpress_analyzer_language();
+
+	// Replace default analyzer.
+	if ( isset( $mapping['settings']['analysis']['analyzer'][ $language . '_analyzer' ] ) ) {
+		$mapping['settings']['analysis']['analyzer']['default'] = $mapping['settings']['analysis']['analyzer'][ $language . '_analyzer' ];
+		$mapping['settings']['analysis']['analyzer']['default']['char_filter'] = array_merge(
+			$mapping['settings']['analysis']['analyzer']['default']['char_filter'] ?? [],
+			[ 'html_strip' ]
+		);
+		// If the last filter was icu_folding then add lowercase filter.
+		if ( end( $mapping['settings']['analysis']['analyzer']['default']['filter'] ) === 'icu_folding' ) {
+			$mapping['settings']['analysis']['analyzer']['default']['filter'][] = 'lowercase';
+		}
+	}
+
+	// Remove deprecated _all parameter.
+	if ( $mapping['settings']['mappings']['post']['_all'] ?? false ) {
+		unset( $mapping['settings']['mappings']['post']['_all'] );
+	}
+
+	// Unset the post title analyzer override to make it use the default.
+	if ( $mapping['settings']['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] ?? false ) {
+		unset( $mapping['settings']['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
+	}
+
+	return $mapping;
 }
 
 /**
