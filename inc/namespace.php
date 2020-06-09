@@ -395,10 +395,11 @@ function elasticpress_analyzer_language() : string {
 		'ar'             => 'ar', // arabic.
 		'hy'             => 'hy', // armenian.
 		'eu'             => 'eu', // basque.
-		'pt_br'          => 'pt', // brazilian portuguese.
+		'pt_br'          => 'br', // brazilian portuguese.
 		'bg_bg'          => 'bg', // bulgarian.
+		'bn_bd'          => 'bn', // bengali.
 		'ca'             => 'ca', // catalan.
-		'cs_cz'          => 'cs', // czeh.
+		'cs_cz'          => 'cs', // czech.
 		'da_dk'          => 'da', // danish.
 		'nl_be'          => 'nl', // dutch.
 		'nl_nl'          => 'nl',
@@ -413,6 +414,7 @@ function elasticpress_analyzer_language() : string {
 		'fr_be'          => 'fr', // french.
 		'fr_ca'          => 'fr',
 		'fr_fr'          => 'fr',
+		'ga'             => 'ga', // irish.
 		'gl_es'          => 'gl', // galician.
 		'de_at'          => 'de', // german.
 		'de_ch'          => 'de',
@@ -426,8 +428,8 @@ function elasticpress_analyzer_language() : string {
 		'it_it'          => 'it', // italian.
 		'lv'             => 'lv', // latvian.
 		'lt_lt'          => 'lt', // lithuanian.
-		'nb_no'          => 'no', // norwegian.
-		'nn_no'          => 'no',
+		'nb_no'          => 'nb', // norwegian bokmål.
+		'nn_no'          => 'nn', // norwegian nynorsk.
 		'fa_ir'          => 'fa', // persian.
 		'pl_pl'          => 'pl', // polish.
 		'pt_pt'          => 'pt', // portuguese.
@@ -516,7 +518,7 @@ function elasticpress_mapping( array $mapping ) : array {
 	$mapping['settings']['analysis']['analyzer']['shingle_analyzer'] = [
 		'type' => 'custom',
 		'tokenizer' => 'icu_tokenizer',
-		'filter' => [ 'icu_normalizer', 'icu_folding', 'lowercase', 'shingle_filter' ],
+		'filter' => [ 'icu_normalizer', 'icu_folding', 'shingle_filter' ],
 	];
 
 	// Get analyzer language.
@@ -529,10 +531,6 @@ function elasticpress_mapping( array $mapping ) : array {
 			$mapping['settings']['analysis']['analyzer']['default']['char_filter'] ?? [],
 			[ 'html_strip' ]
 		);
-		// If the last filter was icu_folding then add lowercase filter.
-		if ( end( $mapping['settings']['analysis']['analyzer']['default']['filter'] ) === 'icu_folding' ) {
-			$mapping['settings']['analysis']['analyzer']['default']['filter'][] = 'lowercase';
-		}
 	}
 
 	// Remove deprecated _all parameter.
