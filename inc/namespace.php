@@ -101,6 +101,9 @@ function load_elasticpress() {
 	// Filter Options for Facet component settings.
 	add_filter( 'site_option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
 	add_filter( 'option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
+
+	// Set up packages feature.
+	Packages\setup();
 }
 
 /**
