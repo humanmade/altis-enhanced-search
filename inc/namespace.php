@@ -127,7 +127,7 @@ function load_debug_bar_elasticpress() {
  * @return array
  */
 function on_http_request_args( array $args, string $url ) : array {
-	// phpcs:ignore
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
 	$host = parse_url( $url, PHP_URL_HOST );
 
 	if ( ELASTICSEARCH_HOST !== $host ) {
