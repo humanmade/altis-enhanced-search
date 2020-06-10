@@ -1,9 +1,13 @@
 <?php
+/**
+ * Altis Search Module.
+ *
+ * @package altis/search
+ */
 
-// phpcs:ignore
 namespace Altis\Enhanced_Search;
 
-use function Altis\register_module;
+use Altis;
 
 add_action( 'altis.modules.init', function () {
 	$default_settings = [
@@ -16,5 +20,5 @@ add_action( 'altis.modules.init', function () {
 		'slowlog_thresholds' => true,
 		'protected-content' => true,
 	];
-	register_module( 'search', __DIR__, 'Search', $default_settings, __NAMESPACE__ . '\\bootstrap' );
+	Altis\register_module( 'search', __DIR__, 'Search', $default_settings, __NAMESPACE__ . '\\bootstrap' );
 } );
