@@ -5,7 +5,7 @@
  * @package altis/search
  */
 
-namespace Altis\Enhanced_Search; // phpcs:ignore
+namespace Altis\Enhanced_Search;
 
 use Altis;
 
