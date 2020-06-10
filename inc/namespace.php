@@ -89,7 +89,7 @@ function load_elasticpress() {
 		// Raise error reporting threshold for the index command as it will generate
 		// a benign warning when the index doesn't already exist.
 		WP_CLI::add_hook( 'before_invoke:elasticpress index', function () {
-			error_reporting( E_ALL );
+			error_reporting( E_ERROR );
 		} );
 		// Index after install.
 		WP_CLI::add_hook( 'after_invoke:core multisite-install', __NAMESPACE__ . '\\setup_elasticpress_on_install' );
