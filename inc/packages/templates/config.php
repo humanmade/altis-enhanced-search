@@ -51,8 +51,6 @@
 					<p>
 						<input type="file" accept="text/plain" id="user-dictionary-file" name="user-dictionary-file" />
 					</p>
-					<h3><label for="user-dictionary-text"><?php esc_html_e( 'Manual entry', 'altis' ); ?></label></h3>
-					<textarea id="user-dictionary-text" name="user-dictionary-text" rows="10" cols="100%"><?php echo esc_textarea( $user_dictionary_text ); ?></textarea>
 					<p>
 						<input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Update user dictionary', 'altis' ); ?>" />
 					</p>
