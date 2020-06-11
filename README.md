@@ -7,4 +7,4 @@
 
 # Enhanced Search
 
-A better default search experience for Altis. Building off the [ElasticPress](https://github.com/10up/ElasticPress) plugin.
+A better default search experience for Altis. Building off the [ElasticPress](https://github.com/10up/ElasticPress) plugin and the [WordPress.com ElasticSearch library](https://github.com/Automattic/wpes-lib).
