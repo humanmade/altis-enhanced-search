@@ -1,4 +1,9 @@
 <?php
+/**
+ * Altis Search.
+ *
+ * @package altis/search
+ */
 
 namespace Altis\Enhanced_Search;
 
@@ -6,7 +11,6 @@ use Altis;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
-use const Altis\ROOT_DIR;
 use ElasticPress_CLI_Command;
 use EP_Dashboard;
 use EP_Feature;
@@ -18,6 +22,11 @@ use WP_CLI;
 use WP_Error;
 use WP_Query;
 
+/**
+ * Bootstrap search module.
+ *
+ * @return void
+ */
 function bootstrap() {
 	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress' );
 	add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
@@ -71,11 +80,11 @@ function load_elasticpress() {
 	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\enable_slowlog_thresholds' );
 	add_filter( 'ep_admin_notice_type', __NAMESPACE__ . '\\remove_ep_dashboard_notices', 20 );
 
-	require_once ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
+	require_once Altis\ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
 
-	// Remove Admin UI for ElasticPress
+	// Remove Admin UI for ElasticPress.
 	remove_action( 'network_admin_menu', [ EP_Dashboard::factory(), 'action_admin_menu' ] );
 	remove_action( 'admin_bar_menu', [ EP_Dashboard::factory(), 'action_network_admin_bar_menu' ], 50 );
 
@@ -107,11 +116,18 @@ function load_elasticpress() {
  * Load Debug Bar for ElasticPress.
  */
 function load_debug_bar_elasticpress() {
-	require_once ROOT_DIR . '/vendor/humanmade/debug-bar-elasticpress/debug-bar-elasticpress.php';
+	require_once Altis\ROOT_DIR . '/vendor/humanmade/debug-bar-elasticpress/debug-bar-elasticpress.php';
 }
 
-function on_http_request_args( $args, $url ) {
-	// @codingStandardsIgnoreLine
+/**
+ * Process HTTP request arguments.
+ *
+ * @param array $args Request arguments.
+ * @param string $url Request URL.
+ * @return array
+ */
+function on_http_request_args( array $args, string $url ) : array {
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
 	$host = parse_url( $url, PHP_URL_HOST );
 
 	if ( ELASTICSEARCH_HOST !== $host ) {
@@ -126,10 +142,10 @@ function on_http_request_args( $args, $url ) {
 }
 
 /**
- * Sign requests made to Elasticsearch
+ * Sign requests made to Elasticsearch.
  *
- * @param array $args
- * @param string $url
+ * @param array $args Request arguments.
+ * @param string $url Request URL.
  * @return array
  */
 function sign_wp_request( array $args, string $url ) : array {
@@ -172,14 +188,21 @@ function sign_psr7_request( RequestInterface $request ) : RequestInterface {
 	return $signed_request;
 }
 
-
+/**
+ * Log request errors.
+ *
+ * @param array $request Request data.
+ * @return void
+ */
 function log_remote_request_errors( array $request ) {
 	$request_response_code = (int) wp_remote_retrieve_response_code( $request['request'] );
 	$is_valid_res = ( $request_response_code >= 200 && $request_response_code <= 299 );
 
 	if ( is_wp_error( $request['request'] ) ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		trigger_error( sprintf( 'Error in ElasticPress request: %s (%s)', $request['request']->get_error_message(), $request['request']->get_error_code() ), E_USER_WARNING );
 	} elseif ( ! $is_valid_res ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		trigger_error( sprintf( 'Error in ElasticPress request: %s (%s)', wp_remote_retrieve_body( $request['request'] ), $request_response_code ), E_USER_WARNING );
 	}
 }
@@ -188,8 +211,8 @@ function log_remote_request_errors( array $request ) {
  * Default ElasticPress functionality is to fall-back to MySQL search when queries fail. We want to instead
  * no-op the query when this happens, as we don't want to put lots of load on to MySQL.
  *
- * @param string $request
- * @param WP_Query $query
+ * @param string $request SQL query string.
+ * @param WP_Query $query The current query object.
  * @return string
  */
 function noop_wp_query_on_failed_ep_request( string $request, WP_Query $query ) : string {
@@ -201,6 +224,13 @@ function noop_wp_query_on_failed_ep_request( string $request, WP_Query $query ) 
 	return "SELECT * FROM $wpdb->posts WHERE 1=0";
 }
 
+/**
+ * No-op found rows query if ElasticSearch request fails.
+ *
+ * @param string $sql SQL query string.
+ * @param WP_Query $query The current query object.
+ * @return string
+ */
 function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $query ) : string {
 	if ( ! isset( $query->elasticsearch_success ) || $query->elasticsearch_success === true ) {
 		return $sql;
@@ -211,7 +241,7 @@ function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $q
 /**
  * Add the elasticsearch check to the Altis healthchecks.
  *
- * @param array $checks
+ * @param array $checks Healthchecks array.
  * @return array
  */
 function add_elasticsearch_healthcheck( array $checks ) : array {
@@ -271,7 +301,7 @@ function run_elasticpress_synced_healthcheck() {
  * we want to index all content as we are using ElasticPress
  * in the WordPress admin too.
  *
- * @param array $statuses
+ * @param array $statuses List of psot status strings to index.
  * @return array
  */
 function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
@@ -285,7 +315,7 @@ function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
  * we want to index all content as we are using ElasticPress
  * in the WordPress admin too.
  *
- * @param array $types
+ * @param array $types List of post types to index.
  * @return array
  */
 function get_elasticpress_indexable_post_types( array $types ) : array {
@@ -295,21 +325,21 @@ function get_elasticpress_indexable_post_types( array $types ) : array {
 /**
  * Override the elasticpress features should be enabled.
  *
- * @param boolean $is_active
- * @param array $settings
- * @param EP_Feature $feature
- * @return void
+ * @param boolean $is_active True if the feature is active.
+ * @param array $settings Feature settings array.
+ * @param EP_Feature $feature The feature object.
+ * @return bool
  */
-function override_elasticpress_feature_activation( bool $is_active, array $settings, EP_Feature $feature ) {
+function override_elasticpress_feature_activation( bool $is_active, array $settings, EP_Feature $feature ) : bool {
 	$config = Altis\get_config()['modules']['search'];
 	$features_activated = [
 		'search' => true,
-		'related_posts' => (bool) $config['related-posts'] ?? false,
-		'documents' => (bool) $config['index-documents'] ?? true,
-		'facets' => $config['facets'] ?? false,
-		'woocommerce' => (bool) $config['woocommerce'] ?? false,
-		'autosuggest' => (bool) $config['autosuggest'] ?? false,
-		'protected_content' => (bool) $config['protected-content'] ?? true,
+		'related_posts' => (bool) ( $config['related-posts'] ?? false ),
+		'documents' => (bool) ( $config['index-documents'] ?? true ),
+		'facets' => (bool) ( $config['facets'] ?? false ),
+		'woocommerce' => (bool) ( $config['woocommerce'] ?? false ),
+		'autosuggest' => (bool) ( $config['autosuggest'] ?? false ),
+		'protected_content' => (bool) ( $config['protected-content'] ?? true ),
 	];
 
 	if ( ! isset( $features_activated[ $feature->slug ] ) ) {
@@ -322,9 +352,8 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 /**
  * Helper function to retrieve an option from the search config.
  *
- * @param $option_key
- * @param null $default_value
- *
+ * @param string $option_key The option name.
+ * @param mixed|null $default_value The default option value.
  * @return mixed|null
  */
 function get_search_config_option( string $option_key, $default_value = null ) {
@@ -336,7 +365,7 @@ function get_search_config_option( string $option_key, $default_value = null ) {
 /**
  * Enables the required settings for slowlog queries to be captured.
  *
- * @param array $mapping
+ * @param array $mapping ElasticSearch index mapping.
  * @return array
  */
 function enable_slowlog_thresholds( array $mapping ) : array {
@@ -569,8 +598,7 @@ function remove_ep_dashboard_notices( string $notice ) : string {
 /**
  * Filter to inject the config setting in to the site options or options.
  *
- * @param $value mixed The option value.
- *
+ * @param mixed $value The option value.
  * @return mixed
  */
 function filter_facet_settings( $value ) {
