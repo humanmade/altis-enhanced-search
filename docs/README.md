@@ -52,6 +52,11 @@ It is also possible to modify the specific fields stored for each post to provid
 
 Elasticsearch is used to provide the search index, as such as a developer you can make direct use of Elasticsearch for advanced feature development. See [Using Elasticsearch](using-elasticsearch.md) for details.
 
+## Search Configuration
+The default search behaviour can be modified to allow for stricter or more permissive matching as well as enabling advanced search query capabilities such as quoted strings for exact matches.
+
+See [Search Configuration](./search-configuration.md) for full details.
+
 ## Additional Configuration Options
 The following options can be enabled/disabled via the search configuration.
 

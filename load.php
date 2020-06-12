@@ -19,6 +19,9 @@ add_action( 'altis.modules.init', function () {
 		'autosuggest' => false,
 		'slowlog_thresholds' => true,
 		'protected-content' => true,
+		'mode' => 'simple',
+		'strict' => true,
+		'field-boost' => [],
 	];
 	Altis\register_module( 'search', __DIR__, 'Search', $default_settings, __NAMESPACE__ . '\\bootstrap' );
 } );

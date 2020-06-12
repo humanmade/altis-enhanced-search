@@ -80,6 +80,9 @@ function load_elasticpress() {
 	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\enable_slowlog_thresholds' );
 	add_filter( 'ep_admin_notice_type', __NAMESPACE__ . '\\remove_ep_dashboard_notices', 20 );
 
+	// Modify the default search query to use preset modes.
+	add_filter( 'ep_formatted_args_query', __NAMESPACE__ . '\\enhance_search_query', 10, 2 );
+
 	require_once Altis\ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
@@ -618,4 +621,117 @@ function filter_facet_settings( $value ) {
 	$value['facets']['match_type'] = $facet_settings['match-type'] ?? 'all';
 
 	return $value;
+}
+
+/**
+ * Modify the default search query based on the configured mode.
+ *
+ * 'strict' = full phrase matching with automatic fuzziness based
+ *            on query length.
+ * 'loose' = boosted full phrase matching with fuzzy individual term
+ *           matching.
+ * 'advanced' = loose term matching with support for quoted terms,
+ *              parentheses, and, or and negation operators and
+ *              prefixed wildcard queries.
+ *
+ * @param array $query The ElasticSearch query.
+ * @param array $args The WP_Query args for the current query.
+ * @return array The modified ElasticSearch query.
+ */
+function enhance_search_query( array $query, array $args ) : array {
+	if ( ! isset( $args['s'] ) || empty( $args['s'] ) ) {
+		return $query;
+	}
+
+	$strict = Altis\get_config()['modules']['search']['strict'] ?? true;
+	$mode = Altis\get_config()['modules']['search']['mode'] ?? 'simple';
+	$field_boost = Altis\get_config()['modules']['search']['field-boost'] ?? [];
+
+	// Get search fields.
+	$search_fields = $query['bool']['should'][0]['multi_match']['fields'];
+
+	// Boost specific fields.
+	if ( ! empty( $field_boost ) ) {
+		foreach ( $field_boost as $field => $boost ) {
+			if ( ! is_string( $field ) ) {
+				trigger_error( 'Search module field boost value must be an object.', E_USER_WARNING );
+				continue;
+			}
+			$existing_index = array_search( $field, $search_fields, true );
+			$boosted_field = sprintf( '%s^%F', $field, floatval( $boost ) );
+			if ( $existing_index !== false ) {
+				$search_fields[ $existing_index ] = $boosted_field;
+			} else {
+				$search_fields[] = $boosted_field;
+			}
+		}
+	}
+
+	if ( $mode === 'simple' && $strict ) {
+		// Remove the fuzzy matching of any word in the phrase.
+		unset( $query['bool']['should'][2] );
+
+		// Set the full phrase match fuzziness to auto, this will auto adjust
+		// the allowed Levenshtein distance depending on the query length.
+		$query['bool']['should'][1]['multi_match']['fuzziness'] = 'AUTO';
+	}
+
+	if ( $mode === 'advanced' ) {
+		$query['bool']['should'] = [
+			get_advanced_query( $args['s'], $search_fields, $strict ),
+		];
+	}
+
+	return $query;
+}
+
+/**
+ * Build an Elasticsearch simple query string array.
+ *
+ * @param string $query_string The search terms.
+ * @param array $search_fields The fields being searched against.
+ * @param bool $strict Whether to use stricter matching 'and' operator by default.
+ * @return array
+ */
+function get_advanced_query( string $query_string, array $search_fields, bool $strict = false ) : array {
+
+	// Deconstruct the quoted parts of the query.
+	$query_pieces = preg_split( '/(?:\s*"([^"]+)"\s*|\s+)/', $query_string, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY );
+
+	// Rebuild the query string with default fuzziness and operator keyword conversion.
+	$query_string = array_reduce( $query_pieces, function ( $query_string, $piece ) {
+		$piece_tokens = explode( ' ', trim( $piece ) );
+		if ( count( $piece_tokens ) > 1 ) {
+			// Reconstruct quoted phrases for exact matching.
+			$query_piece = '"' . implode( ' ', $piece_tokens ) . '"';
+		} else {
+			if ( $piece === 'OR' ) {
+				// Convert uppercase OR to operator.
+				$query_piece = '|';
+			} elseif ( $piece === 'AND' ) {
+				// Convert uppercase AND to operator.
+				$query_piece = '+';
+			} elseif ( in_array( $piece, [ '|', '+', '-', '*', '(', ')', '~' ], true ) ) {
+				// Preserve known operators.
+				$query_piece = $piece;
+			} elseif ( strpos( $piece, '~' ) === false ) {
+				// Add automatic fuzziness on single words without the fuzzy operator.
+				$query_piece = "{$piece}~";
+			} else {
+				$query_piece = $piece;
+			}
+		}
+		return trim( "{$query_string} {$query_piece}" );
+	}, '' );
+
+	// Set default operator based on strict setting.
+	$default_operator = $strict ? 'and' : 'or';
+
+	return [
+		'simple_query_string' => [
+			'query' => $query_string,
+			'fields' => $search_fields,
+			'default_operator' => $default_operator,
+		],
+	];
 }
