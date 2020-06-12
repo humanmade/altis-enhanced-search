@@ -28,19 +28,18 @@ By setting `mode` to "advanced" it is possible to write more complex search term
 - A word followed by `*` will match anything with that prefix
 - A word preceded by `-` will be excluded from the results
 
-For example the following search would return results with exact matches for "the law", or the words "judge" and "dred" with some degree of fuzziness and excluding the word "marvel".
+For example the following search would return results with exact matches for "the law", or the words "judge" and "dred" and excluding the word "marvel".
 
 ```
-"the law" OR (judge AND dred) -marvel
+"the law" OR (judge AND dredd) -marvel
 ```
 
 ## Strict Search
-By default searching will match all the provided search terms with some degree of fuzziness to allow for misspellings and so on.
+By default searching will match _all_ the provided search terms.
 
-This means the more specific a search term is the fewer results will be provided. For example
-"the quick brown fox" will be interpreted as "the AND quick AND brown AND fox".
+This means the more specific a search query is the fewer results will be provided. For example "the quick brown fox" will be interpreted as "the `AND` quick `AND` brown `AND` fox".
 
-Setting `strict` to `false` will change the behaviour to matching each individual term in the search query, however full phrase matches will still be scored more highly.
+Setting `strict` to `false` will change the behaviour to match each individual word as well as the full search query, with complete matches being scored more highly.
 
 ```json
 {
