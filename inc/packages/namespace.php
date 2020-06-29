@@ -30,6 +30,7 @@ function setup() {
 function get_aes_client() : ElasticsearchServiceClient {
 	return Altis\get_aws_sdk()->createElasticsearchService( [
 		'version' => '2015-01-01',
+		'region' => Altis\get_environment_region(),
 	] );
 }
 
@@ -75,7 +76,7 @@ function admin_page() {
 
 	foreach ( $types as $type ) {
 		$uploaded_file_var = "{$type}_uploaded_file";
-		$manual_file_var = "{$type}_uploaded_file";
+		$manual_file_var = "{$type}_manual_file";
 		$text_var = "{$type}_text";
 		$file_date_var = "{$type}_file_date";
 
@@ -155,29 +156,29 @@ function handle_form() {
 
 		// Handle manual entry.
 		if ( isset( $_POST[ $text_field ] ) && ! empty( $_POST[ $text_field ] ) ) {
-			$synonyms_text = sanitize_textarea_field( $_POST[ $text_field ] );
-			$synonyms_file = get_package_file_path( "{$prefix}manual-{$type}" );
-			$has_changed = false;
+			$text = sanitize_textarea_field( $_POST[ $text_field ] );
+			$file = get_package_file_path( "{$prefix}manual-{$type}" );
+			$has_changed = true;
 
 			// Check for updates.
-			if ( file_exists( $synonyms_file ) ) {
+			if ( file_exists( $file ) ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-				$has_changed = $synonyms_text !== file_get_contents( $synonyms_file );
+				$has_changed = $text !== file_get_contents( $file );
 			}
 
 			// Write to uploads.
 			if ( $has_changed ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
-				file_put_contents( $synonyms_file, $synonyms_text );
-				$packages[] = $synonyms_file;
+				file_put_contents( $file, $text );
+				$packages[] = $file;
 			}
 		}
 
 		// Handle file upload.
-		if ( ! empty( $_FILES ) && isset( $_FILES[ $file_field ] ) ) {
-			$synonyms_file = get_package_file_path( "${$prefix}uploaded-{$type}" );
-			move_uploaded_file( $_FILES[ $file_field ]['tmp_name'], $synonyms_file );
-			$packages[] = $synonyms_file;
+		if ( ! empty( $_FILES ) && isset( $_FILES[ $file_field ] ) && ! empty( $_FILES[ $file_field ]['tmp_name'] ) ) {
+			$file = get_package_file_path( "${$prefix}uploaded-{$type}" );
+			move_uploaded_file( $_FILES[ $file_field ]['tmp_name'], $file );
+			$packages[] = $file;
 		}
 
 		// Delete file if remove submit clicked.

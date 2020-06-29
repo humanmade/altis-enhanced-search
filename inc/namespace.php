@@ -8,6 +8,7 @@
 namespace Altis\Enhanced_Search;
 
 use Altis;
+use Altis\Enhanced_Search\Packages;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
@@ -15,7 +16,6 @@ use ElasticPress_CLI_Command;
 use EP_Dashboard;
 use EP_Feature;
 use EP_Features;
-
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use WP_CLI;
@@ -576,6 +576,77 @@ function elasticpress_mapping( array $mapping ) : array {
 	// Unset the post title analyzer override to make it use the default.
 	if ( $mapping['settings']['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] ?? false ) {
 		unset( $mapping['settings']['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
+	}
+
+	// Handle user dictionary for Japanese tokenizer.
+	if ( $language === 'ja' ) {
+		$is_network_japanese = get_site_option( 'WPLANG', 'en_US' ) === 'ja';
+		$user_dictionary_file = Packages\get_package_file_path( 'uploaded-user-dictionary' );
+		if ( ! file_exists( $user_dictionary_file ) && $is_network_japanese ) {
+			$user_dictionary_file = Packages\get_package_file_path( 'global-uploaded-user-dictionary' );
+		}
+
+		// Check for a package ID and add it to the kuromoji tokenizer.
+		$package_id = Packages\get_package_id( $user_dictionary_file );
+		if ( $package_id ) {
+			$mapping['settings']['analysis']['tokenizer']['kuromoji']['user_dictionary'] = $package_id;
+		}
+	}
+
+	// Add a default search analyzer if any custom stopwords or synonyms are provided.
+	$types = [ 'synonyms', 'stopwords' ];
+	$is_network_language = get_site_option( 'WPLANG', 'en_US' ) === get_option( 'WPLANG', 'en_US' );
+	$synonyms = [];
+	$stopwords = [];
+
+	foreach ( $types as $type ) {
+		foreach ( [ 'uploaded', 'manual' ] as $sub_type ) {
+			// Get package file path.
+			$file = Packages\get_package_file_path( "{$sub_type}-{$type}" );
+			if ( ! file_exists( $file ) && $is_network_language ) {
+				$file = Packages\get_package_file_path( "global-{$sub_type}-{$type}" );
+			}
+
+			// Look for a package ID.
+			$package_id = Packages\get_package_id( $file );
+			if ( ! $package_id ) {
+				continue;
+			}
+
+			if ( $type === 'synonyms' ) {
+				$synonyms[ "{$sub_type}_{$type}_filter" ] = [
+					'type' => 'synonym_graph',
+					'synonyms_path' => $package_id,
+				];
+			}
+			if ( $type === 'stopwords' ) {
+				$stopwords[ "{$sub_type}_{$type}_filter" ] = [
+					'type' => 'stop',
+					'ignore_case' => true,
+					'stopwords_path' => $package_id,
+				];
+			}
+		}
+	}
+
+	if ( ! empty( $synonyms ) || ! empty( $stopwords ) ) {
+		$mapping['settings']['analysis']['filter'] = array_merge(
+			$mapping['settings']['analysis']['filter'],
+			$synonyms,
+			$stopwords
+		);
+		// Add stopwords to default analyzer.
+		$mapping['settings']['analysis']['analyzer']['default']['filter'] = array_merge(
+			array_keys( $stopwords ),
+			$mapping['settings']['analysis']['analyzer']['default']['filter']
+		);
+		// Copy default analyzer to default search.
+		$mapping['settings']['analysis']['analyzer']['default_search'] = $mapping['settings']['analysis']['analyzer']['default'];
+		// Add our custom filters.
+		$mapping['settings']['analysis']['analyzer']['default_search']['filter'] = array_merge(
+			array_keys( $synonyms ),
+			$mapping['settings']['analysis']['analyzer']['default_search']['filter']
+		);
 	}
 
 	return $mapping;
