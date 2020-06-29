@@ -1,4 +1,9 @@
 <?php
+/**
+ * Altis Search.
+ *
+ * @package altis/search
+ */
 
 namespace Altis\Enhanced_Search;
 
@@ -6,7 +11,6 @@ use Altis;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
-use const Altis\ROOT_DIR;
 use ElasticPress_CLI_Command;
 use EP_Dashboard;
 use EP_Feature;
@@ -18,6 +22,11 @@ use WP_CLI;
 use WP_Error;
 use WP_Query;
 
+/**
+ * Bootstrap search module.
+ *
+ * @return void
+ */
 function bootstrap() {
 	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress' );
 	add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
@@ -71,11 +80,14 @@ function load_elasticpress() {
 	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\enable_slowlog_thresholds' );
 	add_filter( 'ep_admin_notice_type', __NAMESPACE__ . '\\remove_ep_dashboard_notices', 20 );
 
-	require_once ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
+	// Modify the default search query to use preset modes.
+	add_filter( 'ep_formatted_args_query', __NAMESPACE__ . '\\enhance_search_query', 10, 2 );
+
+	require_once Altis\ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
 
-	// Remove Admin UI for ElasticPress
+	// Remove Admin UI for ElasticPress.
 	remove_action( 'network_admin_menu', [ EP_Dashboard::factory(), 'action_admin_menu' ] );
 	remove_action( 'admin_bar_menu', [ EP_Dashboard::factory(), 'action_network_admin_bar_menu' ], 50 );
 
@@ -89,7 +101,7 @@ function load_elasticpress() {
 		// Raise error reporting threshold for the index command as it will generate
 		// a benign warning when the index doesn't already exist.
 		WP_CLI::add_hook( 'before_invoke:elasticpress index', function () {
-			error_reporting( E_ALL );
+			error_reporting( E_ERROR );
 		} );
 		// Index after install.
 		WP_CLI::add_hook( 'after_invoke:core multisite-install', __NAMESPACE__ . '\\setup_elasticpress_on_install' );
@@ -110,11 +122,18 @@ function load_elasticpress() {
  * Load Debug Bar for ElasticPress.
  */
 function load_debug_bar_elasticpress() {
-	require_once ROOT_DIR . '/vendor/humanmade/debug-bar-elasticpress/debug-bar-elasticpress.php';
+	require_once Altis\ROOT_DIR . '/vendor/humanmade/debug-bar-elasticpress/debug-bar-elasticpress.php';
 }
 
-function on_http_request_args( $args, $url ) {
-	// @codingStandardsIgnoreLine
+/**
+ * Process HTTP request arguments.
+ *
+ * @param array $args Request arguments.
+ * @param string $url Request URL.
+ * @return array
+ */
+function on_http_request_args( array $args, string $url ) : array {
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
 	$host = parse_url( $url, PHP_URL_HOST );
 
 	if ( ELASTICSEARCH_HOST !== $host ) {
@@ -129,10 +148,10 @@ function on_http_request_args( $args, $url ) {
 }
 
 /**
- * Sign requests made to Elasticsearch
+ * Sign requests made to Elasticsearch.
  *
- * @param array $args
- * @param string $url
+ * @param array $args Request arguments.
+ * @param string $url Request URL.
  * @return array
  */
 function sign_wp_request( array $args, string $url ) : array {
@@ -175,14 +194,21 @@ function sign_psr7_request( RequestInterface $request ) : RequestInterface {
 	return $signed_request;
 }
 
-
+/**
+ * Log request errors.
+ *
+ * @param array $request Request data.
+ * @return void
+ */
 function log_remote_request_errors( array $request ) {
 	$request_response_code = (int) wp_remote_retrieve_response_code( $request['request'] );
 	$is_valid_res = ( $request_response_code >= 200 && $request_response_code <= 299 );
 
 	if ( is_wp_error( $request['request'] ) ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		trigger_error( sprintf( 'Error in ElasticPress request: %s (%s)', $request['request']->get_error_message(), $request['request']->get_error_code() ), E_USER_WARNING );
 	} elseif ( ! $is_valid_res ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		trigger_error( sprintf( 'Error in ElasticPress request: %s (%s)', wp_remote_retrieve_body( $request['request'] ), $request_response_code ), E_USER_WARNING );
 	}
 }
@@ -191,8 +217,8 @@ function log_remote_request_errors( array $request ) {
  * Default ElasticPress functionality is to fall-back to MySQL search when queries fail. We want to instead
  * no-op the query when this happens, as we don't want to put lots of load on to MySQL.
  *
- * @param string $request
- * @param WP_Query $query
+ * @param string $request SQL query string.
+ * @param WP_Query $query The current query object.
  * @return string
  */
 function noop_wp_query_on_failed_ep_request( string $request, WP_Query $query ) : string {
@@ -204,6 +230,13 @@ function noop_wp_query_on_failed_ep_request( string $request, WP_Query $query ) 
 	return "SELECT * FROM $wpdb->posts WHERE 1=0";
 }
 
+/**
+ * No-op found rows query if ElasticSearch request fails.
+ *
+ * @param string $sql SQL query string.
+ * @param WP_Query $query The current query object.
+ * @return string
+ */
 function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $query ) : string {
 	if ( ! isset( $query->elasticsearch_success ) || $query->elasticsearch_success === true ) {
 		return $sql;
@@ -214,7 +247,7 @@ function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $q
 /**
  * Add the elasticsearch check to the Altis healthchecks.
  *
- * @param array $checks
+ * @param array $checks Healthchecks array.
  * @return array
  */
 function add_elasticsearch_healthcheck( array $checks ) : array {
@@ -274,7 +307,7 @@ function run_elasticpress_synced_healthcheck() {
  * we want to index all content as we are using ElasticPress
  * in the WordPress admin too.
  *
- * @param array $statuses
+ * @param array $statuses List of psot status strings to index.
  * @return array
  */
 function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
@@ -288,7 +321,7 @@ function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
  * we want to index all content as we are using ElasticPress
  * in the WordPress admin too.
  *
- * @param array $types
+ * @param array $types List of post types to index.
  * @return array
  */
 function get_elasticpress_indexable_post_types( array $types ) : array {
@@ -298,21 +331,21 @@ function get_elasticpress_indexable_post_types( array $types ) : array {
 /**
  * Override the elasticpress features should be enabled.
  *
- * @param boolean $is_active
- * @param array $settings
- * @param EP_Feature $feature
- * @return void
+ * @param boolean $is_active True if the feature is active.
+ * @param array $settings Feature settings array.
+ * @param EP_Feature $feature The feature object.
+ * @return bool
  */
-function override_elasticpress_feature_activation( bool $is_active, array $settings, EP_Feature $feature ) {
+function override_elasticpress_feature_activation( bool $is_active, array $settings, EP_Feature $feature ) : bool {
 	$config = Altis\get_config()['modules']['search'];
 	$features_activated = [
 		'search' => true,
-		'related_posts' => (bool) $config['related-posts'] ?? false,
-		'documents' => (bool) $config['index-documents'] ?? true,
-		'facets' => $config['facets'] ?? false,
-		'woocommerce' => (bool) $config['woocommerce'] ?? false,
-		'autosuggest' => (bool) $config['autosuggest'] ?? false,
-		'protected_content' => (bool) $config['protected-content'] ?? true,
+		'related_posts' => (bool) ( $config['related-posts'] ?? false ),
+		'documents' => (bool) ( $config['index-documents'] ?? true ),
+		'facets' => (bool) ( $config['facets'] ?? false ),
+		'woocommerce' => (bool) ( $config['woocommerce'] ?? false ),
+		'autosuggest' => (bool) ( $config['autosuggest'] ?? false ),
+		'protected_content' => (bool) ( $config['protected-content'] ?? true ),
 	];
 
 	if ( ! isset( $features_activated[ $feature->slug ] ) ) {
@@ -325,9 +358,8 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 /**
  * Helper function to retrieve an option from the search config.
  *
- * @param $option_key
- * @param null $default_value
- *
+ * @param string $option_key The option name.
+ * @param mixed|null $default_value The default option value.
  * @return mixed|null
  */
 function get_search_config_option( string $option_key, $default_value = null ) {
@@ -339,7 +371,7 @@ function get_search_config_option( string $option_key, $default_value = null ) {
 /**
  * Enables the required settings for slowlog queries to be captured.
  *
- * @param array $mapping
+ * @param array $mapping ElasticSearch index mapping.
  * @return array
  */
 function enable_slowlog_thresholds( array $mapping ) : array {
@@ -572,8 +604,7 @@ function remove_ep_dashboard_notices( string $notice ) : string {
 /**
  * Filter to inject the config setting in to the site options or options.
  *
- * @param $value mixed The option value.
- *
+ * @param mixed $value The option value.
  * @return mixed
  */
 function filter_facet_settings( $value ) {
@@ -593,4 +624,117 @@ function filter_facet_settings( $value ) {
 	$value['facets']['match_type'] = $facet_settings['match-type'] ?? 'all';
 
 	return $value;
+}
+
+/**
+ * Modify the default search query based on the configured mode.
+ *
+ * 'strict' = full phrase matching with automatic fuzziness based
+ *            on query length.
+ * 'loose' = boosted full phrase matching with fuzzy individual term
+ *           matching.
+ * 'advanced' = loose term matching with support for quoted terms,
+ *              parentheses, and, or and negation operators and
+ *              prefixed wildcard queries.
+ *
+ * @param array $query The ElasticSearch query.
+ * @param array $args The WP_Query args for the current query.
+ * @return array The modified ElasticSearch query.
+ */
+function enhance_search_query( array $query, array $args ) : array {
+	if ( ! isset( $args['s'] ) || empty( $args['s'] ) ) {
+		return $query;
+	}
+
+	$strict = Altis\get_config()['modules']['search']['strict'] ?? true;
+	$mode = Altis\get_config()['modules']['search']['mode'] ?? 'simple';
+	$field_boost = Altis\get_config()['modules']['search']['field-boost'] ?? [];
+
+	// Get search fields.
+	$search_fields = $query['bool']['should'][0]['multi_match']['fields'];
+
+	// Boost specific fields.
+	if ( ! empty( $field_boost ) ) {
+		foreach ( $field_boost as $field => $boost ) {
+			if ( ! is_string( $field ) ) {
+				trigger_error( 'Search module field boost value must be an object.', E_USER_WARNING );
+				continue;
+			}
+			$existing_index = array_search( $field, $search_fields, true );
+			$boosted_field = sprintf( '%s^%F', $field, floatval( $boost ) );
+			if ( $existing_index !== false ) {
+				$search_fields[ $existing_index ] = $boosted_field;
+			} else {
+				$search_fields[] = $boosted_field;
+			}
+		}
+	}
+
+	if ( $mode === 'simple' && $strict ) {
+		// Remove the fuzzy matching of any word in the phrase.
+		unset( $query['bool']['should'][2] );
+
+		// Set the full phrase match fuzziness to auto, this will auto adjust
+		// the allowed Levenshtein distance depending on the query length.
+		$query['bool']['should'][1]['multi_match']['fuzziness'] = 'AUTO';
+	}
+
+	if ( $mode === 'advanced' ) {
+		$query['bool']['should'] = [
+			get_advanced_query( $args['s'], $search_fields, $strict ),
+		];
+	}
+
+	return $query;
+}
+
+/**
+ * Build an Elasticsearch simple query string array.
+ *
+ * @param string $query_string The search terms.
+ * @param array $search_fields The fields being searched against.
+ * @param bool $strict Whether to use stricter matching 'and' operator by default.
+ * @return array
+ */
+function get_advanced_query( string $query_string, array $search_fields, bool $strict = false ) : array {
+
+	// Deconstruct the quoted parts of the query.
+	$query_pieces = preg_split( '/(?:\s*"([^"]+)"\s*|\s+)/', $query_string, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY );
+
+	// Rebuild the query string with default fuzziness and operator keyword conversion.
+	$query_string = array_reduce( $query_pieces, function ( $query_string, $piece ) {
+		$piece_tokens = explode( ' ', trim( $piece ) );
+		if ( count( $piece_tokens ) > 1 ) {
+			// Reconstruct quoted phrases for exact matching.
+			$query_piece = '"' . implode( ' ', $piece_tokens ) . '"';
+		} else {
+			if ( $piece === 'OR' ) {
+				// Convert uppercase OR to operator.
+				$query_piece = '|';
+			} elseif ( $piece === 'AND' ) {
+				// Convert uppercase AND to operator.
+				$query_piece = '+';
+			} elseif ( in_array( $piece, [ '|', '+', '-', '*', '(', ')', '~' ], true ) ) {
+				// Preserve known operators.
+				$query_piece = $piece;
+			} elseif ( strpos( $piece, '~' ) === false ) {
+				// Add automatic fuzziness on single words without the fuzzy operator.
+				$query_piece = "{$piece}~";
+			} else {
+				$query_piece = $piece;
+			}
+		}
+		return trim( "{$query_string} {$query_piece}" );
+	}, '' );
+
+	// Set default operator based on strict setting.
+	$default_operator = $strict ? 'and' : 'or';
+
+	return [
+		'simple_query_string' => [
+			'query' => $query_string,
+			'fields' => $search_fields,
+			'default_operator' => $default_operator,
+		],
+	];
 }
