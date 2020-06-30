@@ -42,7 +42,7 @@
 							echo esc_html( sprintf(
 								// translators: %s is replaced by the file upload date.
 								__( 'Current file uploaded on %s', 'altis' ),
-								gmdate( get_option( 'date_format', 'Y-m-d H:i:s' ), $user_dicitonary_file_date )
+								gmdate( get_option( 'date_format', 'Y-m-d H:i:s' ), $user_dictionary_file_date )
 							) );
 							?>
 						</p>

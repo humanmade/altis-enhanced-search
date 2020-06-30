@@ -578,7 +578,9 @@ function elasticpress_mapping( array $mapping ) : array {
 		unset( $mapping['settings']['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
 	}
 
-	// Handle user dictionary for Japanese tokenizer.
+	/**
+	 * Handle user dictionary for Japanese sites.
+	 */
 	if ( $language === 'ja' ) {
 		$is_network_japanese = get_site_option( 'WPLANG', 'en_US' ) === 'ja';
 		$user_dictionary_file = Packages\get_package_file_path( 'uploaded-user-dictionary' );

@@ -80,8 +80,10 @@ function admin_page() {
 		$text_var = "{$type}_text";
 		$file_date_var = "{$type}_file_date";
 
-		$$uploaded_file_var = get_package_file_path( "{$prefix}uploaded-{$type}" );
-		$$manual_file_var = get_package_file_path( "{$prefix}manual-{$type}" );
+		$file_type_string = str_replace( '_', '-', $type );
+
+		$$uploaded_file_var = get_package_file_path( "{$prefix}uploaded-{$file_type_string}" );
+		$$manual_file_var = get_package_file_path( "{$prefix}manual-{$file_type_string}" );
 
 		$$text_var = '';
 		if ( file_exists( $$manual_file_var ) ) {
@@ -176,14 +178,14 @@ function handle_form() {
 
 		// Handle file upload.
 		if ( ! empty( $_FILES ) && isset( $_FILES[ $file_field ] ) && ! empty( $_FILES[ $file_field ]['tmp_name'] ) ) {
-			$file = get_package_file_path( "${$prefix}uploaded-{$type}" );
+			$file = get_package_file_path( "{$prefix}uploaded-{$type}" );
 			move_uploaded_file( $_FILES[ $file_field ]['tmp_name'], $file );
 			$packages[] = $file;
 		}
 
 		// Delete file if remove submit clicked.
 		if ( isset( $_POST[ $remove_field ] ) ) {
-			delete_package( get_package_file_path( "${$prefix}uploaded-{$type}" ) );
+			delete_package( get_package_file_path( "{$prefix}uploaded-{$type}" ) );
 		}
 	}
 
