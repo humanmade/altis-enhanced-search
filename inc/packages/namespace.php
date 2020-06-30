@@ -106,7 +106,7 @@ function admin_page() {
  * @return string
  */
 function get_packages_path() : string {
-	return wp_upload_dir()['basedir'] . '/search';
+	return preg_replace( '#/sites/\d+#', '', wp_upload_dir()['basedir'] . '/search' );
 }
 
 /**

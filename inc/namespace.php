@@ -514,7 +514,9 @@ function elasticpress_analyzer_language() : string {
  */
 function elasticpress_mapping( array $mapping ) : array {
 
-	// Merge JSON filters, tokenizers and analyzers.
+	/**
+	 * Merge filters, tokenizers and analyzers from JSON config.
+	 */
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 	$settings_json = file_get_contents( __DIR__ . '/analyzers.json' );
 	$settings = json_decode( $settings_json, true );
@@ -595,7 +597,12 @@ function elasticpress_mapping( array $mapping ) : array {
 		}
 	}
 
-	// Add a default search analyzer if any custom stopwords or synonyms are provided.
+	/**
+	 * Add a default search analyzer if any custom stopwords or synonyms are provided.
+	 *
+	 * Synonyms and stopwords are quick enough to be applied at search time and avoid
+	 * increasing the index size unnecessarily.
+	 */
 	$types = [ 'synonyms', 'stopwords' ];
 	$is_network_language = get_site_option( 'WPLANG', 'en_US' ) === get_option( 'WPLANG', 'en_US' );
 	$synonyms = [];
@@ -637,16 +644,12 @@ function elasticpress_mapping( array $mapping ) : array {
 			$synonyms,
 			$stopwords
 		);
-		// Add stopwords to default analyzer.
-		$mapping['settings']['analysis']['analyzer']['default']['filter'] = array_merge(
-			array_keys( $stopwords ),
-			$mapping['settings']['analysis']['analyzer']['default']['filter']
-		);
 		// Copy default analyzer to default search.
 		$mapping['settings']['analysis']['analyzer']['default_search'] = $mapping['settings']['analysis']['analyzer']['default'];
 		// Add our custom filters.
 		$mapping['settings']['analysis']['analyzer']['default_search']['filter'] = array_merge(
 			array_keys( $synonyms ),
+			array_keys( $stopwords ),
 			$mapping['settings']['analysis']['analyzer']['default_search']['filter']
 		);
 	}

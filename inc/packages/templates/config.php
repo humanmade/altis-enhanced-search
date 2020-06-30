@@ -109,8 +109,10 @@ sea biscuit, sea biscit => seabiscuit</pre>
 		<div class="columns">
 			<div class="column">
 				<p><?php esc_html_e( 'Stop words are words that are ignored when searching. All supported languages have a default list of common stop words by default however you can add additional words here.', 'altis' ); ?></p>
-				<p><?php esc_html_e( 'Stop words should be provided as a comma separated list:', 'altis' ); ?></p>
-				<pre>it, of, and, the ...</pre>
+				<p><?php esc_html_e( 'Stop words should be provided one per line for example:', 'altis' ); ?></p>
+				<pre>ignore
+me
+please</pre>
 			</div>
 			<div class="column">
 				<h3><label for="stopwords-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label></h3>
