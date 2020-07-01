@@ -858,7 +858,7 @@
 				"greek_lowercase_filter",
 				"cjk_width"
 			],
-			"tokenizer": "kuromoji_tokenizer"
+			"tokenizer": "kuromoji"
 		},
 		"ko_analyzer": {
 			"type": "cjk",
