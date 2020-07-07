@@ -131,7 +131,6 @@ function sign_psr7_request( RequestInterface $request ) : RequestInterface {
 	return $signed_request;
 }
 
-
 function log_remote_request_errors( array $request ) {
 	$request_response_code = (int) wp_remote_retrieve_response_code( $request['request'] );
 	$is_valid_res = ( $request_response_code >= 200 && $request_response_code <= 299 );
@@ -254,7 +253,7 @@ function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
  * we want to index all content as we are using ElasticPress
  * in the WordPress admin too.
  *
- * @param array $statuses
+ * @param array $types
  * @return array
  */
 function get_elasticpress_indexable_post_types( array $types ) : array {
@@ -264,10 +263,11 @@ function get_elasticpress_indexable_post_types( array $types ) : array {
 /**
  * Override the elasticpress features should be enabled.
  *
- * @param boolean $is_active
+ * @param bool $is_active
  * @param array $settings
- * @param EP_Feature $feature
- * @return void
+ * @param Feature $feature
+ *
+ * @return bool|mixed
  */
 function override_elasticpress_feature_activation( bool $is_active, array $settings, Feature $feature ) {
 	$config = get_config()['modules']['search'];
