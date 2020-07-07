@@ -72,7 +72,7 @@ function enqueue_scripts( string $hook_suffix ) {
 function admin_page() {
 	$types = [ 'synonyms', 'stopwords', 'user_dictionary' ];
 
-	$prefix = is_network_admin() ? 'global-' : '';
+	$prefix = is_network_admin() ? '' : 'sites/' . get_current_blog_id() . '/';
 
 	foreach ( $types as $type ) {
 		$uploaded_file_var = "{$type}_uploaded_file";
@@ -82,8 +82,8 @@ function admin_page() {
 
 		$file_type_string = str_replace( '_', '-', $type );
 
-		$$uploaded_file_var = get_package_file_path( "{$prefix}uploaded-{$file_type_string}" );
-		$$manual_file_var = get_package_file_path( "{$prefix}manual-{$file_type_string}" );
+		$$uploaded_file_var = get_package_path( "{$prefix}uploaded-{$file_type_string}" );
+		$$manual_file_var = get_package_path( "{$prefix}manual-{$file_type_string}" );
 
 		$$text_var = '';
 		if ( file_exists( $$manual_file_var ) ) {
@@ -106,26 +106,48 @@ function admin_page() {
  * @return string
  */
 function get_packages_path() : string {
-	return preg_replace( '#/sites/\d+#', '', wp_upload_dir()['basedir'] . '/search' );
+	$path = WP_CONTENT_DIR . '/es-packages';
+
+	/**
+	 * Filter the path at which Elasticsearch package files are stored.
+	 *
+	 * @param string $path Absolute directory path, defaults to wp-content/es-packages.
+	 */
+	$path = apply_filters( 'altis.search.packages_path', $path );
+
+	return $path;
 }
 
 /**
  * Get a package file path. Returns the path if the file exists
  * or null on failure.
  *
- * @param string $type A file prefix for the package file.
- * @param int|null $blog_id The site ID to get the file path for.
- * @param int|null $network_id The network ID to get the file path for.
+ * @param string $slug A slug ID for the package file.
  * @return string
  */
-function get_package_file_path( string $type, ?int $blog_id = null, ?int $network_id = null ) : string {
-	return sprintf(
-		'%s/%s-%d-%d.txt',
+function get_package_path( string $slug ) : string {
+	$path = sprintf(
+		'%s/%s.txt',
 		get_packages_path(),
-		$type,
-		$network_id ?? get_current_network_id(),
-		$blog_id ?? get_current_blog_id()
+		$slug
 	);
+
+	return $path;
+}
+
+/**
+ * Get the package ID for a given file path.
+ *
+ * @param string $slug The package slug to get the package ID for.
+ * @return string|null
+ */
+function get_package_id( string $slug ) : ?string {
+	$package_id = get_site_option( "altis_search_package_{$slug}" );
+	if ( ! empty( $package_id ) ) {
+		return $package_id;
+	}
+
+	return null;
 }
 
 /**
@@ -143,10 +165,7 @@ function handle_form() {
 	}
 
 	// Set a global prefix in network admin.
-	$prefix = is_network_admin() ? 'global-' : '';
-
-	// Collect packages to create and associate.
-	$packages = [];
+	$prefix = is_network_admin() ? '' : 'sites/' . get_current_blog_id() . '/';
 
 	// The different types of package.
 	$types = [ 'synonyms', 'stopwords', 'user-dictionary' ];
@@ -159,7 +178,7 @@ function handle_form() {
 		// Handle manual entry.
 		if ( isset( $_POST[ $text_field ] ) && ! empty( $_POST[ $text_field ] ) ) {
 			$text = sanitize_textarea_field( $_POST[ $text_field ] );
-			$file = get_package_file_path( "{$prefix}manual-{$type}" );
+			$file = get_package_path( "{$prefix}manual-{$type}" );
 			$has_changed = true;
 
 			// Check for updates.
@@ -172,59 +191,38 @@ function handle_form() {
 			if ( $has_changed ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
 				file_put_contents( $file, $text );
-				$packages[] = $file;
+				create_package( "{$prefix}manual-{$type}", $file );
 			}
 		}
 
 		// Handle file upload.
 		if ( ! empty( $_FILES ) && isset( $_FILES[ $file_field ] ) && ! empty( $_FILES[ $file_field ]['tmp_name'] ) ) {
-			$file = get_package_file_path( "{$prefix}uploaded-{$type}" );
+			$file = get_package_path( "{$prefix}uploaded-{$type}" );
 			move_uploaded_file( $_FILES[ $file_field ]['tmp_name'], $file );
-			$packages[] = $file;
+			create_package( "{$prefix}uploaded-{$type}", $file );
 		}
 
 		// Delete file if remove submit clicked.
 		if ( isset( $_POST[ $remove_field ] ) ) {
-			delete_package( get_package_file_path( "{$prefix}uploaded-{$type}" ) );
+			delete_package( "{$prefix}uploaded-{$type}" );
 		}
 	}
 
-	foreach ( $packages as $package ) {
-		// Create a new package and associate it.
-		$package_id = create_package( $package );
-		if ( $package_id ) {
-			// Store package ID for file.
-			$name = basename( $package );
-			update_site_option( "altis_search_package_{$name}", $package_id );
-		}
-	}
-}
-
-/**
- * Get the package ID for a given file path.
- *
- * @param string $file The file to get the package ID for.
- * @return string|null
- */
-function get_package_id( string $file ) : ?string {
-	$name = basename( $file );
-
-	$package_id = get_site_option( "altis_search_package_{$name}" );
-	if ( $package_id ) {
-		return $package_id;
-	}
-
-	return null;
+	// Redirect back to form.
+	$redirect_url = is_network_admin() ? network_admin_url( 'settings.php' ) : admin_url( 'options-general.php' );
+	wp_safe_redirect( $redirect_url . '?page=search-config' );
+	exit;
 }
 
 /**
  * Create and associate a package file with AES, removing any existing
  * files with a matching name.
  *
- * @param string $file The full S3 package file path.
+ * @param string $slug The package slug.
+ * @param string $file The package file path.
  * @return string|null The package ID for referencing in analysers.
  */
-function create_package( string $file ) : ?string {
+function create_package( string $slug, string $file ) : ?string {
 
 	// Ensure file exists.
 	if ( ! file_exists( $file ) ) {
@@ -232,6 +230,10 @@ function create_package( string $file ) : ?string {
 		trigger_error( sprintf( 'The given package filepath %s does not exist.', $file ), E_USER_WARNING );
 		return null;
 	}
+
+	// Default package ID is the full path to the package.
+	// Note this will only work if Elasticsearch is running on the same server as WordPress.
+	$package_id = $file;
 
 	/**
 	 * Override the package ID for a given package file name.
@@ -240,99 +242,32 @@ function create_package( string $file ) : ?string {
 	 * @param string $file The full package file path.
 	 */
 	$package_id = apply_filters( 'altis.search.package_id', null, $file );
-	if ( $package_id !== null ) {
-		return $package_id;
-	}
 
-	// Check file is an S3 file path.
-	if ( strpos( $file, 's3://' ) !== 0 ) {
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		trigger_error( sprintf( 'The given package filepath %s is not a valid S3 file path.', $file ), E_USER_WARNING );
-		return null;
-	}
-
-	// Get AES client.
-	$client = get_aes_client();
-
-	// Use the filename for the package name and for matching.
-	$name = basename( $file );
-
-	// Derive S3 bucket and path.
-	preg_match( '#^s3://([^/]+)/(.*?)$#', $file, $s3_file_parts );
-	$s3_bucket = defined( 'S3_UPLOADS_BUCKET' ) ? S3_UPLOADS_BUCKET : $s3_file_parts[1];
-	$s3_key = $s3_file_parts[2];
-
-	// Get domain.
-	$domains = $client->listDomainNames();
-	$domain = $domains['DomainNames'][0]['DomainName'] ?? false;
-
-	if ( empty( $domain ) ) {
-		trigger_error( 'Could not find an AWS ElasticSearch Service Domain to associate the package with.', E_USER_WARNING );
-		return null;
-	}
-
-	// Get old package if one exists with same name.
-	$existing = $client->describePackages( [
-		'Filter' => [
-			'Name' => 'PackageName',
-			'Value' => $name,
-		],
-	] );
-
-	// Create a new package.
-	$new_package = $client->createPackage( [
-		'PackageName' => $name, // required.
-		'PackageSource' => [ // required.
-			'S3BucketName' => $s3_bucket,
-			'S3Key' => $s3_key,
-		],
-		'PackageType' => 'TXT-DICTIONARY',
-	] );
-
-	// Associate the package with the ES domain.
-	$client->associatePackage( [
-		'DomainName' => $domain, // required.
-		'PackageID' => $new_package['PackageDetails']['PackageID'], // required.
-	] );
-
-	// Dissociate and remove the old version of the package.
-	if ( ! empty( $existing['PackageDetailsList'] ) ) {
-		$existing_package_id = $existing['PackageDetailsList'][0]['PackageID'];
-		$client->dissociatePackage( [
-			'DomainName' => $domain, // required.
-			'PackageID' => $existing_package_id, // required.
-		] );
-		$client->deletePackage( [
-			'PackageID' => $existing_package_id,
-		] );
-	}
+	// Store package ID for file.
+	update_site_option( "altis_search_package_{$slug}", $package_id );
 
 	// Return the reference used to get the package in an analyzer.
-	return 'analyzers/' . $new_package['PackageDetails']['PackageID'];
+	return $package_id;
 }
 
 /**
  * Removes the stored package ID and file for a given package.
  *
- * @param string $file The package file path.
+ * @param string $slug The package file path.
  * @return bool
  */
-function delete_package( string $file ) : bool {
+function delete_package( string $slug ) : bool {
+	$file = get_package_path( $slug );
 
 	// Ensure file exists.
 	if ( ! file_exists( $file ) ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		trigger_error( sprintf( 'The given package filepath %s does not exist.', $file ), E_USER_WARNING );
-		return false;
+		trigger_error( sprintf( 'The package file %s does not exist.', $file ), E_USER_WARNING );
+	} else {
+		// Delete the file.
+		unlink( $file );
 	}
 
-	// Delete the file.
-	unlink( $file );
-
-	$name = basename( $file );
-
 	// Remove the stored package ID.
-	delete_site_option( "altis_search_package_{$name}" );
-
-	return true;
+	return delete_site_option( "altis_search_package_{$slug}" );
 }

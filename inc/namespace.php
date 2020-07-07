@@ -585,15 +585,14 @@ function elasticpress_mapping( array $mapping ) : array {
 	 */
 	if ( $language === 'ja' ) {
 		$is_network_japanese = get_site_option( 'WPLANG', 'en_US' ) === 'ja';
-		$user_dictionary_file = Packages\get_package_file_path( 'uploaded-user-dictionary' );
-		if ( ! file_exists( $user_dictionary_file ) && $is_network_japanese ) {
-			$user_dictionary_file = Packages\get_package_file_path( 'global-uploaded-user-dictionary' );
+		$user_dictionary_package_id = Packages\get_package_id( 'uploaded-user-dictionary' );
+		if ( ! $user_dictionary_package_id && $is_network_japanese ) {
+			$user_dictionary_package_id = Packages\get_package_id( 'global-uploaded-user-dictionary' );
 		}
 
 		// Check for a package ID and add it to the kuromoji tokenizer.
-		$package_id = Packages\get_package_id( $user_dictionary_file );
-		if ( $package_id ) {
-			$mapping['settings']['analysis']['tokenizer']['kuromoji']['user_dictionary'] = $package_id;
+		if ( $user_dictionary_package_id ) {
+			$mapping['settings']['analysis']['tokenizer']['kuromoji']['user_dictionary'] = $user_dictionary_package_id;
 		}
 	}
 
@@ -603,21 +602,20 @@ function elasticpress_mapping( array $mapping ) : array {
 	 * Synonyms and stopwords are quick enough to be applied at search time and avoid
 	 * increasing the index size unnecessarily.
 	 */
-	$types = [ 'synonyms', 'stopwords' ];
 	$is_network_language = get_site_option( 'WPLANG', 'en_US' ) === get_option( 'WPLANG', 'en_US' );
 	$synonyms = [];
 	$stopwords = [];
 
-	foreach ( $types as $type ) {
+	foreach ( [ 'synonyms', 'stopwords' ] as $type ) {
 		foreach ( [ 'uploaded', 'manual' ] as $sub_type ) {
 			// Get package file path.
-			$file = Packages\get_package_file_path( "{$sub_type}-{$type}" );
-			if ( ! file_exists( $file ) && $is_network_language ) {
-				$file = Packages\get_package_file_path( "global-{$sub_type}-{$type}" );
+			$package_id = Packages\get_package_id( "{$sub_type}-{$type}" );
+			// Check for network default.
+			if ( ! $package_id && $is_network_language ) {
+				$package_id = Packages\get_package_id( "global-{$sub_type}-{$type}" );
 			}
 
-			// Look for a package ID.
-			$package_id = Packages\get_package_id( $file );
+			// Check for a package ID.
 			if ( ! $package_id ) {
 				continue;
 			}
