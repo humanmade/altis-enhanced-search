@@ -6,7 +6,7 @@ When making changes the data or analyzers that are stored in the search index, y
 
 The `elasticpress` CLI command is used for all index management operations.
 
-To re-sychronise the index for all sites
+To re-sychronize the index for all sites
 
 ```sh
 wp elasticpress index --network-wide
@@ -27,4 +27,3 @@ wp elasticpress index --posts-per-page 200
 ```
 
 See `wp help elasticpress` for all available CLI commands.
-

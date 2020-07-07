@@ -11,12 +11,15 @@
 	],
 	"require": {
 		"php": ">=7.1",
-		"10up/elasticpress": "3.0.3"
+		"10up/elasticpress": "3.0.3",
+		"humanmade/debug-bar-elasticpress": "1.5.0"
 	},
 	"autoload" : {
 		"files": [
-			"load.php",
 			"inc/namespace.php"
 		]
+	},
+	"extra": {
+		"altis": {}
 	}
 }

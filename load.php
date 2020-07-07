@@ -1,18 +1,27 @@
 <?php
+/**
+ * Altis Search Module.
+ *
+ * @package altis/search
+ */
 
 namespace Altis\Enhanced_Search;
 
-use function Altis\register_module;
-
-// Don't self-initialize if this is not an Altis execution.
-if ( ! function_exists( 'add_action' ) ) {
-	return;
-}
+use Altis;
 
 add_action( 'altis.modules.init', function () {
 	$default_settings = [
 		'enabled' => true,
 		'index-documents' => true,
+		'related-posts' => false,
+		'facets' => false,
+		'woocommerce' => false,
+		'autosuggest' => false,
+		'slowlog_thresholds' => true,
+		'protected-content' => true,
+		'mode' => 'simple',
+		'strict' => true,
+		'field-boost' => [],
 	];
-	register_module( 'search', __DIR__, 'Search', $default_settings, __NAMESPACE__ . '\\bootstrap' );
+	Altis\register_module( 'search', __DIR__, 'Search', $default_settings, __NAMESPACE__ . '\\bootstrap' );
 } );

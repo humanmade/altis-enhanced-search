@@ -7,6 +7,7 @@ The languages supported are as follows:
 - Arabic
 - Armenian
 - Basque
+- Bengali
 - Brazilian
 - Bulgarian
 - Catalan
@@ -20,16 +21,19 @@ The languages supported are as follows:
 - Galician
 - German
 - Greek
+- Hebrew
 - Hindi
 - Hungarian
 - Indonesian
 - Italian
+- Irish
 - Japanese
 - Korean
 - Latvian
 - Lithuanian
 - Norwegian
 - Persian
+- Polish
 - Portuguese
 - Romanian
 - Russian
@@ -38,3 +42,4 @@ The languages supported are as follows:
 - Swedish
 - Turkish
 - Thai
+- Ukrainian
