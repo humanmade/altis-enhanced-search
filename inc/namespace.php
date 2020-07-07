@@ -13,6 +13,7 @@ use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
 use ElasticPress\Command as ElasticPress_CLI_Command;
 use ElasticPress\Feature;
+use ElasticPress\Features;
 use ElasticPress\Indexables as ElasticPress_Indexables;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
@@ -91,8 +92,8 @@ function load_elasticpress() {
 
 	// Don't set up features during install.
 	if ( defined( 'WP_INSTALLING' ) && WP_INSTALLING ) {
-		remove_action( 'init', [ EP_Features::factory(), 'handle_feature_activation' ], 0 );
-		remove_action( 'init', [ EP_Features::factory(), 'setup_features' ], 0 );
+		remove_action( 'init', [ Features::factory(), 'handle_feature_activation' ], 0 );
+		remove_action( 'init', [ Features::factory(), 'setup_features' ], 0 );
 	}
 
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -338,7 +339,7 @@ function get_elasticpress_indexable_post_types( array $types ) : array {
  *
  * @param boolean $is_active True if the feature is active.
  * @param array $settings Feature settings array.
- * @param EP_Feature $feature The feature object.
+ * @param Feature $feature The feature object.
  * @return bool
  */
 function override_elasticpress_feature_activation( bool $is_active, array $settings, Feature $feature ) : bool {
