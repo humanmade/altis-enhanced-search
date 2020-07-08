@@ -77,7 +77,7 @@ function load_elasticpress() {
 	add_filter( 'ep_indexable_post_types', __NAMESPACE__ . '\\get_elasticpress_indexable_post_types' );
 	add_filter( 'ep_feature_active', __NAMESPACE__ . '\\override_elasticpress_feature_activation', 10, 3 );
 	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\enable_slowlog_thresholds' );
-	add_filter( 'ep_admin_notice_type', __NAMESPACE__ . '\\remove_ep_dashboard_notices', 20 );
+	add_filter( 'ep_admin_notices', __NAMESPACE__ . '\\remove_ep_dashboard_notices' );
 
 	// Modify the default search query to use preset modes.
 	add_filter( 'ep_formatted_args_query', __NAMESPACE__ . '\\enhance_search_query', 10, 2 );
@@ -89,8 +89,6 @@ function load_elasticpress() {
 	// Remove Admin UI for ElasticPress
 	remove_action( 'network_admin_menu', 'ElasticPress\\Dashboard\\action_admin_menu' );
 	remove_action( 'admin_bar_menu', 'ElasticPress\\Dashboard\\action_network_admin_bar_menu', 50 );
-	remove_action( 'admin_notices', 'ElasticPress\\Dashboard\\maybe_notice' );
-	remove_action( 'network_admin_notices', 'ElasticPress\\Dashboard\\maybe_notice' );
 
 	// Don't set up features during install.
 	if ( defined( 'WP_INSTALLING' ) && WP_INSTALLING ) {
@@ -593,21 +591,18 @@ function elasticpress_mapping( array $mapping ) : array {
 /**
  * Filter the ElasticPress dashboard notices.
  *
- * @param string $notice The notice ID.
- * @return string
+ * @param array $notices The notice keys array.
+ * @return array
  */
-function remove_ep_dashboard_notices( string $notice ) : string {
+function remove_ep_dashboard_notices( array $notices ) : array {
 	$hidden = [
-		'sync-disabled-auto-activate',
-		'sync-disabled-no-sync',
-		'sync-disabled-upgrade',
+		'auto_activate_sync',
+		'no_sync',
+		'upgrade_sync',
+		'using_autosuggest_defaults',
 	];
 
-	if ( in_array( $notice, $hidden, true ) ) {
-		return '';
-	}
-
-	return $notice;
+	return array_diff( $notices, $hidden );
 }
 
 /**
