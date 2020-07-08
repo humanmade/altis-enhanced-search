@@ -27,7 +27,7 @@ use WP_Query;
  * @return void
  */
 function bootstrap() {
-	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress' );
+	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress', 0 );
 	add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
 
 	// Load debug bar for ElasticPress if Query Monitor is enabled in the config.
@@ -65,6 +65,7 @@ function load_elasticpress() {
 	if ( ! defined( 'EP_DASHBOARD_SYNC' ) ) {
 		define( 'EP_DASHBOARD_SYNC', false );
 	}
+
 	add_filter( 'http_request_args', __NAMESPACE__ . '\\on_http_request_args', 10, 2 );
 	add_filter( 'ep_pre_request_url', function ( $url ) {
 		return set_url_scheme( $url, ELASTICSEARCH_PORT === 443 ? 'https' : 'http' );
