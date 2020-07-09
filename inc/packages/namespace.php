@@ -108,7 +108,7 @@ function admin_page() {
  * @return string
  */
 function get_packages_dir() : string {
-	$path = '/usr/share/elasticsearch/config/es-packages';
+	$path = WP_CONTENT_DIR . '/uploads/es-packages';
 
 	/**
 	 * Filter the path at which Elasticsearch package files are stored.
