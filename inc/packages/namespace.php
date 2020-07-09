@@ -404,7 +404,7 @@ function do_settings_update( array $settings, bool $update_data = false ) {
 
 	// Update all data async if required.
 	if ( $update_data ) {
-		ep_remote_request( ep_get_index_name() . '/_update_by_query?conflicts=proceed', [
+		ep_remote_request( ep_get_index_name() . '/_update_by_query?conflicts=proceed&wait_for_completion=false', [
 			'method' => 'POST',
 		] );
 	}
