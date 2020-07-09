@@ -296,11 +296,11 @@ function create_package( string $slug, string $file, bool $for_network = false )
 	 *
 	 * Default usage is to trigger an update to the ES mapping.
 	 *
+	 * @param string $package_id The package ID.
 	 * @param string $slug The package slug.
-	 * @param string $package_id The package ID / path.
 	 * @param bool $for_network True if the package was created at the network level.
 	 */
-	do_action( 'altis.search.created_package', $slug, $package_id, $for_network );
+	do_action( 'altis.search.created_package', $package_id, $slug, $for_network );
 
 	// Return the reference used to get the package in an analyzer.
 	return $package_id;
