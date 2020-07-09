@@ -314,7 +314,7 @@ function create_package( string $slug, string $file, bool $for_network = false )
  * @return bool
  */
 function delete_package( string $slug, bool $for_network = false ) : bool {
-	$file = get_package_path( $slug );
+	$file = get_package_path( $slug, $for_network );
 
 	// Ensure file exists.
 	if ( ! file_exists( $file ) ) {
