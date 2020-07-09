@@ -587,7 +587,7 @@ function elasticpress_mapping( array $mapping ) : array {
 		$is_network_japanese = get_site_option( 'WPLANG', 'en_US' ) === 'ja';
 		$user_dictionary_package_id = Packages\get_package_id( 'uploaded-user-dictionary' );
 		if ( ! $user_dictionary_package_id && $is_network_japanese ) {
-			$user_dictionary_package_id = Packages\get_package_id( 'global-uploaded-user-dictionary' );
+			$user_dictionary_package_id = Packages\get_package_id( 'uploaded-user-dictionary', true );
 		}
 
 		// Check for a package ID and add it to the kuromoji tokenizer.
@@ -612,7 +612,7 @@ function elasticpress_mapping( array $mapping ) : array {
 			$package_id = Packages\get_package_id( "{$sub_type}-{$type}" );
 			// Check for network default.
 			if ( ! $package_id && $is_network_language ) {
-				$package_id = Packages\get_package_id( "global-{$sub_type}-{$type}" );
+				$package_id = Packages\get_package_id( "{$sub_type}-{$type}", true );
 			}
 
 			// Check for a package ID.
