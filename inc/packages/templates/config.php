@@ -15,6 +15,20 @@
 </style>
 <div class="wrap">
 	<h1><?php esc_html_e( 'Search Configuration', 'altis' ); ?></h1>
+	<?php if ( $did_update ) : ?>
+		<?php if ( empty( $errors ) ) : ?>
+			<div class="notice notice-success is-dismissible">
+				<p><?php esc_html_e( 'Search configuration updated!', 'altis' ); ?></p>
+				<p><?php esc_html_e( 'Updates can take a few moments to propagate fully.', 'altis' ); ?></p>
+			</div>
+		<?php else : ?>
+			<?php foreach ( $errors as $error ) : ?>
+				<div class="notice notice-error is-dismissible">
+					<p><?php echo esc_html( $error->get_error_message() ); ?></p>
+				</div>
+			<?php endforeach; ?>
+		<?php endif; ?>
+	<?php endif; ?>
 	<p><?php esc_html_e( 'Configure search synonyms here to improve search results.', 'altis' ); ?></p>
 	<?php if ( is_network_admin() ) : ?>
 		<p class="description"><?php esc_html_e( 'These settings will be used as the default for all sites on the network that match the primary site language.', 'altis' ); ?></p>

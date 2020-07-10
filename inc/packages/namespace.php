@@ -8,6 +8,7 @@
 namespace Altis\Enhanced_Search\Packages;
 
 use Altis\Enhanced_Search;
+use WP_Error;
 
 /**
  * Bind hooks for ElasticSearch Packages.
@@ -19,6 +20,7 @@ function setup() {
 	add_action( 'admin_init', __NAMESPACE__ . '\\handle_form' );
 	add_action( 'admin_menu', __NAMESPACE__ . '\\admin_menu' );
 	add_action( 'network_admin_menu', __NAMESPACE__ . '\\admin_menu' );
+	add_filter( 'removable_query_args', __NAMESPACE__ . '\\add_removable_query_args' );
 
 	// Background tasks.
 	add_action( 'altis.search.update_index_settings', __NAMESPACE__ . '\\update_index_settings', 10, 2 );
@@ -38,6 +40,17 @@ function admin_menu() {
 		'search-config',
 		__NAMESPACE__ . '\\admin_page'
 	);
+}
+
+/**
+ * Add our custom success/error messaging query args to the removable list.
+ *
+ * @param array $removable_query_args Array of query parameter names to remove from the URL in the admin.
+ * @return array
+ */
+function add_removable_query_args( array $removable_query_args ) : array {
+	$removable_query_args[] = 'did_update';
+	return $removable_query_args;
 }
 
 /**
@@ -87,10 +100,12 @@ function admin_page() {
 		}
 	}
 
+	$did_update = isset( $_GET['did_update'] );
+
 	if ( $for_network ) {
-		$error = get_site_option( 'altis_search_config_error', false );
+		$errors = get_site_option( 'altis_search_config_error', false );
 	} else {
-		$error = get_option( 'altis_search_config_error', false );
+		$errors = get_option( 'altis_search_config_error', false );
 	}
 
 	include __DIR__ . '/templates/config.php';
@@ -99,6 +114,22 @@ function admin_page() {
 		delete_site_option( 'altis_search_config_error' );
 	} else {
 		delete_option( 'altis_search_config_error' );
+	}
+}
+
+/**
+ * Sets the search config error message.
+ *
+ * @param WP_Error $error The error object.
+ */
+function add_error_message( WP_Error $error ) {
+	static $errors = [];
+	$errors[] = $error;
+
+	if ( is_network_admin() ) {
+		update_site_option( 'altis_search_config_error', $errors );
+	} else {
+		update_option( 'altis_search_config_error', $errors );
 	}
 }
 
@@ -179,10 +210,20 @@ function handle_form() {
 		return;
 	}
 
+	// Track errors.
+	$errors = [];
+
 	// Ensure upload directory exists.
 	$base_dir = get_packages_dir();
 	if ( ! file_exists( $base_dir ) ) {
-		wp_mkdir_p( $base_dir );
+		$package_dir_created = wp_mkdir_p( $base_dir );
+		if ( ! $package_dir_created ) {
+			$errors[] = new WP_Error(
+				'create_package_dir_failed',
+				// translators: %s replaced by package base directory.
+				sprintf( __( 'Failed to create packages base directory at %s', 'altis' ), $base_dir )
+			);
+		}
 	}
 
 	// Set a flag for whether this is site level or network level.
@@ -215,7 +256,14 @@ function handle_form() {
 			if ( $has_changed ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
 				file_put_contents( $file, $text );
-				create_package( "manual-{$type}", $file, $for_network );
+				$package_id = create_package( "manual-{$type}", $file, $for_network );
+				if ( ! $package_id ) {
+					$errors[] = new WP_Error(
+						'create_package_failed',
+						// translators: %s replaced by package type, one of synonyms or stopwords.
+						sprintf( __( 'Failed to create %s package from manual input', 'altis' ), $type )
+					);
+				}
 			}
 		}
 
@@ -223,7 +271,14 @@ function handle_form() {
 		if ( ! empty( $_FILES ) && isset( $_FILES[ $file_field ] ) && ! empty( $_FILES[ $file_field ]['tmp_name'] ) ) {
 			$file = get_package_path( "uploaded-{$type}", $for_network );
 			move_uploaded_file( $_FILES[ $file_field ]['tmp_name'], $file );
-			create_package( "uploaded-{$type}", $file, $for_network );
+			$package_id = create_package( "uploaded-{$type}", $file, $for_network );
+			if ( ! $package_id ) {
+				$errors[] = new WP_Error(
+					'create_package_failed',
+					// translators: %s replaced by package type, one of synonyms, stopwords or user dictionary.
+					sprintf( __( 'Failed to create %s package from file upload', 'altis' ), $type )
+				);
+			}
 			// User dictionary update means we should update the indexed data.
 			if ( $type === 'user-dictionary' ) {
 				$should_update_indexes = true;
@@ -232,7 +287,14 @@ function handle_form() {
 
 		// Delete file if remove submit clicked.
 		if ( isset( $_POST[ $remove_field ] ) ) {
-			delete_package( "uploaded-{$type}", $for_network );
+			$deleted = delete_package( "uploaded-{$type}", $for_network );
+			if ( ! $deleted ) {
+				$errors[] = new WP_Error(
+					'delete_package_failed',
+					// translators: %s replaced by package type, one of synonyms, stopwords or user dictionary.
+					sprintf( __( 'Failed to delete %s package', 'altis' ), $type )
+				);
+			}
 			// User dictionary update means we should update the indexed data.
 			if ( $type === 'user-dictionary' ) {
 				$should_update_indexes = true;
@@ -240,15 +302,20 @@ function handle_form() {
 		}
 	}
 
+	// Store the errors.
+	array_map( __NAMESPACE__ . '\\add_error_message', $errors );
+
 	// Schedule mapping and index updates.
-	wp_schedule_single_event( time(), 'altis.search.update_index_settings', [
-		$for_network,
-		$should_update_indexes,
-	] );
+	if ( empty( $errors ) ) {
+		wp_schedule_single_event( time(), 'altis.search.update_index_settings', [
+			$for_network,
+			$should_update_indexes,
+		] );
+	}
 
 	// Redirect back to form.
 	$redirect_url = is_network_admin() ? network_admin_url( 'settings.php' ) : admin_url( 'options-general.php' );
-	wp_safe_redirect( $redirect_url . '?page=search-config' );
+	wp_safe_redirect( $redirect_url . '?page=search-config&did_update=1' );
 	exit;
 }
 
