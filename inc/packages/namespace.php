@@ -23,6 +23,7 @@ function setup() {
 	add_filter( 'removable_query_args', __NAMESPACE__ . '\\add_removable_query_args' );
 
 	// Background tasks.
+	add_action( 'altis.search.updated_packages', __NAMESPACE__ . '\\on_updated_packages', 10, 2 );
 	add_action( 'altis.search.update_index_settings', __NAMESPACE__ . '\\update_index_settings', 10, 2 );
 }
 
@@ -82,8 +83,24 @@ function admin_page() {
 		$manual_file_var = "{$type}_manual_file";
 		$text_var = "{$type}_text";
 		$file_date_var = "{$type}_file_date";
+		$uploaded_file_status = "{$type}_uploaded_status";
+		$manual_file_status = "{$type}_manual_status";
+		$uploaded_file_error = "{$type}_uploaded_error";
+		$manual_file_error = "{$type}_manual_error";
 
 		$file_type_string = str_replace( '_', '-', $type );
+
+		if ( $for_network ) {
+			$$uploaded_file_status = get_site_option( "altis_search_package_status_uploaded-{$file_type_string}" );
+			$$manual_file_status = get_site_option( "altis_search_package_status_manual-{$file_type_string}" );
+			$$uploaded_file_error = get_site_option( "altis_search_package_error_uploaded-{$file_type_string}", null );
+			$$manual_file_error = get_site_option( "altis_search_package_error_manual-{$file_type_string}", null );
+		} else {
+			$$uploaded_file_status = get_option( "altis_search_package_status_uploaded-{$file_type_string}" );
+			$$manual_file_status = get_option( "altis_search_package_status_manual-{$file_type_string}" );
+			$$uploaded_file_error = get_option( "altis_search_package_error_uploaded-{$file_type_string}", null );
+			$$manual_file_error = get_option( "altis_search_package_error_manual-{$file_type_string}", null );
+		}
 
 		$$uploaded_file_var = get_package_path( "uploaded-{$file_type_string}", $for_network );
 		$$manual_file_var = get_package_path( "manual-{$file_type_string}", $for_network );
@@ -125,6 +142,15 @@ function admin_page() {
 function add_error_message( WP_Error $error ) {
 	static $errors = [];
 	$errors[] = $error;
+	$errors = array_map( function ( $error ) {
+		if ( ! is_wp_error( $error ) ) {
+			return $error;
+		}
+		return [
+			'code' => $error->get_error_code(),
+			'message' => $error->get_error_message(),
+		];
+	}, $errors );
 
 	if ( is_network_admin() ) {
 		update_site_option( 'altis_search_config_error', $errors );
@@ -257,12 +283,8 @@ function handle_form() {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
 				file_put_contents( $file, $text );
 				$package_id = create_package( "manual-{$type}", $file, $for_network );
-				if ( ! $package_id ) {
-					$errors[] = new WP_Error(
-						'create_package_failed',
-						// translators: %s replaced by package type, one of synonyms or stopwords.
-						sprintf( __( 'Failed to create %s package from manual input', 'altis' ), $type )
-					);
+				if ( is_wp_error( $package_id ) ) {
+					$errors[] = $package_id;
 				}
 			}
 		}
@@ -272,12 +294,8 @@ function handle_form() {
 			$file = get_package_path( "uploaded-{$type}", $for_network );
 			move_uploaded_file( $_FILES[ $file_field ]['tmp_name'], $file );
 			$package_id = create_package( "uploaded-{$type}", $file, $for_network );
-			if ( ! $package_id ) {
-				$errors[] = new WP_Error(
-					'create_package_failed',
-					// translators: %s replaced by package type, one of synonyms, stopwords or user dictionary.
-					sprintf( __( 'Failed to create %s package from file upload', 'altis' ), $type )
-				);
+			if ( is_wp_error( $package_id ) ) {
+				$errors[] = $package_id;
 			}
 			// User dictionary update means we should update the indexed data.
 			if ( $type === 'user-dictionary' ) {
@@ -307,10 +325,7 @@ function handle_form() {
 
 	// Schedule mapping and index updates.
 	if ( empty( $errors ) ) {
-		wp_schedule_single_event( time(), 'altis.search.update_index_settings', [
-			$for_network,
-			$should_update_indexes,
-		] );
+		do_action( 'altis.search.updated_packages', $for_network, $should_update_indexes );
 	}
 
 	// Redirect back to form.
@@ -320,21 +335,34 @@ function handle_form() {
 }
 
 /**
+ * Default callback for when packages have been updated.
+ *
+ * @param boolean $for_network Whether to update all sites.
+ * @param boolean $should_update_indexes Whether to reindex data.
+ */
+function on_updated_packages( bool $for_network, bool $should_update_indexes ) {
+	wp_schedule_single_event( time(), 'altis.search.update_index_settings', [
+		$for_network,
+		$should_update_indexes,
+	] );
+}
+
+/**
  * Create and associate a package file with AES, removing any existing
  * files with a matching name.
  *
  * @param string $slug The package slug.
  * @param string $file The package file path.
  * @param bool $for_network If true creates the package at the network level.
- * @return string|null The package ID for referencing in analysers.
+ * @return string|WP_Error The package ID for referencing in analysers or a WP_Error.
  */
-function create_package( string $slug, string $file, bool $for_network = false ) : ?string {
+function create_package( string $slug, string $file, bool $for_network = false ) {
 
 	// Ensure file exists.
 	if ( ! file_exists( $file ) ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		trigger_error( sprintf( 'The given package filepath %s does not exist.', $file ), E_USER_WARNING );
-		return null;
+		$error = sprintf( 'The given package filepath %s does not exist.', $file );
+		return new WP_Error( 'altis_search_file_not_found', $error );
 	}
 
 	// Default package ID is the full path to the package.
@@ -344,7 +372,7 @@ function create_package( string $slug, string $file, bool $for_network = false )
 	/**
 	 * Override the package ID on creation for a given package file name.
 	 *
-	 * @param string|null The package ID for the given file.
+	 * @param string|WP_Error The package ID for the given file.
 	 * @param string $slug The package slug.
 	 * @param string $file The full package file path.
 	 * @param bool $for_network True if the package is a network level package.
@@ -398,8 +426,12 @@ function delete_package( string $slug, bool $for_network = false ) : bool {
 	// Remove the stored package ID.
 	if ( $for_network ) {
 		$deleted = delete_site_option( "altis_search_package_{$slug}" );
+		delete_site_option( "altis_search_package_status_{$slug}" );
+		delete_site_option( "altis_search_package_error_{$slug}" );
 	} else {
 		$deleted = delete_option( "altis_search_package_{$slug}" );
+		delete_option( "altis_search_package_status_{$slug}" );
+		delete_option( "altis_search_package_error_{$slug}" );
 	}
 
 	/**
