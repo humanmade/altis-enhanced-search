@@ -87,7 +87,7 @@ function load_elasticpress() {
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
 
-	// Remove Admin UI for ElasticPress
+	// Remove Admin UI for ElasticPress.
 	remove_action( 'network_admin_menu', 'ElasticPress\\Dashboard\\action_admin_menu' );
 	remove_action( 'admin_bar_menu', 'ElasticPress\\Dashboard\\action_network_admin_bar_menu', 50 );
 
