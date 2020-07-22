@@ -342,7 +342,10 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 		'facets' => (bool) ( $config['facets'] ?? false ),
 		'woocommerce' => (bool) ( $config['woocommerce'] ?? false ),
 		'autosuggest' => (bool) ( $config['autosuggest'] ?? false ),
-		'protected_content' => (bool) ( $config['protected-content'] ?? true ),
+		// Force protected content feature off as we're overriding indexable types & statuses anyway.
+		// Enabling this feature causes all WP_Query calls for protected content post types to use
+		// Elasticsearch, even if not performing a search.
+		'protected_content' => false,
 	];
 
 	if ( ! isset( $features_activated[ $feature->slug ] ) ) {

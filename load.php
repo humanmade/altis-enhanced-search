@@ -18,7 +18,6 @@ add_action( 'altis.modules.init', function () {
 		'woocommerce' => false,
 		'autosuggest' => false,
 		'slowlog_thresholds' => true,
-		'protected-content' => true,
 		'mode' => 'simple',
 		'strict' => true,
 		'field-boost' => [],
