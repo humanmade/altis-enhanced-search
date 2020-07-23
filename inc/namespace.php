@@ -570,13 +570,28 @@ function elasticpress_mapping( array $mapping ) : array {
 	}
 
 	// Remove deprecated _all parameter.
-	if ( $mapping['settings']['mappings']['post']['_all'] ?? false ) {
-		unset( $mapping['settings']['mappings']['post']['_all'] );
+	if ( $mapping['mappings']['post']['_all'] ?? false ) {
+		unset( $mapping['mappings']['post']['_all'] );
 	}
 
 	// Unset the post title analyzer override to make it use the default.
-	if ( $mapping['settings']['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] ?? false ) {
-		unset( $mapping['settings']['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
+	if ( $mapping['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] ?? false ) {
+		unset( $mapping['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
+	}
+
+	// Add autosuggest ngram analyzer by default, used for attachment search.
+	$autosuggest_fields = get_autosuggest_fields();
+	foreach ( $autosuggest_fields as $field ) {
+		if ( ! isset( $mapping['mappings']['post']['properties'][ $field ] ) ) {
+			$mapping['mappings']['post']['properties'][ $field ] = [];
+		}
+		if ( ! isset( $mapping['mappings']['post']['properties'][ $field ]['fields'] ) ) {
+			$mapping['mappings']['post']['properties'][ $field ]['fields'] = [];
+		}
+		$mapping['mappings']['post']['properties'][ $field ]['fields']['suggest'] = [
+			'type' => 'text',
+			'analyzer' => 'edge_ngram_analyzer',
+		];
 	}
 
 	return $mapping;
@@ -686,7 +701,46 @@ function enhance_search_query( array $query, array $args ) : array {
 		];
 	}
 
+	// Apply ngram search if 'autosuggest' query arg is true.
+	$autosuggest_fields = get_autosuggest_fields();
+
+	if ( ! empty( $autosuggest_fields ) && isset( $args['autosuggest'] ) && $args['autosuggest'] ) {
+		// Append the suggest sub field suffix.
+		$autosuggest_fields = array_map( function ( $field ) {
+			return "{$field}.suggest";
+		}, $autosuggest_fields );
+
+		$query['bool']['should'][] = [
+			'multi_match' => [
+				'query' => $args['s'],
+				'type' => 'phrase',
+				'fields' => $autosuggest_fields,
+				'boost' => 1,
+			],
+		];
+	}
+
+	// Ensure this is not a keyed array.
+	$query['bool']['should'] = array_values( $query['bool']['should'] );
+
 	return $query;
+}
+
+/**
+ * A list of fields to enable autosuggestions for when searching.
+ *
+ * @return array
+ */
+function get_autosuggest_fields() : array {
+	/**
+	 * Filter the fields to use for autosuggest search behaviour.
+	 *
+	 * @param array $fields The field names to include in autosuggestions.
+	 * @param array $args The WP_Query args.
+	 */
+	$autosuggest_fields = apply_filters( 'altis.search.autosuggest_fields', [] );
+
+	return $autosuggest_fields;
 }
 
 /**
