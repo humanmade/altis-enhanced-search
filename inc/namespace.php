@@ -115,6 +115,9 @@ function load_elasticpress() {
 	// Filter Options for Facet component settings.
 	add_filter( 'site_option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
 	add_filter( 'option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
+
+	// Change custom search results icon.
+	add_filter( 'register_post_type_args', __NAMESPACE__ . '\\custom_search_results_post_type_args', 10, 2 );
 }
 
 /**
@@ -761,4 +764,25 @@ function get_advanced_query( string $query_string, array $search_fields, bool $s
 			'default_operator' => $default_operator,
 		],
 	];
+}
+
+/**
+ * Modify the custom search results post type arguments.
+ *
+ * @param array $args The post type args.
+ * @param string $post_type The post type name.
+ * @return array
+ */
+function custom_search_results_post_type_args( array $args, string $post_type ) : array {
+	if ( $post_type !== 'ep-pointer' ) {
+		return $args;
+	}
+
+	// Use the built in search icon.
+	$args['menu_icon'] = 'dashicons-search';
+
+	// Change the menu name to something shorter.
+	$args['labels']['menu_name'] = _x( 'Search Config', 'post type menu name', 'altis' );
+
+	return $args;
 }
