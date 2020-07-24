@@ -598,14 +598,20 @@ function elasticpress_mapping( array $mapping ) : array {
 		);
 	}
 
-	// Remove deprecated _all parameter.
-	if ( $mapping['settings']['mappings']['post']['_all'] ?? false ) {
-		unset( $mapping['settings']['mappings']['post']['_all'] );
+	// Remove deprecated _all fields mapping parameter.
+	if ( $mapping['mappings']['post']['_all'] ?? false ) {
+		unset( $mapping['mappings']['post']['_all'] );
+	}
+	if ( $mapping['mappings']['term']['_all'] ?? false ) {
+		unset( $mapping['mappings']['term']['_all'] );
+	}
+	if ( $mapping['mappings']['user']['_all'] ?? false ) {
+		unset( $mapping['mappings']['user']['_all'] );
 	}
 
 	// Unset the post title analyzer override to make it use the default.
-	if ( $mapping['settings']['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] ?? false ) {
-		unset( $mapping['settings']['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
+	if ( $mapping['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] ?? false ) {
+		unset( $mapping['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
 	}
 
 	return $mapping;
