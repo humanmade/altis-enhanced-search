@@ -11,11 +11,10 @@ use Altis;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
-use ElasticPress_CLI_Command;
-use EP_Dashboard;
-use EP_Feature;
-use EP_Features;
-
+use ElasticPress\Command as ElasticPress_CLI_Command;
+use ElasticPress\Feature;
+use ElasticPress\Features;
+use ElasticPress\Indexables as ElasticPress_Indexables;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use WP_CLI;
@@ -28,7 +27,7 @@ use WP_Query;
  * @return void
  */
 function bootstrap() {
-	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress' );
+	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress', 9 );
 	add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
 
 	// Load debug bar for ElasticPress if Query Monitor is enabled in the config.
@@ -66,6 +65,7 @@ function load_elasticpress() {
 	if ( ! defined( 'EP_DASHBOARD_SYNC' ) ) {
 		define( 'EP_DASHBOARD_SYNC', false );
 	}
+
 	add_filter( 'http_request_args', __NAMESPACE__ . '\\on_http_request_args', 10, 2 );
 	add_filter( 'ep_pre_request_url', function ( $url ) {
 		return set_url_scheme( $url, ELASTICSEARCH_PORT === 443 ? 'https' : 'http' );
@@ -77,9 +77,10 @@ function load_elasticpress() {
 	add_filter( 'ep_ajax_wp_query_integration', '__return_true' );
 	add_filter( 'ep_indexable_post_status', __NAMESPACE__ . '\\get_elasticpress_indexable_post_statuses' );
 	add_filter( 'ep_indexable_post_types', __NAMESPACE__ . '\\get_elasticpress_indexable_post_types' );
+	add_filter( 'ep_indexable_taxonomies', __NAMESPACE__ . '\\get_elasticpress_indexable_taxonomies' );
 	add_filter( 'ep_feature_active', __NAMESPACE__ . '\\override_elasticpress_feature_activation', 10, 3 );
 	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\enable_slowlog_thresholds' );
-	add_filter( 'ep_admin_notice_type', __NAMESPACE__ . '\\remove_ep_dashboard_notices', 20 );
+	add_filter( 'ep_admin_notices', __NAMESPACE__ . '\\remove_ep_dashboard_notices' );
 
 	// Modify the default search query to use preset modes.
 	add_filter( 'ep_formatted_args_query', __NAMESPACE__ . '\\enhance_search_query', 10, 2 );
@@ -89,13 +90,13 @@ function load_elasticpress() {
 	// Now ElasticPress has been included, we can remove some of it's filters.
 
 	// Remove Admin UI for ElasticPress.
-	remove_action( 'network_admin_menu', [ EP_Dashboard::factory(), 'action_admin_menu' ] );
-	remove_action( 'admin_bar_menu', [ EP_Dashboard::factory(), 'action_network_admin_bar_menu' ], 50 );
+	remove_action( 'network_admin_menu', 'ElasticPress\\Dashboard\\action_admin_menu' );
+	remove_action( 'admin_bar_menu', 'ElasticPress\\Dashboard\\action_network_admin_bar_menu', 50 );
 
 	// Don't set up features during install.
 	if ( defined( 'WP_INSTALLING' ) && WP_INSTALLING ) {
-		remove_action( 'init', [ EP_Features::factory(), 'handle_feature_activation' ], 0 );
-		remove_action( 'init', [ EP_Features::factory(), 'setup_features' ], 0 );
+		remove_action( 'init', [ Features::factory(), 'handle_feature_activation' ], 0 );
+		remove_action( 'init', [ Features::factory(), 'setup_features' ], 0 );
 	}
 
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -114,6 +115,9 @@ function load_elasticpress() {
 	// Filter Options for Facet component settings.
 	add_filter( 'site_option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
 	add_filter( 'option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
+
+	// Change custom search results icon.
+	add_filter( 'register_post_type_args', __NAMESPACE__ . '\\custom_search_results_post_type_args', 10, 2 );
 }
 
 /**
@@ -278,9 +282,19 @@ function run_elasticsearch_healthcheck() {
  * Check if ElasticPress index exists.
  */
 function run_elasticpress_indexed_healthcheck() {
-	$status = ep_index_exists();
-	if ( ! $status ) {
-		return new WP_Error( 'elasticsearch-index-not-found', 'ElasticPress Index does not exist.' );
+	$sites = get_sites();
+	$not_exists = [];
+	foreach ( $sites as $site ) {
+		if ( ! ElasticPress_Indexables::factory()->get( 'post' )->index_exists( $site->blog_id ) ) {
+			$not_exists[] = $site->domain . $site->path;
+		}
+	}
+
+	if ( $not_exists ) {
+		return new WP_Error(
+			'elasticsearch-index-not-found',
+			sprintf( 'ElasticPress Index does not exist for site(s) %s', implode( ', ', $not_exists ) )
+		);
 	}
 
 	return true;
@@ -327,15 +341,30 @@ function get_elasticpress_indexable_post_types( array $types ) : array {
 }
 
 /**
+ * Override indexable taxonomies from ElasticPress.
+ *
+ * By default, ElasticPress only indexes public content, but
+ * we want to index all content as we are using ElasticPress
+ * in the WordPress admin too.
+ *
+ * @param array $taxonomies List of registered taxnonomy names.
+ * @return array
+ */
+function get_elasticpress_indexable_taxonomies( array $taxonomies ) : array {
+	return get_taxonomies();
+}
+
+/**
  * Override the elasticpress features should be enabled.
  *
  * @param boolean $is_active True if the feature is active.
  * @param array $settings Feature settings array.
- * @param EP_Feature $feature The feature object.
+ * @param Feature $feature The feature object.
  * @return bool
  */
-function override_elasticpress_feature_activation( bool $is_active, array $settings, EP_Feature $feature ) : bool {
+function override_elasticpress_feature_activation( bool $is_active, array $settings, Feature $feature ) : bool {
 	$config = Altis\get_config()['modules']['search'];
+
 	$features_activated = [
 		'search' => true,
 		'related_posts' => (bool) ( $config['related-posts'] ?? false ),
@@ -569,14 +598,20 @@ function elasticpress_mapping( array $mapping ) : array {
 		);
 	}
 
-	// Remove deprecated _all parameter.
-	if ( $mapping['settings']['mappings']['post']['_all'] ?? false ) {
-		unset( $mapping['settings']['mappings']['post']['_all'] );
+	// Remove deprecated _all fields mapping parameter.
+	if ( $mapping['mappings']['post']['_all'] ?? false ) {
+		unset( $mapping['mappings']['post']['_all'] );
+	}
+	if ( $mapping['mappings']['term']['_all'] ?? false ) {
+		unset( $mapping['mappings']['term']['_all'] );
+	}
+	if ( $mapping['mappings']['user']['_all'] ?? false ) {
+		unset( $mapping['mappings']['user']['_all'] );
 	}
 
 	// Unset the post title analyzer override to make it use the default.
-	if ( $mapping['settings']['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] ?? false ) {
-		unset( $mapping['settings']['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
+	if ( $mapping['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] ?? false ) {
+		unset( $mapping['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
 	}
 
 	return $mapping;
@@ -585,21 +620,18 @@ function elasticpress_mapping( array $mapping ) : array {
 /**
  * Filter the ElasticPress dashboard notices.
  *
- * @param string $notice The notice ID.
- * @return string
+ * @param array $notices The notice keys array.
+ * @return array
  */
-function remove_ep_dashboard_notices( string $notice ) : string {
+function remove_ep_dashboard_notices( array $notices ) : array {
 	$hidden = [
-		'sync-disabled-auto-activate',
-		'sync-disabled-no-sync',
-		'sync-disabled-upgrade',
+		'auto_activate_sync',
+		'no_sync',
+		'upgrade_sync',
+		'using_autosuggest_defaults',
 	];
 
-	if ( in_array( $notice, $hidden, true ) ) {
-		return '';
-	}
-
-	return $notice;
+	return array_diff( $notices, $hidden );
 }
 
 /**
@@ -738,4 +770,25 @@ function get_advanced_query( string $query_string, array $search_fields, bool $s
 			'default_operator' => $default_operator,
 		],
 	];
+}
+
+/**
+ * Modify the custom search results post type arguments.
+ *
+ * @param array $args The post type args.
+ * @param string $post_type The post type name.
+ * @return array
+ */
+function custom_search_results_post_type_args( array $args, string $post_type ) : array {
+	if ( $post_type !== 'ep-pointer' ) {
+		return $args;
+	}
+
+	// Use the built in search icon.
+	$args['menu_icon'] = 'dashicons-search';
+
+	// Change the menu name to something shorter.
+	$args['labels']['menu_name'] = _x( 'Search Config', 'post type menu name', 'altis' );
+
+	return $args;
 }
