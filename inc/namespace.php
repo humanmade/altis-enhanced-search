@@ -74,6 +74,7 @@ function load_elasticpress() {
 	add_filter( 'posts_request', __NAMESPACE__ . '\\noop_wp_query_on_failed_ep_request', 11, 2 );
 	add_filter( 'found_posts_query', __NAMESPACE__ . '\\noop_wp_query_on_failed_ep_request', 6, 2 );
 	add_filter( 'ep_admin_wp_query_integration', '__return_true' );
+	add_filter( 'ep_ajax_wp_query_integration', '__return_true' );
 	add_filter( 'ep_indexable_post_status', __NAMESPACE__ . '\\get_elasticpress_indexable_post_statuses' );
 	add_filter( 'ep_indexable_post_types', __NAMESPACE__ . '\\get_elasticpress_indexable_post_types' );
 	add_filter( 'ep_feature_active', __NAMESPACE__ . '\\override_elasticpress_feature_activation', 10, 3 );
@@ -353,7 +354,10 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 		'facets' => (bool) ( $config['facets'] ?? false ),
 		'woocommerce' => (bool) ( $config['woocommerce'] ?? false ),
 		'autosuggest' => (bool) ( $config['autosuggest'] ?? false ),
-		'protected_content' => (bool) ( $config['protected-content'] ?? true ),
+		// Force protected content feature off as we're overriding indexable types & statuses anyway.
+		// Enabling this feature causes all WP_Query calls for protected content post types to use
+		// Elasticsearch, even if not performing a search.
+		'protected_content' => false,
 	];
 
 	if ( ! isset( $features_activated[ $feature->slug ] ) ) {
