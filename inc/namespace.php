@@ -77,6 +77,7 @@ function load_elasticpress() {
 	add_filter( 'ep_ajax_wp_query_integration', '__return_true' );
 	add_filter( 'ep_indexable_post_status', __NAMESPACE__ . '\\get_elasticpress_indexable_post_statuses' );
 	add_filter( 'ep_indexable_post_types', __NAMESPACE__ . '\\get_elasticpress_indexable_post_types' );
+	add_filter( 'ep_indexable_taxonomies', __NAMESPACE__ . '\\get_elasticpress_indexable_taxonomies' );
 	add_filter( 'ep_feature_active', __NAMESPACE__ . '\\override_elasticpress_feature_activation', 10, 3 );
 	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\enable_slowlog_thresholds' );
 	add_filter( 'ep_admin_notices', __NAMESPACE__ . '\\remove_ep_dashboard_notices' );
@@ -334,6 +335,20 @@ function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
  */
 function get_elasticpress_indexable_post_types( array $types ) : array {
 	return get_post_types();
+}
+
+/**
+ * Override indexable taxonomies from ElasticPress.
+ *
+ * By default, ElasticPress only indexes public content, but
+ * we want to index all content as we are using ElasticPress
+ * in the WordPress admin too.
+ *
+ * @param array $taxonomies List of registered taxnonomy names.
+ * @return array
+ */
+function get_elasticpress_indexable_taxonomies( array $taxonomies ) : array {
+	return get_taxonomies();
 }
 
 /**
