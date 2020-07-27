@@ -85,6 +85,12 @@ function load_elasticpress() {
 	// Modify the default search query to use preset modes.
 	add_filter( 'ep_formatted_args_query', __NAMESPACE__ . '\\enhance_search_query', 10, 2 );
 
+	// Back compat for ElasticPress v2 - change post index name to old version.
+	add_filter( 'ep_index_name', __NAMESPACE__ . '\\filter_index_name' );
+
+	// Ensure non ElasticPress indexes are not affected by global edits using *.
+	add_filter( 'ep_pre_request_url', __NAMESPACE__ . '\\protect_non_ep_indexes', 10, 5 );
+
 	require_once Altis\ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
@@ -244,6 +250,62 @@ function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $q
 		return $sql;
 	}
 	return '';
+}
+
+/**
+ * ElasticPress adds the indexable object type to index names. We can maintain backwards
+ * compatibility by filtering the posts indexable index name to remove this type.
+ *
+ * @param string $index The index name.
+ * @return string
+ */
+function filter_index_name( string $index ) : string {
+	if ( strpos( $index, '-post-' ) !== false ) {
+		return str_replace( '-post-', '-', $index );
+	}
+	return $index;
+}
+
+/**
+ * Ensure ElasticPress requests do not impact on indexes the plugin does not manage.
+ *
+ * @param string $url The full Elasticsearch request URL.
+ * @param integer $failures Number of failures.
+ * @param string $host Host name.
+ * @param string $path Request path.
+ * @param array $args Remote request arguments.
+ * @return string
+ */
+function protect_non_ep_indexes( string $url, int $failures, string $host, string $path, array $args ) : string {
+
+	// If the path uses a wildcard protect the following index patterns.
+	$protected_index_patterns = [
+		'.kibana',
+		'analytics*',
+	];
+
+	/**
+	 * Filter the protected index patterns. This should be an array of
+	 * Elasticsearch index patterns that ElasticPress is not allowed to
+	 * interact with.
+	 *
+	 * @param array $protected_index_patterns The patterns ElasticPress should ignore.
+	 * @param string $path The remote request path.
+	 * @param array $args The remote request args.
+	 */
+	$protected_index_patterns = apply_filters( 'altis.search.protected_index_patterns', $protected_index_patterns, $path, $args );
+
+	// ElasticPress requests that work on all indexes begin with * so we protect
+	// indexes by name using negation eg. -analytics*,* gives all indexes except
+	// analytics indexes.
+	if ( strpos( $path, '*' ) === 0 ) {
+		$protected_path = array_reduce( $protected_index_patterns, function ( $carry, $pattern ) {
+			return "-{$pattern},{$carry}";
+		}, '' );
+		$path = "{$protected_path}{$path}";
+	}
+
+	return $url;
 }
 
 /**
