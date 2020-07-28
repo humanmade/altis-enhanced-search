@@ -12,6 +12,8 @@
 	.column textarea { width: 100%; }
 	.column pre { background: #fff; border: 1px solid #152a4e; padding: 10px; overflow: auto; }
 	.column ul li { margin-left: 20px; list-style: disc; }
+	.es-package-status { float: right; text-transform: uppercase; padding: 3px; font-size: 70%; border-radius: 3px; background: #152a4e; color: #fff; }
+	.es-package-status--active { background-color: green; }
 </style>
 <div class="wrap">
 	<h1><?php esc_html_e( 'Search Configuration', 'altis' ); ?></h1>
@@ -49,8 +51,20 @@
 					<pre>東京スカイツリー,東京 スカイツリー,トウキョウ スカイツリー,カスタム名詞</pre>
 				</div>
 				<div class="column">
-					<h3><label for="user-dictionary-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label></h3>
+					<h3>
+						<label for="user-dictionary-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label>
+						<?php if ( $user_dictionary_file_date && $user_dictionary_uploaded_status ) : ?>
+							<span class="es-package-status es-package-status--<?php echo esc_attr( $user_dictionary_uploaded_status ); ?>">
+								<?php esc_html__( 'Status', 'altis' ); ?>: <?php echo esc_html( $user_dictionary_uploaded_status ); ?>
+							</span>
+						<?php endif; ?>
+					</h3>
 					<?php if ( $user_dictionary_file_date ) : ?>
+						<?php if ( $user_dictionary_uploaded_error ) : ?>
+							<div class="notice notice-error">
+								<p><?php echo esc_html( $user_dictionary_uploaded_error ); ?></p>
+							</div>
+						<?php endif; ?>
 						<p>
 							<?php
 							echo esc_html( sprintf(
@@ -94,9 +108,21 @@ tent => bivouac, teepee
 sea biscuit, sea biscit => seabiscuit</pre>
 			</div>
 			<div class="column">
-				<h3><label for="synonyms-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label></h3>
+				<h3>
+					<label for="synonyms-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label>
+					<?php if ( $synonyms_file_date && $synonyms_uploaded_status ) : ?>
+						<span class="es-package-status es-package-status--<?php echo esc_attr( $synonyms_uploaded_status ); ?>">
+							<?php esc_html__( 'Status', 'altis' ); ?>: <?php echo esc_html( $synonyms_uploaded_status ); ?>
+						</span>
+					<?php endif; ?>
+				</h3>
 				<p class="description"><?php esc_html_e( 'If you have a large number of synonyms in the order of 1000s a file upload is recommended.' ); ?></p>
 				<?php if ( $synonyms_file_date ) : ?>
+					<?php if ( $synonyms_uploaded_error ) : ?>
+						<div class="notice notice-error">
+							<p><?php echo esc_html( $synonyms_uploaded_error ); ?></p>
+						</div>
+					<?php endif; ?>
 					<p>
 						<?php
 						echo esc_html( sprintf(
@@ -111,7 +137,19 @@ sea biscuit, sea biscit => seabiscuit</pre>
 				<p>
 					<input type="file" accept="text/plain" id="synonyms-file" name="synonyms-file" />
 				</p>
-				<h3><label for="synonyms-text"><?php esc_html_e( 'Manual entry', 'altis' ); ?></label></h3>
+				<h3>
+					<label for="synonyms-text"><?php esc_html_e( 'Manual entry', 'altis' ); ?></label>
+					<?php if ( $synonyms_manual_status ) : ?>
+						<span class="es-package-status es-package-status--<?php echo esc_attr( $synonyms_manual_status ); ?>">
+							<?php esc_html__( 'Status', 'altis' ); ?>: <?php echo esc_html( $synonyms_manual_status ); ?>
+						</span>
+					<?php endif; ?>
+				</h3>
+				<?php if ( $synonyms_manual_error ) : ?>
+					<div class="notice notice-error">
+						<p><?php echo esc_html( $synonyms_manual_error ); ?></p>
+					</div>
+				<?php endif; ?>
 				<textarea id="synonyms-text" name="synonyms-text" rows="10" cols="100%"><?php echo esc_textarea( $synonyms_text ); ?></textarea>
 				<p>
 					<input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Update synonyms', 'altis' ); ?>" />
@@ -129,9 +167,21 @@ me
 please</pre>
 			</div>
 			<div class="column">
-				<h3><label for="stopwords-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label></h3>
+				<h3>
+					<label for="stopwords-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label>
+					<?php if ( $stopwords_file_date && $stopwords_uploaded_status ) : ?>
+						<span class="es-package-status es-package-status--<?php echo esc_attr( $stopwords_uploaded_status ); ?>">
+							<?php esc_html__( 'Status', 'altis' ); ?>: <?php echo esc_html( $stopwords_uploaded_status ); ?>
+						</span>
+					<?php endif; ?>
+				</h3>
 				<p class="description"><?php esc_html_e( 'If you have a large number of stop words in the order of 1000s a file upload is recommended.' ); ?></p>
 				<?php if ( $stopwords_file_date ) : ?>
+					<?php if ( $stopwords_uploaded_error ) : ?>
+						<div class="notice notice-error">
+							<p><?php echo esc_html( $stopwords_uploaded_error ); ?></p>
+						</div>
+					<?php endif; ?>
 					<p>
 						<?php
 						echo esc_html( sprintf(
@@ -146,7 +196,19 @@ please</pre>
 				<p>
 					<input type="file" accept="text/plain" id="stopwords-file" name="stopwords-file" />
 				</p>
-				<h3><label for="stopwords-text"><?php esc_html_e( 'Manual entry', 'altis' ); ?></label></h3>
+				<h3>
+					<label for="stopwords-text"><?php esc_html_e( 'Manual entry', 'altis' ); ?></label>
+					<?php if ( $stopwords_manual_status ) : ?>
+						<span class="es-package-status es-package-status--<?php echo esc_attr( $stopwords_manual_status ); ?>">
+							<?php esc_html__( 'Status', 'altis' ); ?>: <?php echo esc_html( $stopwords_manual_status ); ?>
+						</span>
+					<?php endif; ?>
+				</h3>
+				<?php if ( $stopwords_manual_error ) : ?>
+					<div class="notice notice-error">
+						<p><?php echo esc_html( $stopwords_manual_error ); ?></p>
+					</div>
+				<?php endif; ?>
 				<textarea id="stopwords-text" name="stopwords-text" rows="10" cols="100%"><?php echo esc_textarea( $stopwords_text ); ?></textarea>
 				<p>
 					<input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Update stop words', 'altis' ); ?>" />

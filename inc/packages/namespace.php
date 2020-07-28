@@ -8,6 +8,9 @@
 namespace Altis\Enhanced_Search\Packages;
 
 use Altis\Enhanced_Search;
+use ElasticPress\Elasticsearch;
+use ElasticPress\Indexables;
+use ElasticPress\Utils;
 use WP_Error;
 
 /**
@@ -24,7 +27,7 @@ function setup() {
 
 	// Background tasks.
 	add_action( 'altis.search.updated_packages', __NAMESPACE__ . '\\on_updated_packages', 10, 2 );
-	add_action( 'altis.search.update_index_settings', __NAMESPACE__ . '\\update_index_settings', 10, 2 );
+	add_action( 'altis.search.update_index_settings', __NAMESPACE__ . '\\do_settings_update', 10, 2 );
 }
 
 /**
@@ -125,6 +128,12 @@ function admin_page() {
 		$errors = get_option( 'altis_search_config_error', false );
 	}
 
+	if ( ! empty( $errors ) && is_array( $errors ) ) {
+		$errors = array_map( function ( $error ) {
+			return new WP_Error( $error['code'], $error['message'] );
+		}, $errors );
+	}
+
 	include __DIR__ . '/templates/config.php';
 
 	if ( $for_network ) {
@@ -137,7 +146,7 @@ function admin_page() {
 /**
  * Sets the search config error message.
  *
- * @param WP_Error $error The error object.
+ * @param WP_Error $error The error object to add.
  */
 function add_error_message( WP_Error $error ) {
 	static $errors = [];
@@ -448,6 +457,20 @@ function delete_package( string $slug, bool $for_network = false ) : bool {
 }
 
 /**
+ * Return a comma separated list of all default indexables for the given site.
+ *
+ * @param integer|null $blog_id The site to get index names for. Defaults to current site.
+ * @return string
+ */
+function get_site_indices( ?int $blog_id = null ) : string {
+	$posts_index = Indexables::factory()->get( 'post' )->get_index_name( $blog_id );
+	$terms_index = Indexables::factory()->get( 'term' )->get_index_name( $blog_id );
+	$users_index = Indexables::factory()->get( 'user' )->get_index_name( $blog_id );
+
+	return implode( ',', [ $posts_index, $terms_index, $users_index ] );
+}
+
+/**
  * Update the index settings after upload. For stopwords and synonyms
  * no reindexing of data is required as they are applied at search time.
  *
@@ -460,50 +483,55 @@ function delete_package( string $slug, bool $for_network = false ) : bool {
  * @param boolean $update_data Whether the index data should be updated as well.
  * @return void
  */
-function update_index_settings( bool $for_network = false, bool $update_data = false ) {
+function do_settings_update( bool $for_network = false, bool $update_data = false ) {
 	// Get latest settings.
 	$mapping = Enhanced_Search\elasticpress_mapping( [] );
 	$settings = $mapping['settings'];
 
 	if ( $for_network ) {
-		$sites = ep_get_sites( 0 );
+		$sites = Utils\get_sites( 0 );
 		foreach ( $sites as $site ) {
-			switch_to_blog( $site['blog_id'] );
-			do_settings_update( $settings, $update_data );
-			restore_current_blog();
+			if ( ! Utils\is_site_indexable( $site['blog_id'] ) ) {
+				continue;
+			}
+			update_index_settings( get_site_indices( $site['blog_id'] ), $settings, $update_data );
 		}
 	} else {
-		do_settings_update( $settings, $update_data );
+		update_index_settings( get_site_indices(), $settings, $update_data );
 	}
 }
 
 /**
- * Makes the Elasticsearch requests to update the index settings.
+ * Update index settings.
  *
+ * @param string $index An optional index name or pattern to operate on.
  * @param array $settings The updated settings.
  * @param boolean $update_data Whether to update data in the index.
  * @return void
  */
-function do_settings_update( array $settings, bool $update_data = false ) {
+function update_index_settings( string $index, array $settings, bool $update_data = false ) {
+
+	$client = Elasticsearch::factory();
+
 	// Close the index.
-	ep_remote_request( ep_get_index_name() . '/_close', [
+	$client->remote_request( $index . '/_close', [
 		'method' => 'POST',
 	], [], 'close_index' );
 
 	// Update the settings.
-	ep_remote_request( ep_get_index_name() . '/_settings', [
+	$client->remote_request( $index . '/_settings', [
 		'method' => 'PUT',
 		'body' => wp_json_encode( $settings ),
 	], [], 'put_settings' );
 
 	// Open the index.
-	ep_remote_request( ep_get_index_name() . '/_open', [
+	$client->remote_request( $index . '/_open', [
 		'method' => 'POST',
 	], [], 'open_index' );
 
 	// Update all data async if required.
 	if ( $update_data ) {
-		ep_remote_request( ep_get_index_name() . '/_update_by_query?conflicts=proceed&wait_for_completion=false', [
+		$client->remote_request( $index . '/_update_by_query?conflicts=proceed&wait_for_completion=false', [
 			'method' => 'POST',
 		] );
 	}
