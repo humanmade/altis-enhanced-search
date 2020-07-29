@@ -388,6 +388,9 @@ function create_package( string $slug, string $file, bool $for_network = false )
 	 * @param bool $for_network True if the package is a network level package.
 	 */
 	$package_id = apply_filters( 'altis.search.create_package_id', $package_id, $slug, $file, $for_network );
+	if ( is_wp_error( $package_id ) ) {
+		return $package_id;
+	}
 
 	// Store package ID.
 	if ( $for_network ) {
