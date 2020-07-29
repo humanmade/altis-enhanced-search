@@ -148,8 +148,9 @@ function admin_page() {
  * Sets the search config error message.
  *
  * @param WP_Error $error The error object to add.
+ * @param bool $for_network Whether this should be added as a network level error.
  */
-function add_error_message( WP_Error $error ) {
+function add_error_message( WP_Error $error, bool $for_network = false ) {
 	static $errors = [];
 	$errors[] = $error;
 	$errors = array_map( function ( $error ) {
@@ -162,7 +163,7 @@ function add_error_message( WP_Error $error ) {
 		];
 	}, $errors );
 
-	if ( is_network_admin() ) {
+	if ( is_network_admin() || $for_network ) {
 		update_site_option( 'altis_search_config_error', $errors );
 	} else {
 		update_option( 'altis_search_config_error', $errors );
