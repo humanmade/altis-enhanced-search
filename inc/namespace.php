@@ -862,11 +862,11 @@ function custom_search_results_post_type_args( array $args, string $post_type ) 
 		return $args;
 	}
 
-	// Use the built in search icon.
-	$args['menu_icon'] = 'dashicons-search';
+	// Hide in admin menu, we'll add it as a subitem of main search config page.
+	$args['show_in_menu'] = 'search-config';
 
 	// Change the menu name to something shorter.
-	$args['labels']['menu_name'] = _x( 'Search Config', 'post type menu name', 'altis' );
+	$args['labels']['all_items'] = _x( 'Custom Search Results', 'post type menu name', 'altis' );
 
 	return $args;
 }

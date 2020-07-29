@@ -21,7 +21,7 @@ use WP_Error;
 function setup() {
 	add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\\enqueue_scripts' );
 	add_action( 'admin_init', __NAMESPACE__ . '\\handle_form' );
-	add_action( 'admin_menu', __NAMESPACE__ . '\\admin_menu' );
+	add_action( 'admin_menu', __NAMESPACE__ . '\\admin_menu', 5 );
 	add_action( 'network_admin_menu', __NAMESPACE__ . '\\admin_menu' );
 	add_filter( 'removable_query_args', __NAMESPACE__ . '\\add_removable_query_args' );
 
@@ -36,13 +36,14 @@ function setup() {
  * @return void
  */
 function admin_menu() {
-	add_submenu_page(
-		is_network_admin() ? 'settings.php' : 'options-general.php',
+	add_menu_page(
 		__( 'Search Configuration', 'altis' ),
 		__( 'Search Config', 'altis' ),
 		is_network_admin() ? 'manage_network_options' : 'manage_options',
 		'search-config',
-		__NAMESPACE__ . '\\admin_page'
+		__NAMESPACE__ . '\\admin_page',
+		'dashicons-search',
+		171
 	);
 }
 
@@ -64,7 +65,7 @@ function add_removable_query_args( array $removable_query_args ) : array {
  * @return void
  */
 function enqueue_scripts( string $hook_suffix ) {
-	if ( $hook_suffix !== 'settings_page_search-config' ) {
+	if ( $hook_suffix !== 'toplevel_page_search-config' ) {
 		return;
 	}
 
