@@ -12,8 +12,9 @@
 	.column textarea { width: 100%; }
 	.column pre { background: #fff; border: 1px solid #152a4e; padding: 10px; overflow: auto; }
 	.column ul li { margin-left: 20px; list-style: disc; }
-	.es-package-status { float: right; text-transform: uppercase; padding: 3px; font-size: 70%; border-radius: 3px; background: #152a4e; color: #fff; }
-	.es-package-status--active { background-color: green; }
+	.es-package-status { float: right; text-transform: uppercase; padding: 2px 5px; font-size: 65%; border-radius: 3px; background: #152a4e; color: #fff; }
+	.es-package-status--active { background-color: #3FCF8E; color: #000; }
+	.es-package-status[class*="error"] { background-color: #ED7B9D; color: #152a4e; }
 </style>
 <div class="wrap">
 	<h1><?php esc_html_e( 'Search Configuration', 'altis' ); ?></h1>
@@ -54,8 +55,8 @@
 					<h3>
 						<label for="user-dictionary-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label>
 						<?php if ( $user_dictionary_file_date && $user_dictionary_uploaded_status ) : ?>
-							<span class="es-package-status es-package-status--<?php echo esc_attr( $user_dictionary_uploaded_status ); ?>">
-								<?php esc_html__( 'Status', 'altis' ); ?>: <?php echo esc_html( $user_dictionary_uploaded_status ); ?>
+							<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $user_dictionary_uploaded_status ) ); ?>">
+								<?php esc_html_e( 'Status', 'altis' ); ?>: <?php echo esc_html( $user_dictionary_uploaded_status ); ?>
 							</span>
 						<?php endif; ?>
 					</h3>
@@ -111,8 +112,8 @@ sea biscuit, sea biscit => seabiscuit</pre>
 				<h3>
 					<label for="synonyms-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label>
 					<?php if ( $synonyms_file_date && $synonyms_uploaded_status ) : ?>
-						<span class="es-package-status es-package-status--<?php echo esc_attr( $synonyms_uploaded_status ); ?>">
-							<?php esc_html__( 'Status', 'altis' ); ?>: <?php echo esc_html( $synonyms_uploaded_status ); ?>
+						<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $synonyms_uploaded_status ) ); ?>">
+							<?php esc_html_e( 'Status', 'altis' ); ?>: <?php echo esc_html( $synonyms_uploaded_status ); ?>
 						</span>
 					<?php endif; ?>
 				</h3>
@@ -140,8 +141,8 @@ sea biscuit, sea biscit => seabiscuit</pre>
 				<h3>
 					<label for="synonyms-text"><?php esc_html_e( 'Manual entry', 'altis' ); ?></label>
 					<?php if ( $synonyms_manual_status ) : ?>
-						<span class="es-package-status es-package-status--<?php echo esc_attr( $synonyms_manual_status ); ?>">
-							<?php esc_html__( 'Status', 'altis' ); ?>: <?php echo esc_html( $synonyms_manual_status ); ?>
+						<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $synonyms_manual_status ) ); ?>">
+							<?php esc_html_e( 'Status', 'altis' ); ?>: <?php echo esc_html( $synonyms_manual_status ); ?>
 						</span>
 					<?php endif; ?>
 				</h3>
@@ -170,8 +171,8 @@ please</pre>
 				<h3>
 					<label for="stopwords-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label>
 					<?php if ( $stopwords_file_date && $stopwords_uploaded_status ) : ?>
-						<span class="es-package-status es-package-status--<?php echo esc_attr( $stopwords_uploaded_status ); ?>">
-							<?php esc_html__( 'Status', 'altis' ); ?>: <?php echo esc_html( $stopwords_uploaded_status ); ?>
+						<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $stopwords_uploaded_status ) ); ?>">
+							<?php esc_html_e( 'Status', 'altis' ); ?>: <?php echo esc_html( $stopwords_uploaded_status ); ?>
 						</span>
 					<?php endif; ?>
 				</h3>
@@ -199,8 +200,8 @@ please</pre>
 				<h3>
 					<label for="stopwords-text"><?php esc_html_e( 'Manual entry', 'altis' ); ?></label>
 					<?php if ( $stopwords_manual_status ) : ?>
-						<span class="es-package-status es-package-status--<?php echo esc_attr( $stopwords_manual_status ); ?>">
-							<?php esc_html__( 'Status', 'altis' ); ?>: <?php echo esc_html( $stopwords_manual_status ); ?>
+						<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $stopwords_manual_status ) ); ?>">
+							<?php esc_html_e( 'Status', 'altis' ); ?>: <?php echo esc_html( $stopwords_manual_status ); ?>
 						</span>
 					<?php endif; ?>
 				</h3>

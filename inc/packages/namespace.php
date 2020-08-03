@@ -137,10 +137,12 @@ function admin_page() {
 
 	include __DIR__ . '/templates/config.php';
 
-	if ( $for_network ) {
-		delete_site_option( 'altis_search_config_error' );
-	} else {
-		delete_option( 'altis_search_config_error' );
+	if ( ! empty( $errors ) ) {
+		if ( $for_network ) {
+			delete_site_option( 'altis_search_config_error' );
+		} else {
+			delete_option( 'altis_search_config_error' );
+		}
 	}
 }
 
@@ -276,10 +278,11 @@ function handle_form() {
 		$text_field = "{$type}-text";
 		$file_field = "{$type}-file";
 		$remove_field = "{$type}-remove";
+		$package_id = null;
 
 		// Handle manual entry.
 		if ( isset( $_POST[ $text_field ] ) && ! empty( $_POST[ $text_field ] ) ) {
-			$text = sanitize_textarea_field( $_POST[ $text_field ] );
+			$text = sanitize_textarea_field( wp_unslash( $_POST[ $text_field ] ) );
 			$file = get_package_path( "manual-{$type}", $for_network );
 			$has_changed = true;
 
@@ -317,12 +320,8 @@ function handle_form() {
 		// Delete file if remove submit clicked.
 		if ( isset( $_POST[ $remove_field ] ) ) {
 			$deleted = delete_package( "uploaded-{$type}", $for_network );
-			if ( ! $deleted ) {
-				$errors[] = new WP_Error(
-					'delete_package_failed',
-					// translators: %s replaced by package type, one of synonyms, stopwords or user dictionary.
-					sprintf( __( 'Failed to delete %s package', 'altis' ), $type )
-				);
+			if ( is_wp_error( $deleted ) ) {
+				$errors[] = $deleted;
 			}
 			// User dictionary update means we should update the indexed data.
 			if ( $type === 'user-dictionary' ) {
@@ -340,7 +339,7 @@ function handle_form() {
 	}
 
 	// Redirect back to form.
-	$redirect_url = is_network_admin() ? network_admin_url( 'settings.php' ) : admin_url( 'options-general.php' );
+	$redirect_url = is_network_admin() ? network_admin_url( 'settings.php' ) : admin_url( 'admin.php' );
 	wp_safe_redirect( $redirect_url . '?page=search-config&did_update=1' );
 	exit;
 }
@@ -390,6 +389,11 @@ function create_package( string $slug, string $file, bool $for_network = false )
 	 */
 	$package_id = apply_filters( 'altis.search.create_package_id', $package_id, $slug, $file, $for_network );
 	if ( is_wp_error( $package_id ) ) {
+		if ( $for_network ) {
+			update_site_option( "altis_search_package_status_{$slug}", 'ERROR' );
+		} else {
+			update_option( "altis_search_package_status_{$slug}", 'ERROR' );
+		}
 		return $package_id;
 	}
 
@@ -420,9 +424,19 @@ function create_package( string $slug, string $file, bool $for_network = false )
  *
  * @param string $slug The package file path.
  * @param bool $for_network If true deletes the network level package.
- * @return bool
+ * @return bool|WP_Error
  */
-function delete_package( string $slug, bool $for_network = false ) : bool {
+function delete_package( string $slug, bool $for_network = false ) {
+	// Get the package ID to pass to action hook.
+	$package_id = get_package_id( $slug, $for_network );
+	if ( empty( $package_id ) ) {
+		return new WP_Error(
+			'delete_package_error',
+			// translators: %s replaced by package slug.
+			sprintf( __( 'Package for slug %s does not exist', 'altis' ), $slug )
+		);
+	}
+
 	$file = get_package_path( $slug, $for_network );
 
 	// Ensure file exists.
@@ -433,9 +447,6 @@ function delete_package( string $slug, bool $for_network = false ) : bool {
 		// Delete the file.
 		unlink( $file );
 	}
-
-	// Get the package ID to pass to action hook.
-	$package_id = get_package_id( $slug, $for_network );
 
 	// Remove the stored package ID.
 	if ( $for_network ) {
@@ -448,17 +459,27 @@ function delete_package( string $slug, bool $for_network = false ) : bool {
 		delete_option( "altis_search_package_error_{$slug}" );
 	}
 
-	/**
-	 * Action triggered when a package is deleted.
-	 *
-	 * @param string $package_id The package ID.
-	 * @param string $slug The package slug.
-	 * @param bool $for_network Whether this is for the network level or site level.
-	 * @param bool $deleted Whether the option was successfully deleted or not.
-	 */
-	do_action( 'altis.search.deleted_package', $package_id, $slug, $for_network, $deleted );
+	// Update the index settings on successful deletion.
+	if ( $deleted ) {
+		do_settings_update( $for_network, strpos( $slug, 'user-dictionary' ) !== false );
 
-	return $deleted;
+		/**
+		 * Action triggered when a package is deleted.
+		 *
+		 * @param string $package_id The package ID.
+		 * @param string $slug The package slug.
+		 * @param bool $for_network Whether this is for the network level or site level.
+		 */
+		do_action( 'altis.search.deleted_package', $package_id, $slug, $for_network );
+
+		return true;
+	}
+
+	return new WP_Error(
+		'delete_package_error',
+		// translators: %s replaced by package slug.
+		sprintf( __( 'Failed to delete package with slug %s', 'altis' ), $slug )
+	);
 }
 
 /**
@@ -468,11 +489,17 @@ function delete_package( string $slug, bool $for_network = false ) : bool {
  * @return string
  */
 function get_site_indices( ?int $blog_id = null ) : string {
-	$posts_index = Indexables::factory()->get( 'post' )->get_index_name( $blog_id );
-	$terms_index = Indexables::factory()->get( 'term' )->get_index_name( $blog_id );
-	$users_index = Indexables::factory()->get( 'user' )->get_index_name( $blog_id );
+	$indexes = [];
 
-	return implode( ',', [ $posts_index, $terms_index, $users_index ] );
+	// Check for default indexes and their existence.
+	foreach ( Indexables::factory()->get_all() as $indexable ) {
+		if ( ! $indexable->index_exists( $blog_id ) ) {
+			continue;
+		}
+		$indexes[] = $indexable->get_index_name( $blog_id );
+	}
+
+	return implode( ',', $indexes );
 }
 
 /**
@@ -504,6 +531,11 @@ function do_settings_update( bool $for_network = false, bool $update_data = fals
 	} else {
 		update_index_settings( get_site_indices(), $settings, $update_data );
 	}
+
+	/**
+	 * Action triggered once all indexes have been updated.
+	 */
+	do_action( 'altis.search.updated_all_index_settings' );
 }
 
 /**
@@ -540,4 +572,11 @@ function update_index_settings( string $index, array $settings, bool $update_dat
 			'method' => 'POST',
 		] );
 	}
+
+	/**
+	 * Action triggered when settings for a given index pattern have been updated.
+	 *
+	 * @param string $index The index that has just had its settings updated.
+	 */
+	do_action( 'altis.search.updated_settings_for_index', $index );
 }
