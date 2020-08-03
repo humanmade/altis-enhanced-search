@@ -438,6 +438,8 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 		// Enabling this feature causes all WP_Query calls for protected content post types to use
 		// Elasticsearch, even if not performing a search.
 		'protected_content' => false,
+		'terms' => true,
+		'users' => true,
 	];
 
 	if ( ! isset( $features_activated[ $feature->slug ] ) ) {
