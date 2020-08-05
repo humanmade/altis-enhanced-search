@@ -105,6 +105,11 @@ function load_elasticpress() {
 		remove_action( 'init', [ Features::factory(), 'setup_features' ], 0 );
 	}
 
+	// Add default options on install.
+	add_action( 'wp_install', __NAMESPACE__ . '\\on_wp_install' );
+	add_action( 'ep_remote_request', __NAMESPACE__ . '\\on_delete_index', 11, 2 );
+
+	// Ensure indexes are created after install.
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		// Raise error reporting threshold for the index command as it will generate
 		// a benign warning when the index doesn't already exist.
@@ -253,6 +258,52 @@ function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $q
 }
 
 /**
+ * Add default initial options and settings on install.
+ *
+ * @return void
+ */
+function on_wp_install() {
+	// This option is used to determine the index name for backwards compat.
+	set_index_version( 1 );
+}
+
+/**
+ * When an existing index is deleted set the index version so
+ *
+ * @param array $query The Elasticsearch query.
+ * @param string $type The remote request type.
+ * @return void
+ */
+function on_delete_index( $query, string $type ) {
+	if ( $type !== 'delete_index' ) {
+		return;
+	}
+	// Set the version if not already present.
+	if ( ! get_index_version() ) {
+		set_index_version( 1 );
+	}
+}
+
+/**
+ * Set the index version for the current site.
+ *
+ * @param integer $version The version number.
+ * @return void
+ */
+function set_index_version( int $version ) {
+	update_option( 'altis_search_index_version', $version );
+}
+
+/**
+ * Get the index version for the current site.
+ *
+ * @return int|null
+ */
+function get_index_version() : ?int {
+	return get_option( 'altis_search_index_version', null );
+}
+
+/**
  * ElasticPress adds the indexable object type to index names. We can maintain backwards
  * compatibility by filtering the posts indexable index name to remove this type.
  *
@@ -260,9 +311,15 @@ function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $q
  * @return string
  */
 function filter_index_name( string $index ) : string {
-	if ( strpos( $index, '-post-' ) !== false ) {
-		return str_replace( '-post-', '-', $index );
+	// Back compat for Altis v3 & ElasticPress 2.x
+	// Version 3 of ElasticPress introduces Indexables allowing for user
+	// and term search integration. The new index names follow the pattern
+	// <site>-<indexable>-<blog-id> instead of <site>-<blog-id>.
+	$index_version = get_index_version();
+	if ( ! $index_version && strpos( $index, '-post' ) !== false ) {
+		return str_replace( '-post', '', $index );
 	}
+
 	return $index;
 }
 
