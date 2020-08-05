@@ -616,6 +616,7 @@ function elasticpress_mapping( array $mapping ) : array {
 
 	// Add autosuggest ngram analyzer by default, used for attachment search.
 	$autosuggest_fields = get_autosuggest_fields();
+	$search_analyzer = ! empty( $mapping['settings']['analysis']['analyzer']['default_search'] ) ? 'default_search' : 'default';
 	foreach ( $autosuggest_fields as $type => $fields ) {
 		foreach ( $fields as $field ) {
 			if ( ! isset( $mapping['mappings'][ $type ]['properties'][ $field ] ) ) {
@@ -627,6 +628,7 @@ function elasticpress_mapping( array $mapping ) : array {
 			$mapping['mappings'][ $type ]['properties'][ $field ]['fields']['suggest'] = [
 				'type' => 'text',
 				'analyzer' => 'edge_ngram_analyzer',
+				'search_analyzer' => $search_analyzer,
 			];
 		}
 	}
@@ -794,8 +796,7 @@ function get_autosuggest_fields( ?string $type = null ) : array {
 		/**
 		 * Filter the fields to use for autosuggest search behaviour.
 		 *
-		 * @param array $fields The field names to include in autosuggestions.
-		 * @param array $args The WP_Query args.
+		 * @param array $fields The field names for a specific type to include in autosuggestions.
 		 */
 		$fields = apply_filters( "altis.search.autosuggest_{$type}_fields", $fields[ $type ] );
 	}
