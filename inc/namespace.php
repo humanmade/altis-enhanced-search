@@ -337,7 +337,10 @@ function filter_index_name( string $index ) : string {
  *
  * @return string
  */
-function filter_documents_pipeline_id() : string {
+function filter_documents_pipeline_id( string $id ) : string {
+	if ( ! get_index_version() ) {
+		return $id;
+	}
 	return 'attachments';
 }
 
