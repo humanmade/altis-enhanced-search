@@ -575,7 +575,7 @@ function setup_elasticpress_on_install() {
 		'return' => true,
 	] );
 	WP_CLI::line( $response );
-	WP_CLI::line( WP_CLI::colorize( "%GElasticPress configured.%n" ) );
+	WP_CLI::line( WP_CLI::colorize( '%GElasticPress configured.%n' ) );
 }
 
 /**
