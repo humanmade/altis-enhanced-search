@@ -11,10 +11,10 @@ use Altis;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
-use ElasticPress\Command as ElasticPress_CLI_Command;
+use ElasticPress\Elasticsearch;
 use ElasticPress\Feature;
 use ElasticPress\Features;
-use ElasticPress\Indexables as ElasticPress_Indexables;
+use ElasticPress\Indexables;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use WP_CLI;
@@ -70,7 +70,7 @@ function load_elasticpress() {
 	add_filter( 'ep_pre_request_url', function ( $url ) {
 		return set_url_scheme( $url, ELASTICSEARCH_PORT === 443 ? 'https' : 'http' );
 	});
-	add_action( 'ep_remote_request', __NAMESPACE__ . '\\log_remote_request_errors' );
+	add_action( 'ep_remote_request', __NAMESPACE__ . '\\log_remote_request_errors', 10, 2 );
 	add_filter( 'posts_request', __NAMESPACE__ . '\\noop_wp_query_on_failed_ep_request', 11, 2 );
 	add_filter( 'found_posts_query', __NAMESPACE__ . '\\noop_wp_query_on_failed_ep_request', 6, 2 );
 	add_filter( 'ep_admin_wp_query_integration', '__return_true' );
@@ -88,6 +88,9 @@ function load_elasticpress() {
 	// Back compat for ElasticPress v2 - change post index name to old version.
 	add_filter( 'ep_index_name', __NAMESPACE__ . '\\filter_index_name' );
 
+	// Ensure the same attachments ingest pipeline ID is used for the whole network.
+	add_filter( 'ep_documents_pipeline_id', __NAMESPACE__ . '\\filter_documents_pipeline_id' );
+
 	// Ensure non ElasticPress indexes are not affected by global edits using *.
 	add_filter( 'ep_pre_request_url', __NAMESPACE__ . '\\protect_non_ep_indexes', 10, 5 );
 
@@ -100,7 +103,7 @@ function load_elasticpress() {
 	remove_action( 'admin_bar_menu', 'ElasticPress\\Dashboard\\action_network_admin_bar_menu', 50 );
 
 	// Don't set up features during install.
-	if ( defined( 'WP_INSTALLING' ) && WP_INSTALLING ) {
+	if ( defined( 'WP_INITIAL_INSTALL' ) && WP_INITIAL_INSTALL ) {
 		remove_action( 'init', [ Features::factory(), 'handle_feature_activation' ], 0 );
 		remove_action( 'init', [ Features::factory(), 'setup_features' ], 0 );
 	}
@@ -111,11 +114,6 @@ function load_elasticpress() {
 
 	// Ensure indexes are created after install.
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
-		// Raise error reporting threshold for the index command as it will generate
-		// a benign warning when the index doesn't already exist.
-		WP_CLI::add_hook( 'before_invoke:elasticpress index', function () {
-			error_reporting( E_ERROR );
-		} );
 		// Index after install.
 		WP_CLI::add_hook( 'after_invoke:core multisite-install', __NAMESPACE__ . '\\setup_elasticpress_on_install' );
 	}
@@ -208,21 +206,28 @@ function sign_psr7_request( RequestInterface $request ) : RequestInterface {
 }
 
 /**
- * Log request errors.
+ * Log ElasticPress request errors.
  *
  * @param array $request Request data.
+ * @param string|null $type The type of request.
  * @return void
  */
-function log_remote_request_errors( array $request ) {
+function log_remote_request_errors( array $request, ?string $type = null ) {
+	$request_response_body = wp_remote_retrieve_body( $request['request'] );
 	$request_response_code = (int) wp_remote_retrieve_response_code( $request['request'] );
 	$is_valid_res = ( $request_response_code >= 200 && $request_response_code <= 299 );
+	$type = $type ?: 'unknown_request_type';
+
+	// Backup check for errors, sometimes the response is ok but the query
+	// response JSON contains errors.
+	$has_errors = strpos( $request_response_body, '"errors":true' ) !== false;
 
 	if ( is_wp_error( $request['request'] ) ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		trigger_error( sprintf( 'Error in ElasticPress request: %s (%s)', $request['request']->get_error_message(), $request['request']->get_error_code() ), E_USER_WARNING );
-	} elseif ( ! $is_valid_res ) {
+		trigger_error( sprintf( 'Error in ElasticPress request: %s %s (%s)', $type, $request['request']->get_error_message(), $request['request']->get_error_code() ), E_USER_WARNING );
+	} elseif ( ! $is_valid_res || $has_errors ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		trigger_error( sprintf( 'Error in ElasticPress request: %s (%s)', wp_remote_retrieve_body( $request['request'] ), $request_response_code ), E_USER_WARNING );
+		trigger_error( sprintf( 'Error in ElasticPress request: %s %s (%s)', $type, $request_response_body, $request_response_code ), E_USER_WARNING );
 	}
 }
 
@@ -271,10 +276,10 @@ function on_wp_install() {
  * When an existing index is deleted set the index version so
  *
  * @param array $query The Elasticsearch query.
- * @param string $type The remote request type.
+ * @param string|null $type The remote request type.
  * @return void
  */
-function on_delete_index( $query, string $type ) {
+function on_delete_index( $query, ?string $type ) {
 	if ( $type !== 'delete_index' ) {
 		return;
 	}
@@ -317,10 +322,23 @@ function filter_index_name( string $index ) : string {
 	// <site>-<indexable>-<blog-id> instead of <site>-<blog-id>.
 	$index_version = get_index_version();
 	if ( ! $index_version && strpos( $index, '-post' ) !== false ) {
-		return str_replace( '-post', '', $index );
+		$old_index = str_replace( '-post', '', $index );
+		if ( Elasticsearch::factory()->index_exists( $old_index ) ) {
+			return $old_index;
+		}
 	}
 
 	return $index;
+}
+
+/**
+ * The documents ingest pipeline does not need to be site specific
+ * as it is always the same.
+ *
+ * @return string
+ */
+function filter_documents_pipeline_id() : string {
+	return 'attachments';
 }
 
 /**
@@ -404,7 +422,7 @@ function run_elasticpress_indexed_healthcheck() {
 	$sites = get_sites();
 	$not_exists = [];
 	foreach ( $sites as $site ) {
-		if ( ! ElasticPress_Indexables::factory()->get( 'post' )->index_exists( $site->blog_id ) ) {
+		if ( ! Indexables::factory()->get( 'post' )->index_exists( $site->blog_id ) ) {
 			$not_exists[] = $site->domain . $site->path;
 		}
 	}
@@ -552,21 +570,12 @@ function get_elasticsearch_url() : string {
  * When WordPress is installed via WP-CLI, run the ElasticPress setup.
  */
 function setup_elasticpress_on_install() {
-	$ep = new ElasticPress_CLI_Command();
 	WP_CLI::line( 'Setting up ElasticPress...' );
-
-	// Elevate error reporting level as there's a benign warning thrown on first index.
-	$error_reporting_level = error_reporting();
-	error_reporting( E_ERROR );
-
-	// Create the index.
-	$ep->index( [], [
-		'setup' => true,
-		'network-wide' => true,
+	$response = WP_CLI::runcommand( 'elasticpress index --setup --network-wide', [
+		'return' => true,
 	] );
-
-	// Reset error reporting level.
-	error_reporting( $error_reporting_level );
+	WP_CLI::line( $response );
+	WP_CLI::line( WP_CLI::colorize( "%GElasticPress configured.%n" ) );
 }
 
 /**
