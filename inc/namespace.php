@@ -269,7 +269,7 @@ function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $q
  */
 function on_wp_install() {
 	// This option is used to determine the index name for backwards compat.
-	set_index_version( 1 );
+	set_index_version( 3 );
 }
 
 /**
@@ -285,7 +285,7 @@ function on_delete_index( $query, ?string $type ) {
 	}
 	// Set the version if not already present.
 	if ( ! get_index_version() ) {
-		set_index_version( 1 );
+		set_index_version( 3 );
 	}
 }
 
@@ -328,7 +328,8 @@ function filter_index_name( string $index ) : string {
 		}
 	}
 
-	return $index;
+	// Add ep- prefix to easily determine ElasticPress managed indexes.
+	return "ep-{$index}";
 }
 
 /**
@@ -355,32 +356,10 @@ function filter_documents_pipeline_id( string $id ) : string {
  * @return string
  */
 function protect_non_ep_indexes( string $url, int $failures, string $host, string $path, array $args ) : string {
-
-	// If the path uses a wildcard protect the following index patterns.
-	$protected_index_patterns = [
-		'.kibana',
-		'analytics*',
-	];
-
-	/**
-	 * Filter the protected index patterns. This should be an array of
-	 * Elasticsearch index patterns that ElasticPress is not allowed to
-	 * interact with.
-	 *
-	 * @param array $protected_index_patterns The patterns ElasticPress should ignore.
-	 * @param string $path The remote request path.
-	 * @param array $args The remote request args.
-	 */
-	$protected_index_patterns = apply_filters( 'altis.search.protected_index_patterns', $protected_index_patterns, $path, $args );
-
-	// ElasticPress requests that work on all indexes begin with * so we protect
-	// indexes by name using negation eg. -analytics*,* gives all indexes except
-	// analytics indexes.
-	if ( strpos( $path, '*' ) === 0 ) {
-		$protected_path = array_reduce( $protected_index_patterns, function ( $carry, $pattern ) {
-			return "-{$pattern},{$carry}";
-		}, '' );
-		$path = "{$protected_path}{$path}";
+	// ElasticPress requests that work on all indexes may begin with * so we protect
+	// indexes by enforcing the `ep-` prefix added by our filter.
+	if ( strpos( trim( $path, '/' ), '*' ) === 0 ) {
+		$url = str_replace( '/*', '/ep-*', $url );
 	}
 
 	return $url;
