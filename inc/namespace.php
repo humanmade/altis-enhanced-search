@@ -283,8 +283,8 @@ function on_delete_index( $query, ?string $type ) {
 	if ( $type !== 'delete_index' ) {
 		return;
 	}
-	// Set the version if not already present.
-	if ( ! get_index_version() ) {
+	// Set the version to 3.
+	if ( get_index_version() === 2 ) {
 		set_index_version( 3 );
 	}
 }
@@ -300,12 +300,13 @@ function set_index_version( int $version ) {
 }
 
 /**
- * Get the index version for the current site.
+ * Get the index version for the current site. Defaults to
+ * 2 for ElasticPress version 2.
  *
- * @return int|null
+ * @return int
  */
-function get_index_version() : ?int {
-	return get_option( 'altis_search_index_version', null );
+function get_index_version() : int {
+	return get_option( 'altis_search_index_version', null ) ?? 2;
 }
 
 /**
@@ -320,8 +321,7 @@ function filter_index_name( string $index ) : string {
 	// Version 3 of ElasticPress introduces Indexables allowing for user
 	// and term search integration. The new index names follow the pattern
 	// <site>-<indexable>-<blog-id> instead of <site>-<blog-id>.
-	$index_version = get_index_version();
-	if ( ! $index_version && strpos( $index, '-post' ) !== false ) {
+	if ( get_index_version() === 2 && strpos( $index, '-post' ) !== false ) {
 		$old_index = str_replace( '-post', '', $index );
 		if ( Elasticsearch::factory()->index_exists( $old_index ) ) {
 			return $old_index;
@@ -339,7 +339,7 @@ function filter_index_name( string $index ) : string {
  * @return string
  */
 function filter_documents_pipeline_id( string $id ) : string {
-	if ( ! get_index_version() ) {
+	if ( get_index_version() === 2 ) {
 		return $id;
 	}
 	return 'attachments';
@@ -350,7 +350,7 @@ function filter_documents_pipeline_id( string $id ) : string {
  *
  * @param string $url The full Elasticsearch request URL.
  * @param integer $failures Number of failures.
- * @param string $host Host name.
+ * @param string $host Elasticsearch host name.
  * @param string $path Request path.
  * @param array $args Remote request arguments.
  * @return string
@@ -359,7 +359,7 @@ function protect_non_ep_indexes( string $url, int $failures, string $host, strin
 	// ElasticPress requests that work on all indexes may begin with * so we protect
 	// indexes by enforcing the `ep-` prefix added by our filter.
 	if ( strpos( trim( $path, '/' ), '*' ) === 0 ) {
-		$url = str_replace( '/*', '/ep-*', $url );
+		$url = str_replace( "{$host}/*", "{$host}/ep-*", $url );
 	}
 
 	return $url;
