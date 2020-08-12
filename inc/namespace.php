@@ -273,7 +273,8 @@ function on_wp_install() {
 }
 
 /**
- * When an existing index is deleted set the index version so
+ * Set the index version to match ElasticPress version when
+ * indexes are deleted.
  *
  * @param array $query The Elasticsearch query.
  * @param string|null $type The remote request type.
@@ -300,8 +301,9 @@ function set_index_version( int $version ) {
 }
 
 /**
- * Get the index version for the current site. Defaults to
- * 2 for ElasticPress version 2.
+ * Get the index version for the current site.
+ *
+ * Defaults to 2 for ElasticPress version 2.
  *
  * @return int
  */
@@ -310,6 +312,8 @@ function get_index_version() : int {
 }
 
 /**
+ * Modify default index names.
+ *
  * ElasticPress adds the indexable object type to index names. We can maintain backwards
  * compatibility by filtering the posts indexable index name to remove this type.
  *
@@ -333,6 +337,8 @@ function filter_index_name( string $index ) : string {
 }
 
 /**
+ * Modify the documents ingest pipeline ID.
+ *
  * The documents ingest pipeline does not need to be site specific
  * as it is always the same.
  *
