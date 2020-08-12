@@ -329,6 +329,8 @@ function filter_index_name( string $index ) : string {
 		$old_index = str_replace( '-post', '', $index );
 		if ( Elasticsearch::factory()->index_exists( $old_index ) ) {
 			return $old_index;
+		} else {
+			set_index_version( 3 );
 		}
 	}
 
