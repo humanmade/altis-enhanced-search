@@ -144,9 +144,9 @@ function admin_page() : void {
 
 	if ( ! empty( $errors ) ) {
 		if ( $for_network ) {
-			delete_site_option( 'altis_search_config_error' );
+			delete_site_transient( 'altis_search_config_error' );
 		} else {
-			delete_option( 'altis_search_config_error' );
+			delete_transient( 'altis_search_config_error' );
 		}
 	}
 }
@@ -172,9 +172,9 @@ function add_error_message( WP_Error $error, bool $for_network = false ) : void 
 	}, $errors );
 
 	if ( is_network_admin() || $for_network ) {
-		update_site_option( 'altis_search_config_error', $errors );
+		set_site_transient( 'altis_search_config_error', $errors );
 	} else {
-		update_option( 'altis_search_config_error', $errors );
+		set_transient( 'altis_search_config_error', $errors );
 	}
 }
 
