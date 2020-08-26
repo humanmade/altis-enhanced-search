@@ -18,7 +18,7 @@ use WP_Error;
  *
  * @return void
  */
-function setup() {
+function bootstrap() {
 	add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\\enqueue_scripts' );
 	add_action( 'admin_init', __NAMESPACE__ . '\\handle_form' );
 	add_action( 'admin_menu', __NAMESPACE__ . '\\admin_menu', 5 );

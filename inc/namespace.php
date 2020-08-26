@@ -130,7 +130,7 @@ function load_elasticpress() {
 	add_filter( 'register_post_type_args', __NAMESPACE__ . '\\custom_search_results_post_type_args', 10, 2 );
 
 	// Set up packages feature.
-	Packages\setup();
+	Packages\bootstrap();
 }
 
 /**
