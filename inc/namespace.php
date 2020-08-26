@@ -668,9 +668,7 @@ function elasticpress_analyzer_language() : string {
  */
 function elasticpress_mapping( array $mapping ) : array {
 
-	/**
-	 * Merge filters, tokenizers and analyzers from JSON config.
-	 */
+	// Merge filters, tokenizers and analyzers from JSON config.
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 	$settings_json = file_get_contents( __DIR__ . '/analyzers.json' );
 	$settings = json_decode( $settings_json, true );
@@ -740,9 +738,7 @@ function elasticpress_mapping( array $mapping ) : array {
 		unset( $mapping['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
 	}
 
-	/**
-	 * Handle user dictionary for Japanese sites.
-	 */
+	// Handle user dictionary for Japanese sites.
 	if ( $language === 'ja' ) {
 		$is_network_japanese = get_site_option( 'WPLANG', 'en_US' ) === 'ja';
 		$user_dictionary_package_id = Packages\get_package_id( 'uploaded-user-dictionary' );
@@ -756,12 +752,10 @@ function elasticpress_mapping( array $mapping ) : array {
 		}
 	}
 
-	/**
-	 * Add a default search analyzer if any custom stopwords or synonyms are provided.
-	 *
-	 * Synonyms and stopwords are quick enough to be applied at search time and avoid
-	 * increasing the index size unnecessarily.
-	 */
+	// Add a default search analyzer if any custom stopwords or synonyms are provided.
+	//
+	// Synonyms and stopwords are quick enough to be applied at search time and avoid
+	// increasing the index size unnecessarily.
 	$is_network_language = get_site_option( 'WPLANG', 'en_US' ) === get_option( 'WPLANG', 'en_US' );
 	$synonyms = [];
 	$stopwords = [];
