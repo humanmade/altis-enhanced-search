@@ -69,7 +69,12 @@ function enqueue_scripts( string $hook_suffix ) : void {
 		return;
 	}
 
-	wp_enqueue_style( 'wp-components' );
+	wp_enqueue_style(
+		'altis-search-packages',
+		plugin_dir_url( dirname( __FILE__, 2 ) ) . 'assets/packages.css',
+		[ 'wp-components' ],
+		'2020-08-26-01'
+	);
 }
 
 /**
