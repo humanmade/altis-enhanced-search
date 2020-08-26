@@ -447,14 +447,8 @@ function delete_package( string $slug, bool $for_network = false ) {
 
 	$file = get_package_path( $slug, $for_network );
 
-	// Ensure file exists.
-	if ( ! file_exists( $file ) ) {
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		trigger_error( sprintf( 'The package file %s does not exist.', $file ), E_USER_WARNING );
-	} else {
-		// Delete the file.
-		unlink( $file );
-	}
+	// Delete the file.
+	unlink( $file );
 
 	// Remove the stored package ID.
 	if ( $for_network ) {
