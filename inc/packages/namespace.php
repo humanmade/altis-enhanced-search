@@ -35,7 +35,7 @@ function setup() {
  *
  * @return void
  */
-function admin_menu() {
+function admin_menu() : void {
 	add_menu_page(
 		__( 'Search Configuration', 'altis' ),
 		__( 'Search Config', 'altis' ),
@@ -64,7 +64,7 @@ function add_removable_query_args( array $removable_query_args ) : array {
  * @param string $hook_suffix The admin page hook.
  * @return void
  */
-function enqueue_scripts( string $hook_suffix ) {
+function enqueue_scripts( string $hook_suffix ) : void {
 	if ( $hook_suffix !== 'toplevel_page_search-config' ) {
 		return;
 	}
@@ -73,11 +73,11 @@ function enqueue_scripts( string $hook_suffix ) {
 }
 
 /**
- * Includes the search config page template.
+ * Include the search config page template.
  *
  * @return void
  */
-function admin_page() {
+function admin_page() : void {
 	$types = [ 'synonyms', 'stopwords', 'user_dictionary' ];
 
 	$for_network = is_network_admin();
@@ -147,12 +147,13 @@ function admin_page() {
 }
 
 /**
- * Sets the search config error message.
+ * Set the search config error message.
  *
  * @param WP_Error $error The error object to add.
  * @param bool $for_network Whether this should be added as a network level error.
+ * @return void
  */
-function add_error_message( WP_Error $error, bool $for_network = false ) {
+function add_error_message( WP_Error $error, bool $for_network = false ) : void {
 	static $errors = [];
 	$errors[] = $error;
 	$errors = array_map( function ( $error ) {
@@ -191,8 +192,7 @@ function get_packages_dir() : string {
 }
 
 /**
- * Get a package file path. Returns the path if the file exists
- * or null on failure.
+ * Get a package file path.
  *
  * @param string $slug A slug ID for the package file.
  * @param bool $for_network If true returns path for network level package.
@@ -240,7 +240,7 @@ function get_package_id( string $slug, bool $for_network = false ) : ?string {
  *
  * @return void
  */
-function handle_form() {
+function handle_form() : void {
 	if ( ! isset( $_POST['action'] ) || $_POST['action'] !== 'altis-search-config' ) {
 		return;
 	}
@@ -367,7 +367,6 @@ function on_updated_packages( bool $for_network, bool $should_update_indexes ) {
  * @return string|WP_Error The package ID for referencing in analysers or a WP_Error.
  */
 function create_package( string $slug, string $file, bool $for_network = false ) {
-
 	// Ensure file exists.
 	if ( ! file_exists( $file ) ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -515,7 +514,7 @@ function get_site_indices( ?int $blog_id = null ) : string {
  * @param boolean $update_data Whether the index data should be updated as well.
  * @return void
  */
-function do_settings_update( bool $for_network = false, bool $update_data = false ) {
+function do_settings_update( bool $for_network = false, bool $update_data = false ) : void {
 	// Get latest settings.
 	$mapping = Enhanced_Search\elasticpress_mapping( [] );
 	$settings = $mapping['settings'];
@@ -546,8 +545,7 @@ function do_settings_update( bool $for_network = false, bool $update_data = fals
  * @param boolean $update_data Whether to update data in the index.
  * @return void
  */
-function update_index_settings( string $index, array $settings, bool $update_data = false ) {
-
+function update_index_settings( string $index, array $settings, bool $update_data = false ) : void {
 	$client = Elasticsearch::factory();
 
 	// Close the index.
