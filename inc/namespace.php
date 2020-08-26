@@ -774,18 +774,20 @@ function elasticpress_mapping( array $mapping ) : array {
 				continue;
 			}
 
-			if ( $type === 'synonyms' ) {
-				$synonyms[ "{$sub_type}_{$type}_filter" ] = [
-					'type' => 'synonym_graph',
-					'synonyms_path' => $package_id,
-				];
-			}
-			if ( $type === 'stopwords' ) {
-				$stopwords[ "{$sub_type}_{$type}_filter" ] = [
-					'type' => 'stop',
-					'ignore_case' => true,
-					'stopwords_path' => $package_id,
-				];
+			switch ( $type ) {
+				case 'synonyms':
+					$synonyms[ "{$sub_type}_{$type}_filter" ] = [
+						'type' => 'synonym_graph',
+						'synonyms_path' => $package_id,
+					];
+					break;
+				case 'stopwords':
+					$stopwords[ "{$sub_type}_{$type}_filter" ] = [
+						'type' => 'stop',
+						'ignore_case' => true,
+						'stopwords_path' => $package_id,
+					];
+					break;
 			}
 		}
 	}
