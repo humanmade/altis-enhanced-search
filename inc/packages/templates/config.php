@@ -12,7 +12,7 @@
 		<?php if ( empty( $errors ) ) : ?>
 			<div class="notice notice-success is-dismissible">
 				<p><?php esc_html_e( 'Search configuration updated!', 'altis' ); ?></p>
-				<p><?php esc_html_e( 'Updates can take a few moments to propagate fully.', 'altis' ); ?></p>
+				<p><?php esc_html_e( 'Updates can take a few minutes to propagate fully.', 'altis' ); ?></p>
 			</div>
 		<?php else : ?>
 			<?php foreach ( $errors as $error ) : ?>
@@ -44,16 +44,19 @@
 				<div class="column">
 					<h3>
 						<label for="user-dictionary-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label>
-						<?php if ( $user_dictionary_file_date && $user_dictionary_uploaded_status ) : ?>
-							<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $user_dictionary_uploaded_status ) ); ?>">
-								<?php esc_html_e( 'Status', 'altis' ); ?>: <?php echo esc_html( $user_dictionary_uploaded_status ); ?>
+						<?php if ( $types['user_dictionary']['file_date'] && $types['user_dictionary']['uploaded_status'] ) : ?>
+							<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $types['user_dictionary']['uploaded_status'] ) ); ?>">
+								<?php
+									// translators: %s replaced by status name e.g. 'ACTIVE', 'ERROR'.
+									echo esc_html( sprintf( __( 'Status: %s', 'altis' ), $types['user_dictionary']['uploaded_status'] ) );
+								?>
 							</span>
 						<?php endif; ?>
 					</h3>
-					<?php if ( $user_dictionary_file_date ) : ?>
-						<?php if ( $user_dictionary_uploaded_error ) : ?>
+					<?php if ( $types['user_dictionary']['file_date'] ) : ?>
+						<?php if ( $types['user_dictionary']['uploaded_error'] ) : ?>
 							<div class="notice notice-error">
-								<p><?php echo esc_html( $user_dictionary_uploaded_error ); ?></p>
+								<p><?php echo esc_html( $types['user_dictionary']['uploaded_error'] ); ?></p>
 							</div>
 						<?php endif; ?>
 						<p>
@@ -61,7 +64,7 @@
 							echo esc_html( sprintf(
 								// translators: %s is replaced by the file upload date.
 								__( 'Current file uploaded on %s', 'altis' ),
-								gmdate( get_option( 'date_format', 'Y-m-d H:i:s' ), $user_dictionary_file_date )
+								gmdate( get_option( 'date_format', 'Y-m-d H:i:s' ), $types['user_dictionary']['file_date'] )
 							) );
 							?>
 						</p>
@@ -101,17 +104,20 @@ sea biscuit, sea biscit => seabiscuit</pre>
 			<div class="column">
 				<h3>
 					<label for="synonyms-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label>
-					<?php if ( $synonyms_file_date && $synonyms_uploaded_status ) : ?>
-						<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $synonyms_uploaded_status ) ); ?>">
-							<?php esc_html_e( 'Status', 'altis' ); ?>: <?php echo esc_html( $synonyms_uploaded_status ); ?>
+					<?php if ( $types['synonyms']['file_date'] && $types['synonyms']['uploaded_status'] ) : ?>
+						<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $types['synonyms']['uploaded_status'] ) ); ?>">
+							<?php
+								// translators: %s replaced by status name e.g. 'ACTIVE', 'ERROR'.
+								echo esc_html( sprintf( __( 'Status: %s', 'altis' ), $types['synonyms']['uploaded_status'] ) );
+							?>
 						</span>
 					<?php endif; ?>
 				</h3>
 				<p class="description"><?php esc_html_e( 'If you have a large number of synonyms in the order of 1000s a file upload is recommended.' ); ?></p>
-				<?php if ( $synonyms_file_date ) : ?>
-					<?php if ( $synonyms_uploaded_error ) : ?>
+				<?php if ( $types['synonyms']['file_date'] ) : ?>
+					<?php if ( $types['synonyms']['uploaded_error'] ) : ?>
 						<div class="notice notice-error">
-							<p><?php echo esc_html( $synonyms_uploaded_error ); ?></p>
+							<p><?php echo esc_html( $types['synonyms']['uploaded_error'] ); ?></p>
 						</div>
 					<?php endif; ?>
 					<p>
@@ -119,7 +125,7 @@ sea biscuit, sea biscit => seabiscuit</pre>
 						echo esc_html( sprintf(
 							// translators: %s is replaced by the file upload date.
 							__( 'Current file uploaded on %s' ),
-							gmdate( get_option( 'date_format', 'Y-m-d H:i:s' ), $synonyms_file_date )
+							gmdate( get_option( 'date_format', 'Y-m-d H:i:s' ), $types['synonyms']['file_date'] )
 						) );
 						?>
 					</p>
@@ -130,18 +136,21 @@ sea biscuit, sea biscit => seabiscuit</pre>
 				</p>
 				<h3>
 					<label for="synonyms-text"><?php esc_html_e( 'Manual entry', 'altis' ); ?></label>
-					<?php if ( $synonyms_manual_status ) : ?>
-						<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $synonyms_manual_status ) ); ?>">
-							<?php esc_html_e( 'Status', 'altis' ); ?>: <?php echo esc_html( $synonyms_manual_status ); ?>
+					<?php if ( $types['synonyms']['manual_status'] ) : ?>
+						<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $types['synonyms']['manual_status'] ) ); ?>">
+							<?php
+								// translators: %s replaced by status name e.g. 'ACTIVE', 'ERROR'.
+								echo esc_html( sprintf( __( 'Status: %s', 'altis' ), $types['synonyms']['manual_status'] ) );
+							?>
 						</span>
 					<?php endif; ?>
 				</h3>
-				<?php if ( $synonyms_manual_error ) : ?>
+				<?php if ( $types['synonyms']['manual_error'] ) : ?>
 					<div class="notice notice-error">
-						<p><?php echo esc_html( $synonyms_manual_error ); ?></p>
+						<p><?php echo esc_html( $types['synonyms']['manual_error'] ); ?></p>
 					</div>
 				<?php endif; ?>
-				<textarea id="synonyms-text" name="synonyms-text" rows="10" cols="100%"><?php echo esc_textarea( $synonyms_text ); ?></textarea>
+				<textarea id="synonyms-text" name="synonyms-text" rows="10" cols="100%"><?php echo esc_textarea( $types['synonyms']['text'] ); ?></textarea>
 				<p>
 					<input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Update synonyms', 'altis' ); ?>" />
 				</p>
@@ -160,17 +169,20 @@ please</pre>
 			<div class="column">
 				<h3>
 					<label for="stopwords-file"><?php esc_html_e( 'File upload', 'altis' ); ?></label>
-					<?php if ( $stopwords_file_date && $stopwords_uploaded_status ) : ?>
-						<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $stopwords_uploaded_status ) ); ?>">
-							<?php esc_html_e( 'Status', 'altis' ); ?>: <?php echo esc_html( $stopwords_uploaded_status ); ?>
+					<?php if ( $types['stopwords']['file_date'] && $types['stopwords']['uploaded_status'] ) : ?>
+						<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $types['stopwords']['uploaded_status'] ) ); ?>">
+							<?php
+								// translators: %s replaced by status name e.g. 'ACTIVE', 'ERROR'.
+								echo esc_html( sprintf( __( 'Status: %s', 'altis' ), $types['stopwords']['uploaded_status'] ) );
+							?>
 						</span>
 					<?php endif; ?>
 				</h3>
 				<p class="description"><?php esc_html_e( 'If you have a large number of stop words in the order of 1000s a file upload is recommended.' ); ?></p>
-				<?php if ( $stopwords_file_date ) : ?>
-					<?php if ( $stopwords_uploaded_error ) : ?>
+				<?php if ( $types['stopwords']['file_date'] ) : ?>
+					<?php if ( $types['stopwords']['uploaded_error'] ) : ?>
 						<div class="notice notice-error">
-							<p><?php echo esc_html( $stopwords_uploaded_error ); ?></p>
+							<p><?php echo esc_html( $types['stopwords']['uploaded_error'] ); ?></p>
 						</div>
 					<?php endif; ?>
 					<p>
@@ -178,7 +190,7 @@ please</pre>
 						echo esc_html( sprintf(
 							// translators: %s is replaced by the file upload date.
 							__( 'Current file uploaded on %s' ),
-							gmdate( get_option( 'date_format', 'Y-m-d H:i:s' ), $stopwords_file_date )
+							gmdate( get_option( 'date_format', 'Y-m-d H:i:s' ), $types['stopwords']['file_date'] )
 						) );
 						?>
 					</p>
@@ -189,18 +201,21 @@ please</pre>
 				</p>
 				<h3>
 					<label for="stopwords-text"><?php esc_html_e( 'Manual entry', 'altis' ); ?></label>
-					<?php if ( $stopwords_manual_status ) : ?>
-						<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $stopwords_manual_status ) ); ?>">
-							<?php esc_html_e( 'Status', 'altis' ); ?>: <?php echo esc_html( $stopwords_manual_status ); ?>
+					<?php if ( $types['stopwords']['manual_status'] ) : ?>
+						<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $types['stopwords']['manual_status'] ) ); ?>">
+							<?php
+								// translators: %s replaced by status name e.g. 'ACTIVE', 'ERROR'.
+								echo esc_html( sprintf( __( 'Status: %s', 'altis' ), $types['stopwords']['manual_status'] ) );
+							?>
 						</span>
 					<?php endif; ?>
 				</h3>
-				<?php if ( $stopwords_manual_error ) : ?>
+				<?php if ( $types['stopwords']['manual_error'] ) : ?>
 					<div class="notice notice-error">
-						<p><?php echo esc_html( $stopwords_manual_error ); ?></p>
+						<p><?php echo esc_html( $types['stopwords']['manual_error'] ); ?></p>
 					</div>
 				<?php endif; ?>
-				<textarea id="stopwords-text" name="stopwords-text" rows="10" cols="100%"><?php echo esc_textarea( $stopwords_text ); ?></textarea>
+				<textarea id="stopwords-text" name="stopwords-text" rows="10" cols="100%"><?php echo esc_textarea( $types['stopwords']['text'] ); ?></textarea>
 				<p>
 					<input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Update stop words', 'altis' ); ?>" />
 				</p>

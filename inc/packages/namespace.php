@@ -83,55 +83,52 @@ function enqueue_scripts( string $hook_suffix ) : void {
  * @return void
  */
 function admin_page() : void {
-	$types = [ 'synonyms', 'stopwords', 'user_dictionary' ];
+	$types = [
+		'synonyms' => [],
+		'stopwords' => [],
+		'user_dictionary' => [],
+	];
 
 	$for_network = is_network_admin();
 
-	foreach ( $types as $type ) {
-		$uploaded_file_var = "{$type}_uploaded_file";
-		$manual_file_var = "{$type}_manual_file";
-		$text_var = "{$type}_text";
-		$file_date_var = "{$type}_file_date";
-		$uploaded_file_status = "{$type}_uploaded_status";
-		$manual_file_status = "{$type}_manual_status";
-		$uploaded_file_error = "{$type}_uploaded_error";
-		$manual_file_error = "{$type}_manual_error";
-
+	foreach ( $types as $type => $data ) {
 		$file_type_string = str_replace( '_', '-', $type );
 
 		if ( $for_network ) {
-			$$uploaded_file_status = get_site_option( "altis_search_package_status_uploaded-{$file_type_string}" );
-			$$manual_file_status = get_site_option( "altis_search_package_status_manual-{$file_type_string}" );
-			$$uploaded_file_error = get_site_option( "altis_search_package_error_uploaded-{$file_type_string}", null );
-			$$manual_file_error = get_site_option( "altis_search_package_error_manual-{$file_type_string}", null );
+			$data['uploaded_file_status'] = get_site_option( "altis_search_package_status_uploaded-{$file_type_string}" );
+			$data['manual_file_status'] = get_site_option( "altis_search_package_status_manual-{$file_type_string}" );
+			$data['uploaded_file_error'] = get_site_option( "altis_search_package_error_uploaded-{$file_type_string}", null );
+			$data['manual_file_error'] = get_site_option( "altis_search_package_error_manual-{$file_type_string}", null );
 		} else {
-			$$uploaded_file_status = get_option( "altis_search_package_status_uploaded-{$file_type_string}" );
-			$$manual_file_status = get_option( "altis_search_package_status_manual-{$file_type_string}" );
-			$$uploaded_file_error = get_option( "altis_search_package_error_uploaded-{$file_type_string}", null );
-			$$manual_file_error = get_option( "altis_search_package_error_manual-{$file_type_string}", null );
+			$data['uploaded_file_status'] = get_option( "altis_search_package_status_uploaded-{$file_type_string}" );
+			$data['manual_file_status'] = get_option( "altis_search_package_status_manual-{$file_type_string}" );
+			$data['uploaded_file_error'] = get_option( "altis_search_package_error_uploaded-{$file_type_string}", null );
+			$data['manual_file_error'] = get_option( "altis_search_package_error_manual-{$file_type_string}", null );
 		}
 
-		$$uploaded_file_var = get_package_path( "uploaded-{$file_type_string}", $for_network );
-		$$manual_file_var = get_package_path( "manual-{$file_type_string}", $for_network );
+		$data['uploaded_file'] = get_package_path( "uploaded-{$file_type_string}", $for_network );
+		$data['manual_file'] = get_package_path( "manual-{$file_type_string}", $for_network );
 
-		$$text_var = '';
-		if ( file_exists( $$manual_file_var ) ) {
+		$data['text'] = '';
+		if ( file_exists( $data['manual_file'] ) ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-			$$text_var = file_get_contents( $$manual_file_var );
+			$data['text'] = file_get_contents( $data['manual_file'] );
 		}
 
-		$$file_date_var = false;
-		if ( file_exists( $$uploaded_file_var ) ) {
-			$$file_date_var = filemtime( $$uploaded_file_var );
+		$data['file_date'] = false;
+		if ( file_exists( $data['uploaded_file'] ) ) {
+			$data['file_date'] = filemtime( $data['uploaded_file'] );
 		}
+
+		$types[ $type ] = $data;
 	}
 
 	$did_update = isset( $_GET['did_update'] );
 
 	if ( $for_network ) {
-		$errors = get_site_option( 'altis_search_config_error', false );
+		$errors = get_site_transient( 'altis_search_config_error' );
 	} else {
-		$errors = get_option( 'altis_search_config_error', false );
+		$errors = get_transient( 'altis_search_config_error' );
 	}
 
 	if ( ! empty( $errors ) && is_array( $errors ) ) {
