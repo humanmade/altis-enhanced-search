@@ -91,7 +91,7 @@
 					<li><?php esc_html_e( 'you have users from different countries who may use different words for the same thing', 'altis' ); ?></li>
 				</ul>
 				<p><?php esc_html_e( 'The syntax for synonyms is as follows:', 'altis' ); ?></p>
-				<pre># <?php esc_html_e( 'Comments are allowed using a hash at the start the line.', 'altis' ); ?></pre>
+				<pre><?php esc_html_e( '# Comments are allowed using a hash at the start the line.', 'altis' ); ?></pre>
 				<p><?php esc_html_e( 'Comma separated words or phrases will be treated as equivalent.', 'altis' ); ?></p>
 				<pre>sneakers, trainers, footwear, shoes
 foozball, foosball, table football
