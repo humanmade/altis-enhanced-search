@@ -283,7 +283,7 @@ function handle_form() : void {
 		$package_id = null;
 
 		// Handle manual entry.
-		if ( isset( $_POST[ $text_field ] ) && ! empty( $_POST[ $text_field ] ) ) {
+		if ( ! empty( $_POST[ $text_field ] ) ) {
 			$text = sanitize_textarea_field( wp_unslash( $_POST[ $text_field ] ) );
 			$file = get_package_path( "manual-{$type}", $for_network );
 			$has_changed = true;
@@ -297,10 +297,15 @@ function handle_form() : void {
 			// Write to uploads.
 			if ( $has_changed ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
-				file_put_contents( $file, $text );
-				$package_id = create_package( "manual-{$type}", $file, $for_network );
-				if ( is_wp_error( $package_id ) ) {
-					$errors[] = $package_id;
+				$result = file_put_contents( $file, $text );
+				if ( ! $result ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					$errors[] = new WP_Error( 'write_package_error', sprintf( __( 'Could not write search package file to %s', 'altis' ), $file ) );
+				} else {
+					$package_id = create_package( "manual-{$type}", $file, $for_network );
+					if ( is_wp_error( $package_id ) ) {
+						$errors[] = $package_id;
+					}
 				}
 			}
 		}
@@ -308,14 +313,20 @@ function handle_form() : void {
 		// Handle file upload.
 		if ( ! empty( $_FILES ) && isset( $_FILES[ $file_field ] ) && ! empty( $_FILES[ $file_field ]['tmp_name'] ) ) {
 			$file = get_package_path( "uploaded-{$type}", $for_network );
-			move_uploaded_file( $_FILES[ $file_field ]['tmp_name'], $file );
-			$package_id = create_package( "uploaded-{$type}", $file, $for_network );
-			if ( is_wp_error( $package_id ) ) {
-				$errors[] = $package_id;
-			}
-			// User dictionary update means we should update the indexed data.
-			if ( $type === 'user-dictionary' ) {
-				$should_update_indexes = true;
+			$result = move_uploaded_file( $_FILES[ $file_field ]['tmp_name'], $file );
+			if ( ! $result ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				$errors[] = new WP_Error( 'write_package_error', sprintf( __( 'Could not write search package file to %s', 'altis' ), $file ) );
+			} else {
+				$package_id = create_package( "uploaded-{$type}", $file, $for_network );
+				if ( is_wp_error( $package_id ) ) {
+					$errors[] = $package_id;
+				} else {
+					// User dictionary update means we should update the indexed data.
+					if ( $type === 'user-dictionary' ) {
+						$should_update_indexes = true;
+					}
+				}
 			}
 		}
 
@@ -324,10 +335,11 @@ function handle_form() : void {
 			$deleted = delete_package( "uploaded-{$type}", $for_network );
 			if ( is_wp_error( $deleted ) ) {
 				$errors[] = $deleted;
-			}
-			// User dictionary update means we should update the indexed data.
-			if ( $type === 'user-dictionary' ) {
-				$should_update_indexes = true;
+			} else {
+				// User dictionary update means we should update the indexed data.
+				if ( $type === 'user-dictionary' ) {
+					$should_update_indexes = true;
+				}
 			}
 		}
 	}
@@ -458,27 +470,27 @@ function delete_package( string $slug, bool $for_network = false ) {
 		delete_option( "altis_search_package_error_{$slug}" );
 	}
 
-	// Update the index settings on successful deletion.
-	if ( $deleted ) {
-		do_settings_update( $for_network, strpos( $slug, 'user-dictionary' ) !== false );
-
-		/**
-		 * Action triggered when a package is deleted.
-		 *
-		 * @param string $package_id The package ID.
-		 * @param string $slug The package slug.
-		 * @param bool $for_network Whether this is for the network level or site level.
-		 */
-		do_action( 'altis.search.deleted_package', $package_id, $slug, $for_network );
-
-		return true;
+	if ( ! $deleted ) {
+		return new WP_Error(
+			'delete_package_error',
+			// translators: %s replaced by package slug.
+			sprintf( __( 'Failed to delete package with slug %s', 'altis' ), $slug )
+		);
 	}
 
-	return new WP_Error(
-		'delete_package_error',
-		// translators: %s replaced by package slug.
-		sprintf( __( 'Failed to delete package with slug %s', 'altis' ), $slug )
-	);
+	// Update the index settings on successful deletion.
+	do_settings_update( $for_network, strpos( $slug, 'user-dictionary' ) !== false );
+
+	/**
+	 * Action triggered when a package is deleted.
+	 *
+	 * @param string $package_id The package ID.
+	 * @param string $slug The package slug.
+	 * @param bool $for_network Whether this is for the network level or site level.
+	 */
+	do_action( 'altis.search.deleted_package', $package_id, $slug, $for_network );
+
+	return true;
 }
 
 /**
