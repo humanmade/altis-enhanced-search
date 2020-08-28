@@ -299,8 +299,11 @@ function handle_form() : void {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
 				$result = file_put_contents( $file, $text );
 				if ( ! $result ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					$errors[] = new WP_Error( 'write_package_error', sprintf( __( 'Could not write search package file to %s', 'altis' ), $file ) );
+					$errors[] = new WP_Error(
+						'write_package_error',
+						// translators: %s replaced by file package path.
+						sprintf( __( 'Could not write search package file to %s', 'altis' ), $file )
+					);
 				} else {
 					$package_id = create_package( "manual-{$type}", $file, $for_network );
 					if ( is_wp_error( $package_id ) ) {
@@ -315,8 +318,11 @@ function handle_form() : void {
 			$file = get_package_path( "uploaded-{$type}", $for_network );
 			$result = move_uploaded_file( $_FILES[ $file_field ]['tmp_name'], $file );
 			if ( ! $result ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				$errors[] = new WP_Error( 'write_package_error', sprintf( __( 'Could not write search package file to %s', 'altis' ), $file ) );
+				$errors[] = new WP_Error(
+					'write_package_error',
+					// translators: %s replaced by search package file path.
+					sprintf( __( 'Could not write search package file to %s', 'altis' ), $file )
+				);
 			} else {
 				$package_id = create_package( "uploaded-{$type}", $file, $for_network );
 				if ( is_wp_error( $package_id ) ) {
@@ -345,7 +351,9 @@ function handle_form() : void {
 	}
 
 	// Store the errors.
-	array_map( __NAMESPACE__ . '\\add_error_message', $errors );
+	foreach ( $errors as $error ) {
+		add_error_message( $error );
+	}
 
 	// Schedule mapping and index updates.
 	if ( empty( $errors ) ) {
