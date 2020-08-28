@@ -8,6 +8,7 @@
 namespace Altis\Enhanced_Search;
 
 use Altis;
+use Altis\Enhanced_Search\Packages;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
@@ -127,6 +128,9 @@ function load_elasticpress() {
 
 	// Change custom search results icon.
 	add_filter( 'register_post_type_args', __NAMESPACE__ . '\\custom_search_results_post_type_args', 10, 2 );
+
+	// Set up packages feature.
+	Packages\bootstrap();
 }
 
 /**
@@ -664,7 +668,7 @@ function elasticpress_analyzer_language() : string {
  */
 function elasticpress_mapping( array $mapping ) : array {
 
-	// Merge JSON filters, tokenizers and analyzers.
+	// Merge filters, tokenizers and analyzers from JSON config.
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 	$settings_json = file_get_contents( __DIR__ . '/analyzers.json' );
 	$settings = json_decode( $settings_json, true );
@@ -732,6 +736,76 @@ function elasticpress_mapping( array $mapping ) : array {
 	// Unset the post title analyzer override to make it use the default.
 	if ( $mapping['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] ?? false ) {
 		unset( $mapping['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
+	}
+
+	// Handle user dictionary for Japanese sites.
+	if ( $language === 'ja' ) {
+		$is_network_japanese = get_site_option( 'WPLANG', 'en_US' ) === 'ja';
+		$user_dictionary_package_id = Packages\get_package_id( 'uploaded-user-dictionary' );
+		if ( ! $user_dictionary_package_id && $is_network_japanese ) {
+			$user_dictionary_package_id = Packages\get_package_id( 'uploaded-user-dictionary', true );
+		}
+
+		// Check for a package ID and add it to the kuromoji tokenizer.
+		if ( $user_dictionary_package_id ) {
+			$mapping['settings']['analysis']['tokenizer']['kuromoji']['user_dictionary'] = $user_dictionary_package_id;
+		}
+	}
+
+	// Add a default search analyzer if any custom stopwords or synonyms are provided.
+	//
+	// Synonyms and stopwords are quick enough to be applied at search time and avoid
+	// increasing the index size unnecessarily.
+	$is_network_language = get_site_option( 'WPLANG', 'en_US' ) === get_option( 'WPLANG', 'en_US' );
+	$synonyms = [];
+	$stopwords = [];
+
+	foreach ( [ 'synonyms', 'stopwords' ] as $type ) {
+		foreach ( [ 'uploaded', 'manual' ] as $sub_type ) {
+			// Get package file path.
+			$package_id = Packages\get_package_id( "{$sub_type}-{$type}" );
+			// Check for network default.
+			if ( ! $package_id && $is_network_language ) {
+				$package_id = Packages\get_package_id( "{$sub_type}-{$type}", true );
+			}
+
+			// Check for a package ID.
+			if ( ! $package_id ) {
+				continue;
+			}
+
+			switch ( $type ) {
+				case 'synonyms':
+					$synonyms[ "{$sub_type}_{$type}_filter" ] = [
+						'type' => 'synonym_graph',
+						'synonyms_path' => $package_id,
+					];
+					break;
+				case 'stopwords':
+					$stopwords[ "{$sub_type}_{$type}_filter" ] = [
+						'type' => 'stop',
+						'ignore_case' => true,
+						'stopwords_path' => $package_id,
+					];
+					break;
+			}
+		}
+	}
+
+	if ( ! empty( $synonyms ) || ! empty( $stopwords ) ) {
+		$mapping['settings']['analysis']['filter'] = array_merge(
+			$mapping['settings']['analysis']['filter'],
+			$synonyms,
+			$stopwords
+		);
+		// Copy default analyzer to default search.
+		$mapping['settings']['analysis']['analyzer']['default_search'] = $mapping['settings']['analysis']['analyzer']['default'];
+		// Add our custom filters.
+		$mapping['settings']['analysis']['analyzer']['default_search']['filter'] = array_merge(
+			array_keys( $synonyms ),
+			array_keys( $stopwords ),
+			$mapping['settings']['analysis']['analyzer']['default_search']['filter']
+		);
 	}
 
 	return $mapping;
@@ -904,11 +978,11 @@ function custom_search_results_post_type_args( array $args, string $post_type ) 
 		return $args;
 	}
 
-	// Use the built in search icon.
-	$args['menu_icon'] = 'dashicons-search';
+	// Hide in admin menu, we'll add it as a subitem of main search config page.
+	$args['show_in_menu'] = 'search-config';
 
 	// Change the menu name to something shorter.
-	$args['labels']['menu_name'] = _x( 'Search Config', 'post type menu name', 'altis' );
+	$args['labels']['all_items'] = _x( 'Custom Search Results', 'post type menu name', 'altis' );
 
 	return $args;
 }
