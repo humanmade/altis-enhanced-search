@@ -301,7 +301,7 @@ function handle_form() : void {
 				if ( ! $result ) {
 					$errors[] = new WP_Error(
 						'write_package_error',
-						// translators: %s replaced by file package path.
+						// translators: %s replaced by search file package path.
 						sprintf( __( 'Could not write search package file to %s', 'altis' ), $file )
 					);
 				} else {
