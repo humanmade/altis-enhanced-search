@@ -17,7 +17,7 @@ wp site list --field=url | xargs -I % wp elasticpress index --url=%
 To re-sychronise the index and update mappings (needed when the mapping has been modified via filters, site language has been changed or a user dictionary has been added and not reindexed successfully):
 
 ```sh
-wp site list --field=url | xargs -I % wp elasticpress index --url=% --setup; wp elasticpress recreate-network-alias
+wp site list --field=url | xargs -I % wp elasticpress index --url=% --setup && wp elasticpress recreate-network-alias
 ```
 
 ## CLI Recommendations
