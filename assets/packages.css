@@ -1,0 +1,11 @@
+/**
+ * Elasticsearch Service Packages UI styles.
+ */
+.columns { display: flex; flex-wrap: wrap; }
+.column { flex: 1 1 300px; width: 300px; margin-right: 20px; }
+.column textarea { width: 100%; }
+.column pre { background: #fff; border: 1px solid #152a4e; padding: 10px; overflow: auto; }
+.column ul li { margin-left: 20px; list-style: disc; }
+.es-package-status { float: right; text-transform: uppercase; padding: 2px 5px; font-size: 65%; border-radius: 3px; background: #152a4e; color: #fff; }
+.es-package-status--active { background-color: #3FCF8E; color: #000; }
+.es-package-status[class*="error"] { background-color: #ED7B9D; color: #152a4e; }
