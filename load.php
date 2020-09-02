@@ -12,7 +12,7 @@ use Altis;
 add_action( 'altis.modules.init', function () {
 	$default_settings = [
 		'enabled' => true,
-		'index-documents' => true,
+		'index-documents' => false,
 		'related-posts' => false,
 		'facets' => false,
 		'woocommerce' => false,
