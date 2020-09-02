@@ -6,16 +6,18 @@ When making changes the data or analyzers that are stored in the search index, y
 
 The `elasticpress` CLI command is used for all index management operations.
 
-To re-sychronize the index for all sites
+As these tasks are long-running commands, it is recommended to run the index on individual sites instead of using the `--network-wide` flag. When using the `--network-wide` flag on sufficiently large networks, the CLI process would run out of memory and be killed by the operating system. To better manage memory, it is recommended to use an `xargs` pipeline to process each site. To re-sychronize the index for all sites:
 
 ```sh
-wp elasticpress index --network-wide
+wp site list --field=url | xargs -I % wp elasticpress index --url=%
 ```
 
-Re-sychronise the index and updating mappings (needed when updating synonym definitions)
+`wp site list --field=url` will print each site URL on a new line and ingested by `xargs` to be processed individually.
+
+To re-sychronise the index and update mappings (needed when the mapping has been modified via filters, site language has been changed or a user dictionary has been added and not reindexed successfully):
 
 ```sh
-wp elasticpress index --setup
+wp site list --field=url | xargs -I % wp elasticpress index --url=% --setup && wp elasticpress recreate-network-alias
 ```
 
 ## CLI Recommendations
@@ -23,7 +25,7 @@ wp elasticpress index --setup
 When using CLI to perform re-indexes, it's recommended to set the `--posts-per-page` argument to a figure around `200`. By default, this figure is set to `350` which will often cause service timeouts. For example:
 
 ```sh
-wp elasticpress index --posts-per-page 200
+wp site list --field=url | xargs -I % wp elasticpress index --url=% --posts-per-page 200
 ```
 
 See `wp help elasticpress` for all available CLI commands.
