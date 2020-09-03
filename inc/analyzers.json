@@ -116,7 +116,7 @@
 		},
 		"en_stem_filter": {
 			"type": "stemmer",
-			"name": "minimal_english"
+			"name": "light_english"
 		},
 		"es_stop_filter": {
 			"type": "stop",
@@ -972,6 +972,15 @@
 				"icu_folding"
 			],
 			"tokenizer": "icu_tokenizer"
+		},
+		"edge_ngram_analyzer": {
+			"type": "custom",
+			"tokenizer": "icu_tokenizer",
+			"filter": [
+				"icu_normalizer",
+				"icu_folding",
+				"edge_ngram"
+			]
 		}
 	},
 	"tokenizer": {

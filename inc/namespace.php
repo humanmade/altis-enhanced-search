@@ -85,6 +85,8 @@ function load_elasticpress() {
 
 	// Modify the default search query to use preset modes.
 	add_filter( 'ep_formatted_args_query', __NAMESPACE__ . '\\enhance_search_query', 10, 2 );
+	add_filter( 'ep_term_formatted_args_query', __NAMESPACE__ . '\\enhance_term_search_query', 10, 2 );
+	add_filter( 'ep_user_formatted_args_query', __NAMESPACE__ . '\\enhance_user_search_query', 10, 2 );
 
 	// Back compat for ElasticPress v2 - change post index name to old version.
 	add_filter( 'ep_index_name', __NAMESPACE__ . '\\filter_index_name' );
@@ -808,6 +810,43 @@ function elasticpress_mapping( array $mapping ) : array {
 		);
 	}
 
+	// Add autosuggest ngram analyzer by default, used for attachment search.
+	$autosuggest_fields = get_autosuggest_fields();
+	$search_analyzer = ! empty( $mapping['settings']['analysis']['analyzer']['default_search'] ) ? 'default_search' : 'default';
+	foreach ( $autosuggest_fields as $type => $fields ) {
+		// Check this is the mapping for this type.
+		if ( empty( $mapping['mappings'][ $type ] ) ) {
+			continue;
+		}
+
+		// Ensure each field is represented in the mapping to avoid generating the
+		// default mapping.
+		foreach ( $fields as $field ) {
+			if ( ! isset( $mapping['mappings'][ $type ]['properties'][ $field ] ) ) {
+				$mapping['mappings'][ $type ]['properties'][ $field ] = [
+					'type' => 'text',
+				];
+			}
+			if ( ! isset( $mapping['mappings'][ $type ]['properties'][ $field ]['fields'] ) ) {
+				$mapping['mappings'][ $type ]['properties'][ $field ]['fields'] = [
+					'keyword' => [
+						'type' => 'keyword',
+						'ignore_above' => 256,
+					],
+					'raw' => [
+						'type' => 'keyword',
+						'ignore_above' => 256,
+					],
+				];
+			}
+			$mapping['mappings'][ $type ]['properties'][ $field ]['fields']['suggest'] = [
+				'type' => 'text',
+				'analyzer' => 'edge_ngram_analyzer',
+				'search_analyzer' => $search_analyzer,
+			];
+		}
+	}
+
 	return $mapping;
 }
 
@@ -866,9 +905,10 @@ function filter_facet_settings( $value ) {
  *
  * @param array $query The ElasticSearch query.
  * @param array $args The WP_Query args for the current query.
+ * @param string $type The type of object being searched, one of post, term or user.
  * @return array The modified ElasticSearch query.
  */
-function enhance_search_query( array $query, array $args ) : array {
+function enhance_search_query( array $query, array $args, string $type = 'post' ) : array {
 	if ( ! isset( $args['s'] ) || empty( $args['s'] ) ) {
 		return $query;
 	}
@@ -891,8 +931,6 @@ function enhance_search_query( array $query, array $args ) : array {
 			$boosted_field = sprintf( '%s^%F', $field, floatval( $boost ) );
 			if ( $existing_index !== false ) {
 				$search_fields[ $existing_index ] = $boosted_field;
-			} else {
-				$search_fields[] = $boosted_field;
 			}
 		}
 	}
@@ -912,7 +950,98 @@ function enhance_search_query( array $query, array $args ) : array {
 		];
 	}
 
+	// Add ngram search if 'autosuggest' query arg is true.
+	$autosuggest_fields = get_autosuggest_fields( $type );
+	$use_autosuggest = ( isset( $args['autosuggest'] ) && $args['autosuggest'] ) || ( defined( 'DOING_AJAX' ) && DOING_AJAX );
+	if ( ! empty( $autosuggest_fields ) && $use_autosuggest ) {
+		// Append the suggest sub field suffix.
+		$autosuggest_fields = array_map( function ( $field ) {
+			return "{$field}.suggest";
+		}, $autosuggest_fields );
+
+		$query['bool']['should'][] = [
+			'multi_match' => [
+				'query' => $args['s'],
+				'fuzziness' => 'AUTO',
+				'fields' => $autosuggest_fields,
+			],
+		];
+	}
+
+	// Ensure this is not a keyed array.
+	$query['bool']['should'] = array_values( $query['bool']['should'] );
+
 	return $query;
+}
+
+/**
+ * Modify the default term search query based on the configured mode.
+ *
+ * @param array $query The ElasticSearch query.
+ * @param array $args The WP_Term_Query args for the current query.
+ * @return array The modified ElasticSearch query.
+ */
+function enhance_term_search_query( array $query, array $args ) : array {
+	return enhance_search_query( $query, $args, 'term' );
+}
+
+/**
+ * Modify the default term search query based on the configured mode.
+ *
+ * @param array $query The ElasticSearch query.
+ * @param array $args The WP_User_Query args for the current query.
+ * @return array The modified ElasticSearch query.
+ */
+function enhance_user_search_query( array $query, array $args ) : array {
+	return enhance_search_query( $query, $args, 'user' );
+}
+
+/**
+ * A list of fields to enable autosuggestions for when searching.
+ *
+ * @param string|null $type Optional indexable type to get fields for.
+ * @return array
+ */
+function get_autosuggest_fields( ?string $type = null ) : array {
+	$fields = [];
+
+	foreach ( Indexables::factory()->get_all( null, true ) as $indexable ) {
+		$fields[ $indexable ] = [];
+	}
+
+	// Add default autosuggest fields.
+	if ( isset( $fields['post'] ) ) {
+		$fields['post'] = [ 'post_title' ];
+	}
+	if ( isset( $fields['term'] ) ) {
+		$fields['term'] = [ 'name' ];
+	}
+	if ( isset( $fields['user'] ) ) {
+		$fields['user'] = [ 'user_nicename', 'display_name', 'user_login' ];
+	}
+
+	/**
+	 * Filter the fields to use for autosuggest search behaviour.
+	 *
+	 * @param array $fields The field names to include in autosuggestions.
+	 */
+	$fields = apply_filters( 'altis.search.autosuggest_fields', $fields );
+
+	foreach ( $fields as $object_type => $type_fields ) {
+		/**
+		 * Filter the fields to use for autosuggest search behaviour.
+		 *
+		 * @param array $type_fields The field names for a specific type to include in autosuggestions.
+		 */
+		$fields[ $object_type ] = apply_filters( "altis.search.autosuggest_{$object_type}_fields", $type_fields );
+	}
+
+	// Return specified type if present.
+	if ( $type ) {
+		return $fields[ $type ] ?? [];
+	}
+
+	return $fields;
 }
 
 /**
