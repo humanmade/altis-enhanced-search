@@ -893,6 +893,51 @@ function filter_facet_settings( $value ) {
 }
 
 /**
+ * Get the search fuzziness configuration.
+ *
+ * Fetches the "fuzziness" config value, parses and validates it returning
+ * a value that can be used in Elasticsearch queries.
+ *
+ * @return array
+ */
+function get_fuzziness() : array {
+	$fuzziness = Altis\get_config()['modules']['search']['fuzziness'] ?? 'auto:4,7';
+
+	// Handle array format.
+	if ( ! is_array( $fuzziness ) ) {
+		$fuzziness = [
+			'distance' => $fuzziness,
+		];
+	}
+
+	// Set default values.
+	$fuzziness = wp_parse_args( $fuzziness, [
+		'distance' => 'auto:4,7',
+		'prefix-length' => 1,
+		'max-expansions' => 50,
+		'transpositions' => true,
+	] );
+
+	// Validate distance value.
+	if ( ! preg_match( '/^([0-2]|auto:\d+,\d+|auto)$/', $fuzziness['distance'] ) ) {
+		trigger_error( sprintf( 'The provided fuzziness distance config option %s is invalid, defaulting to "auto:4,7"', (string) $fuzziness ), E_USER_WARNING );
+		$fuzziness['distance'] = 'auto:4,7';
+	}
+
+	// Ensure correct type for distance is returned.
+	if ( is_numeric( $fuzziness['distance'] ) ) {
+		$fuzziness['distance'] = (int) $fuzziness;
+	}
+
+	// Sanitize value types.
+	$fuzziness['prefix-length'] = absint( $fuzziness['prefix-length'] );
+	$fuzziness['max-expansions'] = absint( $fuzziness['max-expansions'] );
+	$fuzziness['transpositions'] = (bool) $fuzziness['max-expansions'];
+
+	return $fuzziness;
+}
+
+/**
  * Modify the default search query based on the configured mode.
  *
  * 'strict' = full phrase matching with automatic fuzziness based
@@ -916,6 +961,7 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 	$strict = Altis\get_config()['modules']['search']['strict'] ?? true;
 	$mode = Altis\get_config()['modules']['search']['mode'] ?? 'simple';
 	$field_boost = Altis\get_config()['modules']['search']['field-boost'] ?? [];
+	$fuzziness = get_fuzziness();
 
 	// Get search fields.
 	$search_fields = $query['bool']['should'][0]['multi_match']['fields'];
@@ -941,12 +987,18 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 
 		// Set the full phrase match fuzziness to auto, this will auto adjust
 		// the allowed Levenshtein distance depending on the query length.
-		$query['bool']['should'][1]['multi_match']['fuzziness'] = 'AUTO';
+		// - 0-3 chars = 0 edits.
+		// - 4-6 chars = 1 edit.
+		// - 7+ chars = 2 edits.
+		$query['bool']['should'][1]['multi_match']['fuzziness'] = $fuzziness['distance'];
+		$query['bool']['should'][1]['multi_match']['prefix_length'] = $fuzziness['prefix-length'];
+		$query['bool']['should'][1]['multi_match']['max_expansions'] = $fuzziness['max-expansions'];
+		$query['bool']['should'][1]['multi_match']['fuzzy_transpositions'] = $fuzziness['transpositions'];
 	}
 
 	if ( $mode === 'advanced' ) {
 		$query['bool']['should'] = [
-			get_advanced_query( $args['s'], $search_fields, $strict ),
+			get_advanced_query( $args, $search_fields, $strict ),
 		];
 	}
 
@@ -962,8 +1014,11 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 		$query['bool']['should'][] = [
 			'multi_match' => [
 				'query' => $args['s'],
-				'fuzziness' => 'AUTO',
 				'fields' => $autosuggest_fields,
+				'fuzziness' => $fuzziness['distance'],
+				'prefix_length' => $fuzziness['prefix-length'],
+				'max_expansions' => $fuzziness['max-expansions'],
+				'fuzzy_transpositions' => $fuzziness['transpositions'],
 			],
 		];
 	}
@@ -1047,18 +1102,21 @@ function get_autosuggest_fields( ?string $type = null ) : array {
 /**
  * Build an Elasticsearch simple query string array.
  *
- * @param string $query_string The search terms.
+ * @param array $args The WP_Query args.
  * @param array $search_fields The fields being searched against.
  * @param bool $strict Whether to use stricter matching 'and' operator by default.
  * @return array
  */
-function get_advanced_query( string $query_string, array $search_fields, bool $strict = false ) : array {
+function get_advanced_query( array $args, array $search_fields, bool $strict = false ) : array {
 
 	// Deconstruct the quoted parts of the query.
-	$query_pieces = preg_split( '/(?:\s*"([^"]+)"\s*|\s+)/', $query_string, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY );
+	$query_pieces = preg_split( '/(?:\s*"([^"]+)"\s*|\s+)/', $args['s'], -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY );
+
+	// Get fuzzy search config values.
+	$fuzziness = get_fuzziness();
 
 	// Rebuild the query string with default fuzziness and operator keyword conversion.
-	$query_string = array_reduce( $query_pieces, function ( $query_string, $piece ) {
+	$query_string = array_reduce( $query_pieces, function ( $query_string, $piece ) use ( $fuzziness ) {
 		$piece_tokens = explode( ' ', trim( $piece ) );
 		if ( count( $piece_tokens ) > 1 ) {
 			// Reconstruct quoted phrases for exact matching.
@@ -1074,8 +1132,28 @@ function get_advanced_query( string $query_string, array $search_fields, bool $s
 				// Preserve known operators.
 				$query_piece = $piece;
 			} elseif ( strpos( $piece, '~' ) === false ) {
-				// Add automatic fuzziness on single words without the fuzzy operator.
-				$query_piece = "{$piece}~";
+				// Add fuzzy search values.
+				if ( is_int( $fuzziness['distance'] ) ) {
+					// Add fixed fuzziness value on single words over 3 characters.
+					if ( mb_strlen( $piece ) > 3 && $fuzziness['distance'] > 0 ) {
+						$query_piece = "{$piece}~{$fuzziness['distance']}";
+					} else {
+						$query_piece = $piece;
+					}
+				} else {
+					// Add equivalent of automatic fuzziness on single words.
+					if ( preg_match( '/(?:auto:(\d+),(\d+)|auto)/', $fuzziness['distance'], $matches ) ) {
+						if ( mb_strlen( $piece ) < ( (int) $matches[1] ?? 3 ) ) {
+							$query_piece = $piece;
+						} elseif ( mb_strlen( $piece ) < ( (int) $matches[2] ?? 6 ) ) {
+							$query_piece = "{$piece}~1";
+						} else {
+							$query_piece = "{$piece}~2";
+						}
+					} else {
+						$query_piece = $piece;
+					}
+				}
 			} else {
 				$query_piece = $piece;
 			}
@@ -1086,12 +1164,37 @@ function get_advanced_query( string $query_string, array $search_fields, bool $s
 	// Set default operator based on strict setting.
 	$default_operator = $strict ? 'and' : 'or';
 
+	$query = [
+		'query' => $query_string,
+		'fields' => $search_fields,
+		'default_operator' => $default_operator,
+		// Requires at least the first character to match when applying
+		// fuzzy matching. This significantly speeds up queries and it is rare
+		// for someone to get the first letter of their search term wrong e.g.
+		// breif / brief are the more common types of misspelling.
+		'fuzzy_prefix_length' => $fuzziness['prefix-length'],
+		// The number of fuzzy terms to generate, defaults to 50 in Elasticsearch.
+		// Lower numbers mean faster searches but reduced numbers of matches.
+		'fuzzy_max_expansions' => $fuzziness['max-expansions'],
+		// Whether to allow transposing letters while generating fuzzy terms
+		// e.g. ab -> ba.
+		'fuzzy_transpositions' => $fuzziness['transpositions'],
+	];
+
+	/**
+	 * Filter the advanced search query options.
+	 *
+	 * This can be used to tweak the behaviopur of fuzzy matching and other
+	 * options documented here:
+	 * https://www.elastic.co/guide/en/elasticsearch/reference/6.3/query-dsl-simple-query-string-query.html
+	 *
+	 * @param array $query The simple_query_string options array.
+	 * @param array $args The WP_Query args.
+	 */
+	$query = apply_filters( 'altis.search.advanced_query', $query, $args );
+
 	return [
-		'simple_query_string' => [
-			'query' => $query_string,
-			'fields' => $search_fields,
-			'default_operator' => $default_operator,
-		],
+		'simple_query_string' => $query,
 	];
 }
 
