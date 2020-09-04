@@ -920,7 +920,8 @@ function get_fuzziness() : array {
 
 	// Validate distance value.
 	if ( ! preg_match( '/^([0-2]|auto:\d+,\d+|auto)$/', $fuzziness['distance'] ) ) {
-		trigger_error( sprintf( 'The provided fuzziness distance config option %s is invalid, defaulting to "auto:4,7"', (string) $fuzziness ), E_USER_WARNING );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		trigger_error( sprintf( 'The provided fuzziness distance config option %s is invalid. This should be an integer from 0-2 or a string in the format "auto:[min],[max]". Defaulting to "auto:4,7"', $fuzziness ), E_USER_WARNING );
 		$fuzziness['distance'] = 'auto:4,7';
 	}
 
