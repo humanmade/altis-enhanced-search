@@ -79,3 +79,62 @@ By default the post title, excerpt, content, author name and taxonomy terms are 
 ```
 
 It is important to note that the field names should match the fields in the elasticsearch index and do not always correspond 1:1 with database fields.
+
+## Fuzzy Matching
+By default some degree of fuzzy matching is allowed so that simple spelling errors can still return some results, for example "breif" would match "brief". This can sometimes result in unwanted search results however with short words and acronyms.
+
+Fuzzy matching works by providing an _edit distance_ as an integer from 0-2. The number indicates how many edits are allowed for a term to match. Edits can be one of the following:
+
+* Changing a character (box → fox)
+* Removing a character (click → lick)
+* Inserting a character (sic → sick)
+* Transposing two adjacent characters (act → cat)
+
+**Note:** when using "advanced" search mode quoted strings will not use fuzzy matching.
+
+**Note:** if you have synonyms configured they will not use fuzzy matching.
+
+Below is the default fuzzy search configuration.
+
+```json
+{
+	"extra": {
+		"altis": {
+			"modules": {
+				"search": {
+					"fuzziness": {
+						"distance": "auto:4,7",
+						"prefix-length": 1,
+						"max-expansions": 40,
+						"transpositions": true
+					}
+				}
+			}
+		}
+	}
+}
+```
+
+**`distance`**
+
+This is the [Elasticsearch fuzziness value](https://www.elastic.co/guide/en/elasticsearch/reference/6.3/common-options.html#fuzziness) and determines the maximum edit distance for fuzzy matching. This value can also be set as the value for `fuzziness` directly if you do not need to edit the other options.
+
+- If an integer is provided this is used as a fixed edit distance eg. 0, 1 or 2 edits allowed
+- If a string is provided it must be in the form `auto:[min],[max]`
+  - If `min` is 3 all terms from 0-2 characters long will have an edit distance of 0
+  - If `max` is 6 all terms from `min` to 6 characters long will have an edit distance of 1
+  - Any terms longer than `max` will have an edit distance of 2
+
+**`prefix-length`**
+
+This value determines how many characters at the start of a search term must match before fuzzy matching is applied. For instance a prefix length of 1 will mean that "lotion" will match "lotoin" but not "potion" or "motion".
+
+**`max-expansions`**
+
+This value is the number of fuzzy terms generated from a search term when used for matching. Higher values will result in slower searches but more matches and lower values will result in faster searches but fewer matches.
+
+If you have a prefix length of 0 you may wish to increase this value to get more matches.
+
+**`transpositions`**
+
+This option allows you to prevent transpositions from being counted as a single edit. In the above example the transposition "act" to "cat" has an edit distance of 1. Setting this value to `false` would mean the same transposition would have an edit distance of 2 because 2 letters have been replaced.
