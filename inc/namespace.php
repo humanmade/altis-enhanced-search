@@ -63,6 +63,9 @@ function load_elasticpress() {
 	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\enable_slowlog_thresholds' );
 	add_filter( 'ep_admin_notice_type', __NAMESPACE__ . '\\remove_ep_dashboard_notices', 20 );
 
+	// Fix the mime type search query.
+	add_filter( 'ep_formatted_args', __NAMESPACE__ . '\\fix_mime_type_query', 11, 2 );
+
 	require_once ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
@@ -187,6 +190,86 @@ function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $q
 		return $sql;
 	}
 	return '';
+}
+
+/**
+ * Modify the mime type query to support truncated forms.
+ *
+ * @param array $query The Elasticsearch query.
+ * @param array $args The WP_Query query vars.
+ * @return array
+ */
+function fix_mime_type_query( array $query, array $args ) : array {
+	if ( empty( $args['post_mime_type'] ) ) {
+		return $query;
+	}
+
+	if ( ! isset( $query['post_filter'] ) ) {
+		return $query;
+	}
+
+	$filter = $query['post_filter']['bool']['must'] ?? [];
+
+	// Collect mime types in post filter.
+	$mime_types = [];
+
+	foreach ( $filter as $index => $sub_query ) {
+		// Extract list of mime types if present.
+		if ( ! empty( $sub_query['terms']['post_mime_type'] ) ) {
+			$mime_types = $sub_query['terms']['post_mime_type'];
+		}
+		// Extract base regex mime type if present.
+		if ( ! empty( $sub_query['regexp']['post_mime_type'] ) ) {
+			$mime_types = [ $sub_query['terms']['post_mime_type'] ];
+		}
+
+		if ( empty( $mime_types ) ) {
+			continue;
+		}
+
+		// Remove the existing mime type filter when we encounter it.
+		unset( $filter[ $index ] );
+		break;
+	}
+
+	if ( empty( $mime_types ) ) {
+		return $query;
+	}
+
+	// Collect fully qualified mime types here e.g. image/jpeg.
+	$terms = [];
+	// Collect prefix types here e.g. image, image/*.
+	$prefixes = [];
+
+	// Process mime types into prefixes and terms.
+	foreach ( $mime_types as $type ) {
+		// Remove trailing slashes and wildcards.
+		$type = rtrim( $type, './*' );
+		if ( strpos( $type, '/' ) !== false ) {
+			$terms[] = $type;
+		} else {
+			$prefixes[] = $type;
+		}
+	}
+
+	// Add the new prefix and terms queries together.
+	$mime_type_filter = [];
+	if ( ! empty( $terms ) ) {
+		$mime_type_filter[] = [ 'terms' => [ 'post_mime_type' => $terms ] ];
+	}
+	if ( ! empty( $prefixes ) ) {
+		foreach ( $prefixes as $prefix ) {
+			$mime_type_filter[] = [ 'prefix' => [ 'post_mime_type' => $prefix ] ];
+		}
+	}
+
+	// Add a compound query for our terms and prefixes.
+	if ( ! empty( $mime_type_filter ) ) {
+		$filter[] = [ 'bool' => [ 'should' => $mime_type_filter ] ];
+		$query['post_filter']['bool']['must'] = array_values( $filter );
+	}
+
+	return $query;
 }
 
 /**
