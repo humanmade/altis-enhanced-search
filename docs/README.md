@@ -2,7 +2,7 @@
 
 ![](./assets/banner-search.png)
 
-The Search module provides a mirrored index of all CMS content that is optimized for search relevance, speed and accuracy. The Search module overrides the default search functionality to query the specialized search index in place of a standard MySQL query. This means all default search operations using the CMS search APIs for posts such as `WP_Query`, `get_posts`, `get_search_form()` and the REST API search endpoints will transparently make use of the search index.
+The Search module provides a mirrored Elasticsearch index of all CMS content that is optimized for search relevance, speed and accuracy.
 
 The default Search index and related functionality is provided by the [ElasticPress plugin](https://github.com/10up/ElasticPress) and the multilingual support is derived from [the WordPress.com ElasticSearch library](https://github.com/Automattic/wpes-lib).
 
@@ -22,19 +22,39 @@ If you do not wish to use the search module it can be deactivated via your confi
 }
 ```
 
+**Note:** turning this module off does not remove the Elasticsearch server. This can still be used for [Native Analytics](docs://analytics/native/README.md) and any custom use cases.
+
 Content that is indexed in the search index by default:
 
 - Posts
 - Pages
 - Media
 - Custom Post Types (registered with `show_in_search` or `public`)
-- Post's Meta
-- Post's Terms
-- Post's Author
+- Post Meta
+- Post Terms
+- Post Author
+- Users
+- User Meta
+- Terms
+- Term Meta
 
 When used in conjunction with the [Media Rekognition](docs://media/image-recognition.md) feature, all images are processed for automatic keyword detection and stored in the search index too.
 
-All documents that are uploaded to the media library are also parsed and indexed. For example, if you upload a PDF file, the PDF content will be read and included in the search index. Searches for keywords and phrases that are included in the document will be then be included in search results.
+## CMS Query Integration
+The method for determining whether CMS queries are handled by Elasticsearch or MySQL uses sensible defaults but can also be controlled in more granular ways through code. In addition there is special handling required for supporting partial search terms common in autosuggest or "typeahead" interfaces.
+
+[Find out how to control Elasticsearch query integration and how to use autosuggest search here](./cms-query-integration.md).
+
+## Search Configuration
+The default search behaviour can be tuned to allow for stricter or more permissive matching as well as enabling advanced search query capabilities such as using quoted strings for exact matches. You can also tune the relevancy of specific fields, and how fuzzy matching works.
+
+See [Search Configuration](./search-configuration/README.md) for full details.
+
+### Custom User Dictionaries
+A subset of search configuration is the ability to upload [custom user dictionaries](./search-configuration/custom-dictionaries.md) for adding synonyms, stop words and custom text analysis for Japanese to further tune and improve search results.
+
+## Document Indexing
+All documents that are uploaded to the media library can also be parsed and indexed. For example, if you upload a PDF file, the PDF content will be read and included in the search index. Searches for keywords and phrases that are included in the document will be then be included in search results.
 
 The following document types are parsed and their content is added to the search index:
 
@@ -46,16 +66,13 @@ The following document types are parsed and their content is added to the search
 - DOC
 - DOCX
 
-To disable the indexing of document content, set the `modules.search.index-documents` settings to `false`.
+To enable the indexing of document content, set the `modules.search.index-documents` setting to `true`.
 
+## Search Index Modification
 It is also possible to modify the specific fields stored for each post to provide extra search data that is not included by default. See [Search Index Modification](posts-index-modification.md) for details.
 
+## Using Elasticsearch
 Elasticsearch is used to provide the search index, as such as a developer you can make direct use of Elasticsearch for advanced feature development. See [Using Elasticsearch](using-elasticsearch.md) for details.
-
-## Search Configuration
-The default search behaviour can be modified to allow for stricter or more permissive matching as well as enabling advanced search query capabilities such as quoted strings for exact matches.
-
-See [Search Configuration](./search-configuration.md) for full details.
 
 ## Additional Configuration Options
 The following options can be enabled/disabled via the search configuration.
@@ -64,7 +81,6 @@ The following options can be enabled/disabled via the search configuration.
 - `"facets": true|false|['match-type' => "all" (default)|...]`
 - `"woocommerce": true|false (default)`
 - `"autosuggest": true|false (default)`
-- `"index-documents": true (default) |false`
 
 ### Related Posts
 To find related posts leveraging Elastic Search use the `ep_find_related()` function. The function requires a single parameter ( `$post_id` ) with another optional parameter ( `$return` ). The `$post_id` will be used to find the posts that are related to it, with `$return` specifying the number of related posts to return, which defaults to 5.
@@ -76,7 +92,5 @@ Facets are a feature in ElasticPress which add control to filter content by one 
 
 Depending on the configuration specified for `facets`, if the `match-type` property is set to `any`, it will force the results to match any selected taxonomy term. If set to `all`, it will match to results with all of the selected terms.
 
-### Auto Suggest
-The default auto suggest functionality has been modified but does not effect the default WP search form template.
-
-In addition to the default auto suggest endpoint, an additional endpoint was added (`/autosuggest/`). This endpoint accepts as json object to modify the parameters that are forwarded to ElasticPress for suggesting posts.
+### Search Form Auto Suggest
+This feature enhances search forms on the website to show a dropdown list of suggestions as users type.
