@@ -134,6 +134,9 @@ function load_elasticpress() {
 	// Change custom search results icon.
 	add_filter( 'register_post_type_args', __NAMESPACE__ . '\\custom_search_results_post_type_args', 10, 2 );
 
+	// Configure features.
+	add_action( 'init', __NAMESPACE__ . '\\configure_documents_feature', 1 );
+
 	// Set up packages feature.
 	Packages\bootstrap();
 }
@@ -143,6 +146,22 @@ function load_elasticpress() {
  */
 function load_debug_bar_elasticpress() {
 	require_once Altis\ROOT_DIR . '/vendor/humanmade/debug-bar-elasticpress/debug-bar-elasticpress.php';
+}
+
+/**
+ * Modify the default behaviour of the documents feature.
+ *
+ * @return void
+ */
+function configure_documents_feature() {
+	$documents_feature = Features::factory()->get_registered_feature( 'documents' );
+
+	if ( ! $documents_feature ) {
+		return;
+	}
+
+	// Remove default document search integration.
+	remove_filter( 'pre_get_posts', [ $documents_feature, 'setup_document_search' ] );
 }
 
 /**
