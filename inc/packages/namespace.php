@@ -95,15 +95,15 @@ function admin_page() : void {
 		$file_type_string = str_replace( '_', '-', $type );
 
 		if ( $for_network ) {
-			$data['uploaded_file_status'] = get_site_option( "altis_search_package_status_uploaded-{$file_type_string}" );
-			$data['manual_file_status'] = get_site_option( "altis_search_package_status_manual-{$file_type_string}" );
-			$data['uploaded_file_error'] = get_site_option( "altis_search_package_error_uploaded-{$file_type_string}", null );
-			$data['manual_file_error'] = get_site_option( "altis_search_package_error_manual-{$file_type_string}", null );
+			$data['uploaded_status'] = get_site_option( "altis_search_package_status_uploaded-{$file_type_string}" );
+			$data['manual_status'] = get_site_option( "altis_search_package_status_manual-{$file_type_string}" );
+			$data['uploaded_error'] = get_site_option( "altis_search_package_error_uploaded-{$file_type_string}", null );
+			$data['manual_error'] = get_site_option( "altis_search_package_error_manual-{$file_type_string}", null );
 		} else {
-			$data['uploaded_file_status'] = get_option( "altis_search_package_status_uploaded-{$file_type_string}" );
-			$data['manual_file_status'] = get_option( "altis_search_package_status_manual-{$file_type_string}" );
-			$data['uploaded_file_error'] = get_option( "altis_search_package_error_uploaded-{$file_type_string}", null );
-			$data['manual_file_error'] = get_option( "altis_search_package_error_manual-{$file_type_string}", null );
+			$data['uploaded_status'] = get_option( "altis_search_package_status_uploaded-{$file_type_string}" );
+			$data['manual_status'] = get_option( "altis_search_package_status_manual-{$file_type_string}" );
+			$data['uploaded_error'] = get_option( "altis_search_package_error_uploaded-{$file_type_string}", null );
+			$data['manual_error'] = get_option( "altis_search_package_error_manual-{$file_type_string}", null );
 		}
 
 		$data['uploaded_file'] = get_package_path( "uploaded-{$file_type_string}", $for_network );
