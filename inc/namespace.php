@@ -117,6 +117,9 @@ function load_elasticpress() {
 	// Filter Options for Facet component settings.
 	add_filter( 'site_option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
 	add_filter( 'option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
+
+	// Configure features.
+	add_action( 'init', __NAMESPACE__ . '\\configure_documents_feature', 1 );
 }
 
 /**
@@ -124,6 +127,16 @@ function load_elasticpress() {
  */
 function load_debug_bar_elasticpress() {
 	require_once Altis\ROOT_DIR . '/vendor/humanmade/debug-bar-elasticpress/debug-bar-elasticpress.php';
+}
+
+/**
+ * Modify the default behaviour of the documents feature.
+ *
+ * @return void
+ */
+function configure_documents_feature() {
+	// Remove default document search integration.
+	remove_filter( 'pre_get_posts', 'ep_documents_search_attachment_post_type' );
 }
 
 /**
