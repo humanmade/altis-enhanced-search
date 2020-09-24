@@ -2,7 +2,19 @@
 
 ![](./assets/banner-search.png)
 
-The Search module provides a mirrored Elasticsearch index of all CMS content that is optimized for search relevance, speed and accuracy.
+The Search module provides a mirrored Elasticsearch index of all CMS content that is optimized for search relevance, speed and accuracy. This operates at a higher level than the primary datastore (MySQL) and is the recommended solution for searching.
+
+The benefits of using Elasticsearch over MySQL search queries include:
+
+- Speed
+- Advanced text analysis
+  - Removing HTML
+  - Language dependent word stemming and stopwords
+  - Language dependent tokenisation
+- Configurable relevancy scores
+- Fuzzy matching
+- Synonyms
+- Aggregations for faceted search and statistics
 
 The default Search index and related functionality is provided by the [ElasticPress plugin](https://github.com/10up/ElasticPress) and the multilingual support is derived from [the WordPress.com ElasticSearch library](https://github.com/Automattic/wpes-lib).
 

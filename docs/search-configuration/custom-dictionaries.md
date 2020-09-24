@@ -1,10 +1,10 @@
 # Custom User Dictionaries
 
-The search module supports 3 types of custom dictionaries for helping to tune search results to your content. These are synonyms, stop words and custom text analysis for Japanese.
+The search module supports 3 types of custom dictionaries for helping to tune search results for your content. These are synonyms, stop words and custom text analysis for Japanese.
 
-In the website admin you can upload text files (`.txt` only) or in the case of stop words and synonyms manually enter them on the [Search Configuration](admin://admin.php?page=search-config) screen.
+In the website admin you can upload text files (`.txt` only) and in the case of stop words and synonyms also manually enter them on the [Search Configuration](admin://admin.php?page=search-config) screen.
 
-Note that only a file upload is supported for Japanese user dictionaries.
+Note that only a file upload is supported for the Japanese user dictionary as it is used by the [kuromoji tokenizer](https://www.elastic.co/guide/en/elasticsearch/plugins/6.3/analysis-kuromoji-tokenizer.html) that splits words up during analysis. Synonyms and stop words are "filters" so multiple files (uploaded and manually entered) can be used for those.
 
 User dictionaries can be configured for [the entire network](admin://network/admin.php?page=search-config) (provided the subsites match the primary site language) or at an individual site level.
 
@@ -12,7 +12,6 @@ User dictionaries can be configured for [the entire network](admin://network/adm
 For better search relevance and results, a dictionary of synonyms can be very useful in the following cases:
 
 - There are a lot of acronyms or other contractions in your content
-- There are invented words such as product names in the content that do not appear in the dictionary
 - There are common mis-spellings of search terms
 - There are users from different countries who may use different words for the same thing
 - There are sub categories of content that should match a more general search term
