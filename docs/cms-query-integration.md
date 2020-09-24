@@ -4,7 +4,9 @@ The Search module overrides the default search functionality to query the specia
 
 It is possible to control this behaviour and thus use the search index for non search queries that might otherwise be too slow to do in the database such as meta queries.
 
-Each query class accepts an array of parameters. ElasticPress checks for the value of an `ep_integrate` parameter, if this is true the query is performed by Elasticsearch instead of MySQL. For example:
+Each query class accepts an array of parameters. ElasticPress checks for the value of an `ep_integrate` parameter, if this is true the query is performed by Elasticsearch instead of MySQL. If the `s` (search) parameter is present `ep_integrate` will be set to `true` automatically.
+
+The following example sets `ep_integrate` to true for a non search query, that is any query where the `s` parameter is not used.
 
 ```php
 $posts = new WP_Query( [
@@ -40,12 +42,14 @@ Because of the way Elasticsearch works it performs better with complete search t
 
 In some cases you might want to provide a dynamic interface where results are fetched as the user types. The standard method of search will not produce good results until a full word has been typed out so Altis provides a means of analysing and fetching results based on partial search terms.
 
-In the same way `ep_integrate` can be passed to any query class you can pass the parameter `autosuggest`:
+In the same way as `ep_integrate` can be passed to any query class you can pass the parameter `autosuggest` along with the `s` parameter:
 
 ```php
 $posts = new WP_Query( [
 	'autosuggest' => true,
-	's' => 'str', // A partial search term.
+	// A partial search term.
+	// Setting `s` will cause `ep_integrate` to be added and set to true.
+	's' => 'str',
 ] );
 ```
 
