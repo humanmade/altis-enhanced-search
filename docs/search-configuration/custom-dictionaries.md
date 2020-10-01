@@ -2,9 +2,9 @@
 
 The search module supports 3 types of custom dictionaries for helping to tune search results for your content. These are synonyms, stop words and custom text analysis for Japanese.
 
-In the website admin you can upload text files (`.txt` only) and in the case of stop words and synonyms also manually enter them on the [Search Configuration](admin://admin.php?page=search-config) screen.
+In the website admin, you can upload text files (`.txt` only) and, in the case of stop words and synonyms, also manually enter them on the [Search Configuration](admin://admin.php?page=search-config) screen.
 
-Note that only a file upload is supported for the Japanese user dictionary as it is used by the [kuromoji tokenizer](https://www.elastic.co/guide/en/elasticsearch/plugins/6.3/analysis-kuromoji-tokenizer.html) that splits words up during analysis. Synonyms and stop words are "filters" so multiple files (uploaded and manually entered) can be used for those.
+Note that only a file upload is supported for the Japanese user dictionary, as it is used by the [kuromoji tokenizer](https://www.elastic.co/guide/en/elasticsearch/plugins/6.3/analysis-kuromoji-tokenizer.html) that splits words up during analysis. Synonyms and stop words are "filters" so multiple files (uploaded and manually entered) can be used for those.
 
 User dictionaries can be configured for [the entire network](admin://network/admin.php?page=search-config) (provided the subsites match the primary site language) or at an individual site level.
 
@@ -12,15 +12,15 @@ User dictionaries can be configured for [the entire network](admin://network/adm
 For better search relevance and results, a dictionary of synonyms can be very useful in the following cases:
 
 - There are a lot of acronyms or other contractions in your content
-- There are common mis-spellings of search terms
+- There are common misspellings of search terms
 - There are users from different countries who may use different words for the same thing
-- There are sub categories of content that should match a more general search term
+- There are sub-categories of content that should match a more general search term
 
 For example, you may want search results for the phrase "Checking Accounts" to match content that is titled "Current Accounts" or for common acronyms like "GDP" to match "Gross Domestic Product".
 
-Additionally to cater for variations in language you could create synonyms for American English e.g. "sneakers" to British English e.g. "trainers".
+Additionally, to cater for variations in language, you could create synonyms for American English e.g. "sneakers" to British English e.g. "trainers".
 
-Comma separated lists of words are treated as equivalent. You should have one list of synonyms per line.
+Comma-separated lists of words are treated as equivalent. You should have one list of synonyms per line.
 
 ```
 sneakers, trainers, footwear, shoes
@@ -28,7 +28,7 @@ foozball, foosball, table football
 CPU, central processing unit
 ```
 
-Comma separated words or phrases followed by "=>" will be treated the same as comma separated words or phrases to the right of the "=>" operator but not the other way around.
+Comma-separated words or phrases followed by "=>" will be treated the same as comma-separated words or phrases to the right of the "=>" operator but not the other way around.
 
 ```
 i-pod, i pod => ipod
@@ -36,7 +36,7 @@ tent => bivouac, teepee
 sea biscuit, sea biscit => seabiscuit
 ```
 
-In the above example a search for "tent" will match content containing "bivouac" or "teepee" but a search for "teepee" will only return results containing the word "teepee" specifically.
+In the above example, a search for "tent" will match content containing "bivouac" or "teepee" but a search for "teepee" will only return results containing the word "teepee" specifically.
 
 
 ## Stop Words
@@ -56,7 +56,7 @@ words
 ## Japanese User Dictionary
 Your site's language must be set to Japanese to see this option.
 
-A user dictionary provides a way to control how words are broken up when searching. If there are compound words or phrases specific to this site such as the names of authors or celebrities that users may search for they can be specified here to increase search relevancy.
+A user dictionary provides a way to control how words are broken up when searching. If there are compound words or phrases specific to this site, such as the names of authors or celebrities that users may search for, they can be specified here to increase search relevancy.
 
 The syntax for the provided text file should follow the CSV format:
 
