@@ -16,7 +16,7 @@ The benefits of using Elasticsearch over MySQL search queries include:
 - Synonyms
 - Aggregations for faceted search and statistics
 
-The default Search index and related functionality is provided by the [ElasticPress plugin](https://github.com/10up/ElasticPress) and the multilingual support is derived from [the WordPress.com ElasticSearch library](https://github.com/Automattic/wpes-lib).
+The default Search index and related functionality is provided by the [ElasticPress plugin](https://github.com/10up/ElasticPress) and the multilingual support is derived from [the WordPress.com Elasticsearch library](https://github.com/Automattic/wpes-lib).
 
 If you do not wish to use the search module it can be deactivated via your config:
 
@@ -53,12 +53,12 @@ Content that is indexed in the search index by default:
 When used in conjunction with the [Media Rekognition](docs://media/image-recognition.md) feature, all images are processed for automatic keyword detection and stored in the search index too.
 
 ## CMS Query Integration
-The method for determining whether CMS queries are handled by Elasticsearch or MySQL uses sensible defaults but can also be controlled in more granular ways through code. In addition there is special handling required for supporting partial search terms common in autosuggest or "typeahead" interfaces.
+The method for determining whether CMS queries are handled by Elasticsearch or MySQL uses sensible defaults, but can also be controlled in more granular ways through code. Special handling is required for supporting partial search terms common in autosuggest or "typeahead" interfaces.
 
 [Find out how to control Elasticsearch query integration and how to use autosuggest search here](./cms-query-integration.md).
 
 ## Search Configuration
-The default search behaviour can be tuned to allow for stricter or more permissive matching as well as enabling advanced search query capabilities such as using quoted strings for exact matches. You can also tune the relevancy of specific fields, and how fuzzy matching works.
+The default search behavior can be tuned to allow for stricter or more permissive matching, as well as enabling advanced search query capabilities such as using quoted strings for exact matches. You can also tune the relevancy of specific fields and how fuzzy matching works.
 
 See [Search Configuration](./search-configuration/README.md) for full details.
 
