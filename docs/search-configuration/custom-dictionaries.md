@@ -56,18 +56,61 @@ words
 ## Japanese User Dictionary
 Your site's language must be set to Japanese to see this option.
 
-A user dictionary provides a way to control how words are broken up when searching. If there are compound words or phrases specific to this site, such as the names of authors or celebrities that users may search for, they can be specified here to increase search relevancy.
+A user dictionary provides a way to control how words are broken up when searching. If there are compound words or phrases specific to your site, such as the names of imaginary places, or authors and celebrities that users may search for, they can be specified here to increase search relevancy.
 
-The syntax for the provided text file should follow the CSV format:
-
-```csv
-text, token 1 ... token n, reading 1 ... reading n, part-of-speech tag
-```
-
-For example:
+The syntax for the provided text file should follow the Comma-Separated Values (CSV) format:
 
 ```csv
-東京スカイツリー,東京 スカイツリー,トウキョウ スカイツリー,カスタム名詞
+text,tokens,readings,part-of-speech
 ```
 
-Will cause "東京スカイツリー" to be interpreted as "東京" and "スカイツリー" rather than "東京", "スカイ" and "ツリ".
+1. `text` is the compound word or phrase that appears in your content, such as a name
+2. `tokens` must contain the same text again with spaces added between each word
+3. `readings` must contain the same text as `tokens` with any kanji replaced by katakana. This describes the pronunciation of the tokens.
+4. `part-of-speech` defines what the text is, for example a noun or verb
+
+By default the text "東京スカイツリー" would be broken up into "東京", "スカイ" and "ツリ". The example below changes this behavior so that the text is treated as a custom noun:
+
+```csv
+東京スカイツリー,東京 スカイツリー,トウキョウ スカイツリー,名詞
+```
+
+1. The `text` is "東京スカイツリー"
+2. The `tokens` are "東京" and "スカイツリー"
+3. The `readings` are "トウキョウ" and "スカイツリー"
+4. The `part-of-speech` is "名詞"
+
+The available parts of speech are:
+
+- 名詞
+- 固有名詞
+- 形式名詞
+- 動詞
+- 助動詞
+- 複合動詞
+- 形容詞
+- 形容動詞
+- 連体詞
+- 前置詞
+- 辞書形
+- 普通形
+- 丁寧形
+- 活用形
+- 終止形
+- 命令形
+- 使役形
+- 四段活用
+- 条件形
+- 助数詞
+- 対比
+- 否定
+- 強調
+- 簡略化
+- 筆者
+- 確認
+- 説明
+- 伝聞
+- 目的
+- 不可避
+- 敬語
+- 副助詞
