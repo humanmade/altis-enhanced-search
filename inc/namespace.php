@@ -92,6 +92,19 @@ function load_elasticpress() {
 
 	// Map site language to Elasticsearch analyzer.
 	add_filter( 'ep_analyzer_language', __NAMESPACE__ . '\\elasticpress_analyzer_language', 10, 2 );
+
+	// Configure features.
+	add_action( 'init', __NAMESPACE__ . '\\configure_documents_feature', 1 );
+}
+
+/**
+ * Modify the default behaviour of the documents feature.
+ *
+ * @return void
+ */
+function configure_documents_feature() {
+	// Remove default document search integration.
+	remove_filter( 'pre_get_posts', 'ep_documents_search_attachment_post_type' );
 }
 
 function on_http_request_args( $args, $url ) {
