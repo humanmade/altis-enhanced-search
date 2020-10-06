@@ -37,9 +37,21 @@
 				<div class="column">
 					<p><?php esc_html_e( 'A user dictionary provides a way to control how words are broken up. If there are compound words or phrases specific to this site that users may search for they can be specified here to increase search relevancy.', 'altis' ); ?></p>
 					<p><?php esc_html_e( 'The syntax for the provided file should be in a CSV format:', 'altis' ); ?></p>
-					<pre><?php esc_html_e( 'text, token 1 ... token n, reading 1 ... reading n, part-of-speech tag', 'altis' ); ?></pre>
-					<p><?php esc_html_e( 'For example', 'altis' ); ?>:</p>
-					<pre>東京スカイツリー,東京 スカイツリー,トウキョウ スカイツリー,カスタム名詞</pre>
+					<pre><?php esc_html_e( 'text, tokens, readings, part-of-speech', 'altis' ); ?></pre>
+					<ol>
+						<li><?php echo wp_kses( __( '<code>text</code> is the compound word or phrase that appears in your content, such as a name.', 'altis' ), [ 'code' => [] ] ); ?></li>
+						<li><?php echo wp_kses( __( '<code>tokens</code> must contain the same text again with spaces added between each word.', 'altis' ), [ 'code' => [] ] ); ?></li>
+						<li><?php echo wp_kses( __( '<code>readings</code> must contain the same text as `tokens` with any kanji replaced by katakana. This describes the pronunciation of the tokens.', 'altis' ), [ 'code' => [] ] ); ?></li>
+						<li><?php echo wp_kses( __( '<code>part-of-speech</code> defines what the text is, for example a noun or verb.', 'altis' ), [ 'code' => [] ] ); ?></li>
+					</ol>
+					<p><?php esc_html_e( 'By default the text "東京スカイツリー" would be broken up into "東京", "スカイ" and "ツリ". The example below changes this behavior so that the text is treated as a custom noun:', 'altis' ); ?></p>
+					<pre>東京スカイツリー,東京 スカイツリー,トウキョウ スカイツリー,名詞</pre>
+					<ol>
+						<li><?php echo wp_kses( __( 'The <code>text</code> is "東京スカイツリー"', 'altis' ), [ 'code' => [] ] ); ?></li>
+						<li><?php echo wp_kses( __( 'The <code>tokens</code> are "東京" and "スカイツリー"', 'altis' ), [ 'code' => [] ] ); ?></li>
+						<li><?php echo wp_kses( __( 'The <code>readings</code> are "トウキョウ" and "スカイツリー"', 'altis' ), [ 'code' => [] ] ); ?></li>
+						<li><?php echo wp_kses( __( 'The <code>part-of-speech</code> is "名詞"', 'altis' ), [ 'code' => [] ] ); ?></li>
+					</ol>
 				</div>
 				<div class="column">
 					<h3>
