@@ -100,7 +100,7 @@ function load_elasticpress() {
 	// Ensure non ElasticPress indexes are not affected by global edits using *.
 	add_filter( 'ep_pre_request_url', __NAMESPACE__ . '\\protect_non_ep_indexes', 10, 5 );
 
-	require_once Altis\ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
+	require_once Altis\ROOT_DIR . '/vendor/humanmade/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
 
