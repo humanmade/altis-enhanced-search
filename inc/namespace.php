@@ -28,7 +28,7 @@ use WP_Query;
  * @return void
  */
 function bootstrap() {
-	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress', 9 );
+	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress', 4 );
 	add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
 
 	// Load debug bar for ElasticPress if Query Monitor is enabled in the config.
