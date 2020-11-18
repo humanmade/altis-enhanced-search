@@ -902,14 +902,45 @@ function elasticpress_mapping( array $mapping ) : array {
 			$synonyms,
 			$stopwords
 		);
+
 		// Copy default analyzer to default search.
 		$mapping['settings']['analysis']['analyzer']['default_search'] = $mapping['settings']['analysis']['analyzer']['default'];
-		// Add our custom filters.
-		$mapping['settings']['analysis']['analyzer']['default_search']['filter'] = array_merge(
-			array_keys( $synonyms ),
-			array_keys( $stopwords ),
-			$mapping['settings']['analysis']['analyzer']['default_search']['filter']
-		);
+
+		// Add stopwords after `icu_normalizer` if present, otherwise prepend.
+		// This ensures text is lowercased and full-width characters converted to
+		// half-width while still retaining accents. This is should also ensure
+		// stopwords and stemming have not yet been applied.
+		if ( in_array( 'icu_normalizer', $mapping['settings']['analysis']['analyzer']['default_search']['filter'], true ) ) {
+			array_splice(
+				$mapping['settings']['analysis']['analyzer']['default_search']['filter'],
+				array_search( 'icu_normalizer', $mapping['settings']['analysis']['analyzer']['default_search']['filter'], true ) + 1,
+				0,
+				array_keys( $stopwords )
+			);
+		} else {
+			$mapping['settings']['analysis']['analyzer']['default_search']['filter'] = array_merge(
+				array_keys( $stopwords ),
+				$mapping['settings']['analysis']['analyzer']['default_search']['filter']
+			);
+		}
+
+		// Add synonyms before `icu_folding` if present, otherwise append.
+		// This ensures text is lowercased and full-width characters converted to
+		// half-width while still retaining accents. This is should also ensure
+		// default stopwords and minimal or light stemming have been applied.
+		if ( in_array( 'icu_folding', $mapping['settings']['analysis']['analyzer']['default_search']['filter'], true ) ) {
+			array_splice(
+				$mapping['settings']['analysis']['analyzer']['default_search']['filter'],
+				array_search( 'icu_folding', $mapping['settings']['analysis']['analyzer']['default_search']['filter'], true ),
+				0,
+				array_keys( $synonyms )
+			);
+		} else {
+			$mapping['settings']['analysis']['analyzer']['default_search']['filter'] = array_merge(
+				$mapping['settings']['analysis']['analyzer']['default_search']['filter'],
+				array_keys( $synonyms )
+			);
+		}
 	}
 
 	// Add autosuggest ngram analyzer by default, used for attachment search.
