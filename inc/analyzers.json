@@ -854,9 +854,7 @@
 				"kuromoji_baseform",
 				"ja_pos_filter",
 				"icu_normalizer",
-				"icu_folding",
-				"greek_lowercase_filter",
-				"cjk_width"
+				"icu_folding"
 			],
 			"tokenizer": "kuromoji"
 		},
