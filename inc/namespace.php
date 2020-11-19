@@ -67,6 +67,7 @@ function load_elasticpress() {
 		define( 'EP_DASHBOARD_SYNC', false );
 	}
 
+	add_filter( 'http_request_args', __NAMESPACE__ . '\\remove_ep_search_term_header', 1 );
 	add_filter( 'http_request_args', __NAMESPACE__ . '\\on_http_request_args', 10, 2 );
 	add_filter( 'ep_pre_request_url', function ( $url ) {
 		return set_url_scheme( $url, ELASTICSEARCH_PORT === 443 ? 'https' : 'http' );
@@ -162,6 +163,24 @@ function configure_documents_feature() {
 
 	// Remove default document search integration.
 	remove_filter( 'pre_get_posts', [ $documents_feature, 'setup_document_search' ] );
+}
+
+/**
+ * Remove the EP-Search-Term header.
+ *
+ * This header is only used for the elasticpress.io hosted service and as
+ * it stores the search query unencoded causes the request signing to fail
+ * when searching with unicode characters.
+ *
+ * @param array $args
+ * @return array
+ */
+function remove_ep_search_term_header( array $args ) : array {
+	if ( isset( $args['headers']['EP-Search-Term'] ) ) {
+		unset( $args['headers']['EP-Search-Term'] );
+	}
+
+	return $args;
 }
 
 /**
