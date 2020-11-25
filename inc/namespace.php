@@ -89,6 +89,12 @@ function load_elasticpress() {
 	add_filter( 'ep_term_formatted_args_query', __NAMESPACE__ . '\\enhance_term_search_query', 10, 2 );
 	add_filter( 'ep_user_formatted_args_query', __NAMESPACE__ . '\\enhance_user_search_query', 10, 2 );
 
+	// Modify the decay function paramters to use values from the Altis module config.
+	add_filter( 'epwr_scale', __NAMESPACE__ . '\\apply_date_decay_config_values' );
+	add_filter( 'epwr_decay', __NAMESPACE__ . '\\apply_date_decay_config_values' );
+	add_filter( 'epwr_offset', __NAMESPACE__ . '\\apply_date_decay_config_values' );
+	add_filter( 'epwr_boost_mode', __NAMESPACE__ . '\\apply_date_decay_config_values' );
+
 	// Fix the mime type search query.
 	add_filter( 'ep_formatted_args', __NAMESPACE__ . '\\fix_mime_type_query', 11, 2 );
 
@@ -1202,6 +1208,39 @@ function enhance_term_search_query( array $query, array $args ) : array {
  */
 function enhance_user_search_query( array $query, array $args ) : array {
 	return enhance_search_query( $query, $args, 'user' );
+}
+
+/**
+ * Use date decay settings from Altis config, if specified.
+ *
+ * This function retrieves each of the decay function's parameters.
+ *
+ * @var string "offset"     How far in the past a post must be before it starts to decay.
+ * @var string "scale"      The reference interval of the date distribution
+ * @var float  "decay"      Factor by which relevance decays at each interval from the offset.
+ * @var sting  "boost_mode" How this score of this function affects overall score.
+ *
+ * @uses $wp_filter global, for detecting the current filter.
+ * @param string|float $default_value Current value for the value being filtered.
+ * @return string|float Updated value.
+ */
+function apply_date_decay_config_values( $default_value ) {
+
+	// Ensure this is running on a filter for one of the allowed list of fields.
+	$matched_filter = preg_match(
+		'~epwr_(scale|decay|offset|boost_mode)~',
+		current_filter(),
+		$field
+	);
+
+	if ( ! $matched_filter ) {
+		return $default_value;
+	}
+
+	// If the field exists in the module config, return the value from config rather than the default.
+	$config = Altis\get_config();
+
+	return $config['modules']['search']['date-decay'][ $field[1] ] ?? $default_value;
 }
 
 /**
