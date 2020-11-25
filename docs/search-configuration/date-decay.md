@@ -22,23 +22,23 @@ Altis Enhanced Search allows for overriding these default values by specifying t
 
 ```
 {
-	"extra": {
-		"altis": {
-			"modules": {
-				"search": {
-					"date-decay": {
-						"offset": "30d",
-                        "scale": "30d",
-                        "decay": 0.9,
-                        "boost_mode": "multiply"
-					}
-				}
-			}
-		}
-	}
+    "extra":{
+        "altis":{
+            "modules":{
+                "search":{
+                    "date-decay":{
+                        "offset":"30d",
+                        "scale":"30d",
+                        "decay":0.9,
+                        "boost_mode":"multiply"
+                    }
+                }
+            }
+        }
+    }
 }
 ```
 
 This configuration creates a date decay algorithm where posts from the past month ("offset") are considered equally current, and for every 30 days in the past ("scale") posts are considered to lose 10% of their relevancy ("decay"). A post from a year ago is weighted about 30% as high (.9^12 = .2824) as one from the past week.
 
-A useful correlation iby which to understand this score is that exact matches are about 4x more impactful on a post's score as fuzzy matches... so figuring out at what age a post which exactly matches the search terms presented is stale enough to not outweigh a current post can help to derive the values to use for thte decay function.
+A useful correlation by which to understand this score is that exact matches are about 4x more impactful on a post's score as fuzzy matches... so figuring out at what age a post which exactly matches the search terms presented is stale enough to not outweigh a current post can help to derive the values to use for thte decay function.
