@@ -20,15 +20,15 @@ Altis Enhanced Search allows for overriding these default values by specifying t
 
 ```
 {
-    "extra":{
-        "altis":{
-            "modules":{
-                "search":{
-                    "date-decay":{
-                        "offset":"30d",
-                        "scale":"30d",
-                        "decay":0.9,
-                        "boost_mode":"multiply"
+    "extra": {
+        "altis": {
+            "modules": {
+                "search": {
+                    "date-decay": {
+                        "offset": "30d",
+                        "scale": "30d",
+                        "decay": 0.9,
+                        "boost_mode": "multiply"
                     }
                 }
             }
