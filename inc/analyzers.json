@@ -32,7 +32,7 @@
 		},
 		"bn_stem_filter": {
 			"type": "stemmer",
-			"name": "light_bengali"
+			"name": "bengali"
 		},
 		"br_stop_filter": {
 			"type": "stop",
@@ -187,7 +187,7 @@
 		},
 		"ga_stem_filter": {
 			"type": "stemmer",
-			"name": "_irish_"
+			"name": "irish"
 		},
 		"ga_elision_filter": {
 			"type": "elision",
