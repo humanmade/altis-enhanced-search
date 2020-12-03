@@ -14,7 +14,7 @@
 				<p><?php esc_html_e( 'Search configuration updated!', 'altis' ); ?></p>
 				<p><?php esc_html_e( 'Updates can take a few minutes to become active.', 'altis' ); ?></p>
 				<?php if ( version_compare( $elasticsearch_version, '7.8', '<' ) ) : ?>
-					<p><strong><?php esc_html_e( 'For changes to take effect you must reindex your content once the configuration is showing as active.', 'altis' ); ?></strong></p>
+					<p><strong><?php esc_html_e( 'For changes to take effect you must reindex your content once the configuration status is active.', 'altis' ); ?></strong></p>
 				<?php endif; ?>
 			</div>
 		<?php else : ?>
