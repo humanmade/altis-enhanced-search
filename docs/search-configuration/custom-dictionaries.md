@@ -8,6 +8,12 @@ Note that only a file upload is supported for the Japanese user dictionary, as i
 
 User dictionaries can be configured for [the entire network](admin://network/admin.php?page=search-config) (provided the subsites match the primary site language) or at an individual site level.
 
+## Updating User Dictionaries
+
+After updating custom dictionaries you will need to [reindex your content](../reindexing-content.md) unless you are on Elasticsearch version 7.8 or higher.
+
+Elasticsearch 7.8 usage is still experimental. Please contact support if you wish to try upgrading.
+
 ## Synonyms
 For better search relevance and results, a dictionary of synonyms can be very useful in the following cases:
 
