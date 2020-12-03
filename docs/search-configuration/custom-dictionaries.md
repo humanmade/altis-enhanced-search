@@ -12,7 +12,7 @@ User dictionaries can be configured for [the entire network](admin://network/adm
 
 After updating custom dictionaries you will need to [reindex your content](../reindexing-content.md) unless you are on Elasticsearch version 7.8 or higher.
 
-Elasticsearch 7.8 usage is still experimental. Please contact support if you wish to try upgrading.
+Elasticsearch 7.8+ usage is still experimental. Please contact support if you wish to try upgrading.
 
 ## Synonyms
 For better search relevance and results, a dictionary of synonyms can be very useful in the following cases:
