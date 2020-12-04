@@ -17,6 +17,7 @@
 	"autoload" : {
 		"files": [
 			"inc/namespace.php",
+			"inc/analysis/namespace.php",
 			"inc/packages/namespace.php"
 		]
 	},

@@ -137,6 +137,9 @@ function admin_page() : void {
 		}, $errors );
 	}
 
+	// Make ES version available.
+	$elasticsearch_version = Elasticsearch::factory()->get_elasticsearch_version();
+
 	include __DIR__ . '/templates/config.php';
 
 	if ( ! empty( $errors ) ) {
@@ -567,6 +570,14 @@ function do_settings_update( bool $for_network = false, bool $update_data = fals
  */
 function update_index_settings( string $index, array $settings, bool $update_data = false ) : void {
 	$client = Elasticsearch::factory();
+
+	// Direct settings updates are only supported on Opendistro Elasticsearch 7.8+.
+	if ( version_compare( $client->get_elasticsearch_version(), '7.8', '<' ) ) {
+		if ( defined( 'WP_EP_DEBUG' ) && WP_EP_DEBUG ) {
+			trigger_error( 'Elasticsearch version 7.8 or higher is required to update index settings. Please reindex data manually.', E_USER_WARNING );
+		}
+		return;
+	}
 
 	// Close the index.
 	$client->remote_request( $index . '/_close', [

@@ -8,7 +8,6 @@
 namespace Altis\Enhanced_Search;
 
 use Altis;
-use Altis\Enhanced_Search\Packages;
 use Aws\Credentials;
 use Aws\Credentials\CredentialProvider;
 use Aws\Signature\SignatureV4;
@@ -792,9 +791,7 @@ function elasticpress_analyzer_language() : string {
 function elasticpress_mapping( array $mapping ) : array {
 
 	// Merge filters, tokenizers and analyzers from JSON config.
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-	$settings_json = file_get_contents( __DIR__ . '/analyzers.json' );
-	$settings = json_decode( $settings_json, true );
+	$settings = Analysis\get_analyzers();
 
 	// Ensure a sensible max shingle diff.
 	if ( ! isset( $mapping['settings']['index.max_shingle_diff'] ) ) {
