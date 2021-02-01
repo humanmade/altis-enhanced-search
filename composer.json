@@ -22,6 +22,11 @@
 		]
 	},
 	"extra": {
-		"altis": {}
+		"altis": {
+			"install-overrides": [
+				"10up/elasticpress",
+				"humanmade/debug-bar-elasticpress"
+			]
+		}
 	}
 }
