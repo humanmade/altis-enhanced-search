@@ -93,8 +93,8 @@ The following options can be enabled/disabled via the search configuration.
 - `"facets": true|false|['match-type' => "all" (default)|...]`
 - `"woocommerce": true|false (default)`
 - `"autosuggest": true|false (default)`
-- `"users": (default) true|false`
-- `"terms": (default) true|false`
+- `"users": true (default)|false`
+- `"terms": true (default)|false`
 
 ### Related Posts
 To find related posts leveraging Elastic Search use the `ep_find_related()` function. The function requires a single parameter ( `$post_id` ) with another optional parameter ( `$return` ). The `$post_id` will be used to find the posts that are related to it, with `$return` specifying the number of related posts to return, which defaults to 5.

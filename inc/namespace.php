@@ -976,7 +976,7 @@ function elasticpress_mapping( array $mapping ) : array {
 		}
 	}
 
-	// Add autosuggest ngram analyzer by default, used for attachment search.
+	// Add autosuggest ngram analyzer by default, used for attachment, user and term search.
 	$autosuggest_fields = get_autosuggest_fields();
 	$search_analyzer = ! empty( $mapping['settings']['analysis']['analyzer']['default_search'] ) ? 'default_search' : 'default';
 	foreach ( $autosuggest_fields as $type => $fields ) {
@@ -999,11 +999,22 @@ function elasticpress_mapping( array $mapping ) : array {
 				],
 			];
 
+			// Field mapping already exists so just merge our suggest field.
+			if ( isset( $mapping['mappings'][ $type ]['properties'][ $field ] ) ) {
+				if ( $mapping['mappings'][ $type ]['properties'][ $field ]['type'] === 'text' ) {
+					$mapping['mappings'][ $type ]['properties'][ $field ] = array_merge_recursive_distinct(
+						$mapping['mappings'][ $type ]['properties'][ $field ],
+						$field_mapping
+					);
+				}
+				continue;
+			}
+
 			// Split field on dots in case this is a nested property.
 			$sub_fields = explode( '.', $field );
 
-			// This is a sub property so try and match against dynamic templates to get the mapping.
-			// Dynamic templates using match & unmatch operate on the last field in a given path.
+			// Check dynamic templates to get the intended mapping.
+			// https://www.elastic.co/guide/en/elasticsearch/reference/6.8/dynamic-templates.html for ref.
 			$start_field = $sub_fields[0];
 			$end_field = $sub_fields[ count( $sub_fields ) - 1 ];
 			foreach ( ( $mapping['mappings'][ $type ]['dynamic_templates'] ?? [] ) as $template ) {
@@ -1014,18 +1025,23 @@ function elasticpress_mapping( array $mapping ) : array {
 					'path_match' => '',
 					'path_unmatch' => '',
 				] );
+				// If `match_pattern` is `regex` then check `match` against the end field as a regular expression.
 				if ( $template['match_pattern'] === 'regex' && ! preg_match( "/{$template['match']}/", $end_field ) ) {
 					continue;
 				}
+				// Check end field against `match` only allowing for wildcards.
 				if ( $template['match'] && $template['match_pattern'] !== 'regex' && ! fnmatch( $template['match'], $end_field ) ) {
 					continue;
 				}
+				// Check end field against `unmatch` to exclude patterns after matching.
 				if ( $template['unmatch'] && fnmatch( $template['unmatch'], $end_field ) ) {
 					continue;
 				}
+				// Check full field path for wildcard matches against `path_match`.
 				if ( $template['path_match'] && ! fnmatch( $template['path_match'], $field ) ) {
 					continue;
 				}
+				// Check full field path against `path_unmatch` to exclude patterns after matching.
 				if ( $template['path_unmatch'] && fnmatch( $template['path_unmatch'], $field ) ) {
 					continue;
 				}
