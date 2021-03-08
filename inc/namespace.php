@@ -20,6 +20,10 @@ use Psr\Http\Message\RequestInterface;
 use WP_CLI;
 use WP_Error;
 use WP_Query;
+use WP_Term_Query;
+use WP_User_Query;
+
+use function Altis\Analytics\Utils\flatten_array;
 
 /**
  * Bootstrap search module.
@@ -87,6 +91,13 @@ function load_elasticpress() {
 	add_filter( 'ep_formatted_args_query', __NAMESPACE__ . '\\enhance_search_query', 10, 2 );
 	add_filter( 'ep_term_formatted_args_query', __NAMESPACE__ . '\\enhance_term_search_query', 10, 2 );
 	add_filter( 'ep_user_formatted_args_query', __NAMESPACE__ . '\\enhance_user_search_query', 10, 2 );
+
+	// Default enable autosuggest matching for user & term searches.
+	add_action( 'pre_get_users', __NAMESPACE__ . '\\enable_user_query_autosuggest' );
+	add_action( 'pre_get_terms', __NAMESPACE__ . '\\enable_term_query_autosuggest' );
+
+	// Ensure search fields are properly mapped to values.
+	add_filter( 'ep_search_fields', __NAMESPACE__ . '\\filter_search_fields', 10, 2 );
 
 	// Modify the decay function paramters to use values from the Altis module config.
 	add_filter( 'epwr_scale', __NAMESPACE__ . '\\apply_date_decay_config_values' );
@@ -635,8 +646,8 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 		// Enabling this feature causes all WP_Query calls for protected content post types to use
 		// Elasticsearch, even if not performing a search.
 		'protected_content' => false,
-		'terms' => true,
-		'users' => true,
+		'terms' => (bool) ( $config['terms'] ?? true ),
+		'users' => (bool) ( $config['users'] ?? true ),
 	];
 
 	if ( ! isset( $features_activated[ $feature->slug ] ) ) {
@@ -965,7 +976,7 @@ function elasticpress_mapping( array $mapping ) : array {
 		}
 	}
 
-	// Add autosuggest ngram analyzer by default, used for attachment search.
+	// Add autosuggest ngram analyzer by default, used for attachment, user and term search.
 	$autosuggest_fields = get_autosuggest_fields();
 	$search_analyzer = ! empty( $mapping['settings']['analysis']['analyzer']['default_search'] ) ? 'default_search' : 'default';
 	foreach ( $autosuggest_fields as $type => $fields ) {
@@ -977,32 +988,135 @@ function elasticpress_mapping( array $mapping ) : array {
 		// Ensure each field is represented in the mapping to avoid generating the
 		// default mapping.
 		foreach ( $fields as $field ) {
-			if ( ! isset( $mapping['mappings'][ $type ]['properties'][ $field ] ) ) {
-				$mapping['mappings'][ $type ]['properties'][ $field ] = [
-					'type' => 'text',
-				];
-			}
-			if ( ! isset( $mapping['mappings'][ $type ]['properties'][ $field ]['fields'] ) ) {
-				$mapping['mappings'][ $type ]['properties'][ $field ]['fields'] = [
-					'keyword' => [
-						'type' => 'keyword',
-						'ignore_above' => 256,
-					],
-					'raw' => [
-						'type' => 'keyword',
-						'ignore_above' => 256,
-					],
-				];
-			}
-			$mapping['mappings'][ $type ]['properties'][ $field ]['fields']['suggest'] = [
+			$field_mapping = [
 				'type' => 'text',
-				'analyzer' => 'edge_ngram_analyzer',
-				'search_analyzer' => $search_analyzer,
+				'fields' => [
+					'suggest' => [
+						'type' => 'text',
+						'analyzer' => 'edge_ngram_analyzer',
+						'search_analyzer' => $search_analyzer,
+					],
+				],
 			];
+
+			// Field mapping already exists so just merge our suggest field.
+			if ( isset( $mapping['mappings'][ $type ]['properties'][ $field ] ) ) {
+				if ( $mapping['mappings'][ $type ]['properties'][ $field ]['type'] === 'text' ) {
+					$mapping['mappings'][ $type ]['properties'][ $field ] = array_merge_recursive_distinct(
+						$mapping['mappings'][ $type ]['properties'][ $field ],
+						$field_mapping
+					);
+				}
+				continue;
+			}
+
+			// Split field on dots in case this is a nested property.
+			$sub_fields = explode( '.', $field );
+
+			// Check dynamic templates to get the intended mapping.
+			// https://www.elastic.co/guide/en/elasticsearch/reference/6.8/dynamic-templates.html for ref.
+			$start_field = $sub_fields[0];
+			$end_field = $sub_fields[ count( $sub_fields ) - 1 ];
+			foreach ( ( $mapping['mappings'][ $type ]['dynamic_templates'] ?? [] ) as $template ) {
+				$template = wp_parse_args( $template[ array_keys( $template )[0] ], [
+					'match_pattern' => null,
+					'match' => '',
+					'unmatch' => '',
+					'path_match' => '',
+					'path_unmatch' => '',
+				] );
+				// If `match_pattern` is `regex` then check `match` against the end field as a regular expression.
+				if ( $template['match_pattern'] === 'regex' && ! preg_match( "/{$template['match']}/", $end_field ) ) {
+					continue;
+				}
+				// Check end field against `match` only allowing for wildcards.
+				if ( $template['match'] && $template['match_pattern'] !== 'regex' && ! fnmatch( $template['match'], $end_field ) ) {
+					continue;
+				}
+				// Check end field against `unmatch` to exclude patterns after matching.
+				if ( $template['unmatch'] && fnmatch( $template['unmatch'], $end_field ) ) {
+					continue;
+				}
+				// Check full field path for wildcard matches against `path_match`.
+				if ( $template['path_match'] && ! fnmatch( $template['path_match'], $field ) ) {
+					continue;
+				}
+				// Check full field path against `path_unmatch` to exclude patterns after matching.
+				if ( $template['path_unmatch'] && fnmatch( $template['path_unmatch'], $field ) ) {
+					continue;
+				}
+
+				// We have a matching template so update the field mapping for a text field or object property.
+				if ( ( $template['mapping']['type'] ?? false ) === 'text' ) {
+					$field_mapping = array_merge_recursive_distinct( $template['mapping'], $field_mapping );
+				}
+				if ( $template['mapping']['properties'][ $end_field ] ?? false ) {
+					$template['mapping']['properties'][ $end_field ] = array_merge_recursive_distinct(
+						$template['mapping']['properties'][ $end_field ],
+						$field_mapping
+					);
+					$field_mapping = [ 'properties' => $template['mapping']['properties'] ];
+					// Remove end field from $sub_fields if matched.
+					array_pop( $sub_fields );
+				}
+			}
+
+			// This is a path mapping.
+			if ( count( $sub_fields ) > 1 ) {
+				// Remove the first part of the path as it is handled below.
+				array_shift( $sub_fields );
+				$sub_fields = array_reverse( $sub_fields );
+				$field_mapping = array_reduce( $sub_fields, function ( $carry, $field ) {
+					return [ 'properties' => [ $field => $carry ] ];
+				}, $field_mapping );
+			}
+
+			// Merge mapping.
+			$mapping['mappings'][ $type ]['properties'] = array_merge_recursive_distinct(
+				$mapping['mappings'][ $type ]['properties'],
+				[ $start_field => $field_mapping ]
+			);
+		}
+	}
+
+	// Ensure text fields with a field name have the `.sortable` field.
+	// Some ES version mappings are missing this.
+	foreach ( $mapping['mappings'] as $type => $map ) {
+		foreach ( $map['properties'] as $name => $property ) {
+			if ( $property['type'] === 'text' && isset( $property['fields'] ) ) {
+				$mapping['mappings'][ $type ]['properties'][ $name ]['fields'] = array_merge_recursive_distinct( $property['fields'], [
+					'sortable' => [
+						'type'         => 'keyword',
+						'ignore_above' => 10922,
+						'normalizer'   => 'lowerasciinormalizer',
+					],
+				] );
+			}
 		}
 	}
 
 	return $mapping;
+}
+
+/**
+ * Recursive array merge that does not convert non array types to array.
+ *
+ * @param array $array1 The first array to merge data into.
+ * @param array $array2 The array to override the first array.
+ * @return array
+ */
+function array_merge_recursive_distinct( array $array1, array $array2 ) : array {
+	$merged = $array1;
+
+	foreach ( $array2 as $key => $value ) {
+		if ( is_array( $value ) && isset( $merged[ $key ] ) && is_array( $merged[ $key ] ) ) {
+			$merged[ $key ] = array_merge_recursive_distinct( $merged[ $key ], $value );
+		} else {
+			$merged[ $key ] = $value;
+		}
+	}
+
+	return $merged;
 }
 
 /**
@@ -1110,6 +1224,12 @@ function get_fuzziness() : array {
  * @return array The modified ElasticSearch query.
  */
 function enhance_search_query( array $query, array $args, string $type = 'post' ) : array {
+	// In some cases like user queries this field is called search rather than 's'.
+	if ( isset( $args['search'] ) ) {
+		$args['s'] = $args['search'];
+	}
+
+	// Check we have a search query.
 	if ( ! isset( $args['s'] ) || empty( $args['s'] ) ) {
 		return $query;
 	}
@@ -1208,6 +1328,47 @@ function enhance_user_search_query( array $query, array $args ) : array {
 }
 
 /**
+ * Enable autosuggest for user queries.
+ *
+ * @param WP_User_Query $user_query The user query object.
+ * @return void
+ */
+function enable_user_query_autosuggest( WP_User_Query $user_query ) {
+	if ( empty( $user_query->get( 'search' ) ) ) {
+		return;
+	}
+	$user_query->set( 'autosuggest', true );
+}
+
+/**
+ * Enable autosuggest for term queries.
+ *
+ * @param WP_Term_Query $term_query The term query object.
+ * @return void
+ */
+function enable_term_query_autosuggest( WP_Term_Query $term_query ) {
+	if ( empty( $term_query->query_vars['search'] ) ) {
+		return;
+	}
+	$term_query->query_vars['autosuggest'] = true;
+}
+
+/**
+ * Ensure meta search fields use the correct value property.
+ *
+ * @param array $search_fields Fields to search against.
+ * @return array
+ */
+function filter_search_fields( array $search_fields ) : array {
+	return array_map( function ( $field ) {
+		if ( fnmatch( 'meta.*', $field ) && ! fnmatch( 'meta.*.value', $field ) ) {
+			$field .= '.value';
+		}
+		return $field;
+	}, $search_fields );
+}
+
+/**
  * Use date decay settings from Altis config, if specified.
  *
  * This function retrieves each of the decay function's parameters.
@@ -1261,7 +1422,14 @@ function get_autosuggest_fields( ?string $type = null ) : array {
 		$fields['term'] = [ 'name' ];
 	}
 	if ( isset( $fields['user'] ) ) {
-		$fields['user'] = [ 'user_nicename', 'display_name', 'user_login' ];
+		$fields['user'] = [
+			'user_nicename',
+			'display_name',
+			'user_login',
+			'meta.first_name.value',
+			'meta.last_name.value',
+			'meta.nickname.value',
+		];
 	}
 
 	/**

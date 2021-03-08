@@ -22,6 +22,8 @@ add_action( 'altis.modules.init', function () {
 		'strict' => true,
 		'field-boost' => [],
 		'fuzziness' => 'auto:4,7',
+		'users' => true,
+		'terms' => true,
 	];
 	Altis\register_module( 'search', __DIR__, 'Search', $default_settings, __NAMESPACE__ . '\\bootstrap' );
 } );

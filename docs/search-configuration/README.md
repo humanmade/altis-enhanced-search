@@ -69,7 +69,7 @@ By default the post title, excerpt, content, author name and taxonomy terms are 
 					"field-boost": {
 						"post_title": 3,
 						"post_excerpt": 2,
-						"meta.custom_field": 2
+						"meta.custom_field.value": 2
 					}
 				}
 			}

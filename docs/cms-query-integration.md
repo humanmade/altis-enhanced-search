@@ -42,7 +42,7 @@ Because of the default way that Elasticsearch analyses text it performs better w
 
 In some cases you might want to provide a dynamic interface where results are fetched as the user types. The standard method of search will not produce good results until a full word has been typed out, so Altis provides a means of analysing and fetching results based on partial search terms.
 
-In the same way as `ep_integrate` can be passed to any query class, you can pass the parameter `autosuggest` along with the `s` parameter:
+In the same way as `ep_integrate` can be passed to any query class, you can pass the parameter `autosuggest` along with the `s` parameter (or `search` for user and term queries):
 
 ```php
 $posts = new WP_Query( [
@@ -53,7 +53,12 @@ $posts = new WP_Query( [
 ] );
 ```
 
-The `autosuggest` parameter defaults to true if the `DOING_AJAX` constant is defined and `true`.
+The `autosuggest` parameter defaults to true in the following circumstances:
+
+- If the `DOING_AJAX` constant is defined and `true`, to allow for search as you type functionality
+- Media library searches
+- User searches
+- Term searches
 
 ### Filters
 
@@ -63,6 +68,6 @@ By default only a subset of fields are analysed for autosuggest searches, but th
 
 **`altis.search.autosuggest_term_fields : array`** defaults to `name`.
 
-**`altis.search.autosuggest_user_fields : array`** defaults to `user_nicename`, `display_name` and `user_login`.
+**`altis.search.autosuggest_user_fields : array`** defaults to `user_nicename`, `display_name`, `user_login`, `meta.first_name.value`, `meta.last_name.value` and `meta.nickname.value`.
 
 **Note:** if the above filters are used the site content will need to be re-indexed for autosuggestions to work properly.
