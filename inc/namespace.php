@@ -96,6 +96,9 @@ function load_elasticpress() {
 	add_action( 'pre_get_users', __NAMESPACE__ . '\\enable_user_query_autosuggest' );
 	add_action( 'pre_get_terms', __NAMESPACE__ . '\\enable_term_query_autosuggest' );
 
+	// Add custom field boosting.
+	add_filter( 'ep_weighting_default_post_type_weights', __NAMESPACE__ . '\\add_field_boost_defaults', 10, 2 );
+
 	// Ensure search fields are properly mapped to values.
 	add_filter( 'ep_search_fields', __NAMESPACE__ . '\\filter_search_fields', 10, 2 );
 
@@ -1303,6 +1306,25 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 	$query['bool']['should'] = array_values( $query['bool']['should'] );
 
 	return $query;
+}
+
+/**
+ * Add our configured default boost to search fields.
+ *
+ * @param array $fields The default field weightings.
+ * @return array
+ */
+function add_field_boost_defaults( array $fields ) : array {
+	$field_boost = Altis\get_config()['modules']['search']['field-boost'] ?? [];
+	$boosted_fields = array_keys( $field_boost );
+
+	foreach ( $fields as $field => $weighting ) {
+		if ( in_array( $field, $boosted_fields, true ) ) {
+			$fields[ $field ]['weight'] = floatval( $field_boost[ $field ] );
+		}
+	}
+
+	return $fields;
 }
 
 /**
