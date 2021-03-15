@@ -188,7 +188,7 @@ function configure_documents_feature() {
  * it stores the search query unencoded causes the request signing to fail
  * when searching with unicode characters.
  *
- * @param array $args
+ * @param array $args EP request args.
  * @return array
  */
 function remove_ep_search_term_header( array $args ) : array {
