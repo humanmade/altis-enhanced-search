@@ -1493,7 +1493,7 @@ function get_advanced_query( array $args, array $search_fields, bool $strict = f
 				if ( is_int( $fuzziness['distance'] ) ) {
 					// Add fixed fuzziness value on single words over 3 characters.
 					if ( mb_strlen( $piece ) > 3 && $fuzziness['distance'] > 0 ) {
-						$query_piece = "{$piece}~{$fuzziness['distance']}";
+						$query_piece = "({$piece}~{$fuzziness['distance']}|{$piece})";
 					} else {
 						$query_piece = $piece;
 					}
@@ -1503,9 +1503,9 @@ function get_advanced_query( array $args, array $search_fields, bool $strict = f
 						if ( mb_strlen( $piece ) < ( (int) $matches[1] ?? 3 ) ) {
 							$query_piece = $piece;
 						} elseif ( mb_strlen( $piece ) < ( (int) $matches[2] ?? 6 ) ) {
-							$query_piece = "{$piece}~1";
+							$query_piece = "({$piece}~1|{$piece})";
 						} else {
-							$query_piece = "{$piece}~2";
+							$query_piece = "({$piece}~2|{$piece})";
 						}
 					} else {
 						$query_piece = $piece;
