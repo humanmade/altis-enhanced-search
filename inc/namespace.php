@@ -1317,10 +1317,22 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 function add_field_boost_defaults( array $fields ) : array {
 	$field_boost = Altis\get_config()['modules']['search']['field-boost'] ?? [];
 	$boosted_fields = array_keys( $field_boost );
+	$existing_fields = array_keys( $fields );
 
-	foreach ( $fields as $field => $weighting ) {
+	// Update existing defaults.
+	foreach ( $existing_fields as $field ) {
 		if ( in_array( $field, $boosted_fields, true ) ) {
 			$fields[ $field ]['weight'] = floatval( $field_boost[ $field ] );
+		}
+	}
+
+	// Add additional fields.
+	foreach ( $boosted_fields as $field ) {
+		if ( ! in_array( $field, $existing_fields, true ) ) {
+			$fields[ $field ] = [
+				'enabled' => true,
+				'weight' => floatval( $field_boost[ $field ] ),
+			];
 		}
 	}
 
