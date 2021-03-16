@@ -772,7 +772,7 @@ function elasticpress_analyzer_language() : string {
 	 * Get value from db as get_locale() doesn't always return the current
 	 * value when using switch_to_blog().
 	 */
-	$locale = get_option( 'WPLANG', get_site_option( 'WPLANG', 'en_US' ) );
+	$locale = get_option( 'WPLANG', get_site_option( 'WPLANG' ) ) ?: 'en_US';
 	$locale = strtolower( $locale );
 	if ( isset( $supported_languages[ $locale ] ) ) {
 		return $supported_languages[ $locale ];
