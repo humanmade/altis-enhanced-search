@@ -96,6 +96,9 @@ function load_elasticpress() {
 	add_action( 'pre_get_users', __NAMESPACE__ . '\\enable_user_query_autosuggest' );
 	add_action( 'pre_get_terms', __NAMESPACE__ . '\\enable_term_query_autosuggest' );
 
+	// Add custom field boosting.
+	add_filter( 'ep_weighting_default_post_type_weights', __NAMESPACE__ . '\\add_field_boost_defaults', 10, 2 );
+
 	// Ensure search fields are properly mapped to values.
 	add_filter( 'ep_search_fields', __NAMESPACE__ . '\\filter_search_fields', 10, 2 );
 
@@ -792,7 +795,7 @@ function elasticpress_analyzer_language() : string {
 	 * Get value from db as get_locale() doesn't always return the current
 	 * value when using switch_to_blog().
 	 */
-	$locale = get_option( 'WPLANG', get_site_option( 'WPLANG', 'en_US' ) );
+	$locale = get_option( 'WPLANG', get_site_option( 'WPLANG' ) ) ?: 'en_US';
 	$locale = strtolower( $locale );
 	if ( isset( $supported_languages[ $locale ] ) ) {
 		return $supported_languages[ $locale ];
@@ -1329,6 +1332,37 @@ function search_filtered_post_content( array $weight_config ) : array {
 }
 
 /**
+ * Add our configured default boost to search fields.
+ *
+ * @param array $fields The default field weightings.
+ * @return array
+ */
+function add_field_boost_defaults( array $fields ) : array {
+	$field_boost = Altis\get_config()['modules']['search']['field-boost'] ?? [];
+	$boosted_fields = array_keys( $field_boost );
+	$existing_fields = array_keys( $fields );
+
+	// Update existing defaults.
+	foreach ( $existing_fields as $field ) {
+		if ( in_array( $field, $boosted_fields, true ) ) {
+			$fields[ $field ]['weight'] = floatval( $field_boost[ $field ] );
+		}
+	}
+
+	// Add additional fields.
+	foreach ( $boosted_fields as $field ) {
+		if ( ! in_array( $field, $existing_fields, true ) ) {
+			$fields[ $field ] = [
+				'enabled' => true,
+				'weight' => floatval( $field_boost[ $field ] ),
+			];
+		}
+	}
+
+	return $fields;
+}
+
+/**
  * Modify the default term search query based on the configured mode.
  *
  * @param array $query The ElasticSearch query.
@@ -1516,7 +1550,7 @@ function get_advanced_query( array $args, array $search_fields, bool $strict = f
 				if ( is_int( $fuzziness['distance'] ) ) {
 					// Add fixed fuzziness value on single words over 3 characters.
 					if ( mb_strlen( $piece ) > 3 && $fuzziness['distance'] > 0 ) {
-						$query_piece = "{$piece}~{$fuzziness['distance']}";
+						$query_piece = "({$piece}~{$fuzziness['distance']}|{$piece})";
 					} else {
 						$query_piece = $piece;
 					}
@@ -1526,9 +1560,9 @@ function get_advanced_query( array $args, array $search_fields, bool $strict = f
 						if ( mb_strlen( $piece ) < ( (int) $matches[1] ?? 3 ) ) {
 							$query_piece = $piece;
 						} elseif ( mb_strlen( $piece ) < ( (int) $matches[2] ?? 6 ) ) {
-							$query_piece = "{$piece}~1";
+							$query_piece = "({$piece}~1|{$piece})";
 						} else {
-							$query_piece = "{$piece}~2";
+							$query_piece = "({$piece}~2|{$piece})";
 						}
 					} else {
 						$query_piece = $piece;
