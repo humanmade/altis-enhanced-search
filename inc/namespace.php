@@ -88,6 +88,9 @@ function load_elasticpress() {
 	add_filter( 'ep_term_formatted_args_query', __NAMESPACE__ . '\\enhance_term_search_query', 10, 2 );
 	add_filter( 'ep_user_formatted_args_query', __NAMESPACE__ . '\\enhance_user_search_query', 10, 2 );
 
+	// Add custom field boosting.
+	add_filter( 'ep_weighting_default_post_type_weights', __NAMESPACE__ . '\\add_field_boost_defaults', 10, 2 );
+
 	// Fix the mime type search query.
 	add_filter( 'ep_formatted_args', __NAMESPACE__ . '\\fix_mime_type_query', 11, 2 );
 
@@ -1177,6 +1180,37 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 	$query['bool']['should'] = array_values( $query['bool']['should'] );
 
 	return $query;
+}
+
+/**
+ * Add our configured default boost to search fields.
+ *
+ * @param array $fields The default field weightings.
+ * @return array
+ */
+function add_field_boost_defaults( array $fields ) : array {
+	$field_boost = Altis\get_config()['modules']['search']['field-boost'] ?? [];
+	$boosted_fields = array_keys( $field_boost );
+	$existing_fields = array_keys( $fields );
+
+	// Update existing defaults.
+	foreach ( $existing_fields as $field ) {
+		if ( in_array( $field, $boosted_fields, true ) ) {
+			$fields[ $field ]['weight'] = floatval( $field_boost[ $field ] );
+		}
+	}
+
+	// Add additional fields.
+	foreach ( $boosted_fields as $field ) {
+		if ( ! in_array( $field, $existing_fields, true ) ) {
+			$fields[ $field ] = [
+				'enabled' => true,
+				'weight' => floatval( $field_boost[ $field ] ),
+			];
+		}
+	}
+
+	return $fields;
 }
 
 /**
