@@ -1122,26 +1122,10 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 
 	$strict = Altis\get_config()['modules']['search']['strict'] ?? true;
 	$mode = Altis\get_config()['modules']['search']['mode'] ?? 'simple';
-	$field_boost = Altis\get_config()['modules']['search']['field-boost'] ?? [];
 	$fuzziness = get_fuzziness();
 
 	// Get search fields.
 	$search_fields = $query['bool']['should'][0]['multi_match']['fields'];
-
-	// Boost specific fields.
-	if ( ! empty( $field_boost ) ) {
-		foreach ( $field_boost as $field => $boost ) {
-			if ( ! is_string( $field ) ) {
-				trigger_error( 'Search module field boost value must be an object.', E_USER_WARNING );
-				continue;
-			}
-			$existing_index = array_search( $field, $search_fields, true );
-			$boosted_field = sprintf( '%s^%F', $field, floatval( $boost ) );
-			if ( $existing_index !== false ) {
-				$search_fields[ $existing_index ] = $boosted_field;
-			}
-		}
-	}
 
 	if ( $mode === 'simple' && $strict ) {
 		// Remove the fuzzy matching of any word in the phrase.
