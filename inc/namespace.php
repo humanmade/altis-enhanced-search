@@ -96,6 +96,9 @@ function load_elasticpress() {
 	add_action( 'pre_get_users', __NAMESPACE__ . '\\enable_user_query_autosuggest' );
 	add_action( 'pre_get_terms', __NAMESPACE__ . '\\enable_term_query_autosuggest' );
 
+	// Add custom field boosting.
+	add_filter( 'ep_weighting_default_post_type_weights', __NAMESPACE__ . '\\add_field_boost_defaults', 10, 2 );
+
 	// Ensure search fields are properly mapped to values.
 	add_filter( 'ep_search_fields', __NAMESPACE__ . '\\filter_search_fields', 10, 2 );
 
@@ -104,6 +107,9 @@ function load_elasticpress() {
 	add_filter( 'epwr_decay', __NAMESPACE__ . '\\apply_date_decay_config_values' );
 	add_filter( 'epwr_offset', __NAMESPACE__ . '\\apply_date_decay_config_values' );
 	add_filter( 'epwr_boost_mode', __NAMESPACE__ . '\\apply_date_decay_config_values' );
+
+	// Search against better default fields.
+	add_filter( 'ep_weighting_default_post_type_weights', __NAMESPACE__ . '\\search_filtered_post_content', 100 );
 
 	// Fix the mime type search query.
 	add_filter( 'ep_formatted_args', __NAMESPACE__ . '\\fix_mime_type_query', 11, 2 );
@@ -795,7 +801,7 @@ function elasticpress_analyzer_language() : string {
 	 * Get value from db as get_locale() doesn't always return the current
 	 * value when using switch_to_blog().
 	 */
-	$locale = get_option( 'WPLANG', get_site_option( 'WPLANG', 'en_US' ) );
+	$locale = get_option( 'WPLANG', get_site_option( 'WPLANG' ) ) ?: 'en_US';
 	$locale = strtolower( $locale );
 	if ( isset( $supported_languages[ $locale ] ) ) {
 		return $supported_languages[ $locale ];
@@ -1247,26 +1253,10 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 	// Get config settings.
 	$strict = Altis\get_config()['modules']['search']['strict'] ?? true;
 	$mode = Altis\get_config()['modules']['search']['mode'] ?? 'simple';
-	$field_boost = Altis\get_config()['modules']['search']['field-boost'] ?? [];
 	$fuzziness = get_fuzziness();
 
 	// Get search fields.
 	$search_fields = $query['bool']['should'][0]['multi_match']['fields'];
-
-	// Boost specific fields.
-	if ( ! empty( $field_boost ) ) {
-		foreach ( $field_boost as $field => $boost ) {
-			if ( ! is_string( $field ) ) {
-				trigger_error( 'Search module field boost value must be an object.', E_USER_WARNING );
-				continue;
-			}
-			$existing_index = array_search( $field, $search_fields, true );
-			$boosted_field = sprintf( '%s^%F', $field, floatval( $boost ) );
-			if ( $existing_index !== false ) {
-				$search_fields[ $existing_index ] = $boosted_field;
-			}
-		}
-	}
 
 	if ( $mode === 'simple' && $strict && version_compare( $algorithm_version, '3.5', 'lt' ) ) {
 		// Remove the fuzzy matching of any word in the phrase.
@@ -1315,6 +1305,57 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 	$query['bool']['should'] = array_values( $query['bool']['should'] );
 
 	return $query;
+}
+
+/**
+ * Swaps the default search against post content to filtered content.
+ *
+ * This means that reusable blocks will be parsed along with short codes and
+ * other functionalilty that can modify the end result of the post content.
+ *
+ * @param array $weight_config The default field weighting config.
+ * @return array
+ */
+function search_filtered_post_content( array $weight_config ) : array {
+	if ( ! isset( $weight_config['post_content'] ) ) {
+		return $weight_config;
+	}
+
+	$weight_config['post_content_filtered'] = $weight_config['post_content'];
+	unset( $weight_config['post_content'] );
+
+	return $weight_config;
+}
+
+/**
+ * Add our configured default boost to search fields.
+ *
+ * @param array $fields The default field weightings.
+ * @return array
+ */
+function add_field_boost_defaults( array $fields ) : array {
+	$field_boost = Altis\get_config()['modules']['search']['field-boost'] ?? [];
+	$boosted_fields = array_keys( $field_boost );
+	$existing_fields = array_keys( $fields );
+
+	// Update existing defaults.
+	foreach ( $existing_fields as $field ) {
+		if ( in_array( $field, $boosted_fields, true ) ) {
+			$fields[ $field ]['weight'] = floatval( $field_boost[ $field ] );
+		}
+	}
+
+	// Add additional fields.
+	foreach ( $boosted_fields as $field ) {
+		if ( ! in_array( $field, $existing_fields, true ) ) {
+			$fields[ $field ] = [
+				'enabled' => true,
+				'weight' => floatval( $field_boost[ $field ] ),
+			];
+		}
+	}
+
+	return $fields;
 }
 
 /**
@@ -1505,7 +1546,7 @@ function get_advanced_query( array $args, array $search_fields, bool $strict = f
 				if ( is_int( $fuzziness['distance'] ) ) {
 					// Add fixed fuzziness value on single words over 3 characters.
 					if ( mb_strlen( $piece ) > 3 && $fuzziness['distance'] > 0 ) {
-						$query_piece = "{$piece}~{$fuzziness['distance']}";
+						$query_piece = "({$piece}~{$fuzziness['distance']}|{$piece})";
 					} else {
 						$query_piece = $piece;
 					}
@@ -1515,9 +1556,9 @@ function get_advanced_query( array $args, array $search_fields, bool $strict = f
 						if ( mb_strlen( $piece ) < ( (int) $matches[1] ?? 3 ) ) {
 							$query_piece = $piece;
 						} elseif ( mb_strlen( $piece ) < ( (int) $matches[2] ?? 6 ) ) {
-							$query_piece = "{$piece}~1";
+							$query_piece = "({$piece}~1|{$piece})";
 						} else {
-							$query_piece = "{$piece}~2";
+							$query_piece = "({$piece}~2|{$piece})";
 						}
 					} else {
 						$query_piece = $piece;
