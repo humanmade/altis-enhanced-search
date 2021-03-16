@@ -108,6 +108,9 @@ function load_elasticpress() {
 	add_filter( 'epwr_offset', __NAMESPACE__ . '\\apply_date_decay_config_values' );
 	add_filter( 'epwr_boost_mode', __NAMESPACE__ . '\\apply_date_decay_config_values' );
 
+	// Search against better default fields.
+	add_filter( 'ep_weighting_default_post_type_weights', __NAMESPACE__ . '\\search_filtered_post_content', 100 );
+
 	// Fix the mime type search query.
 	add_filter( 'ep_formatted_args', __NAMESPACE__ . '\\fix_mime_type_query', 11, 2 );
 
@@ -1306,6 +1309,26 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 	$query['bool']['should'] = array_values( $query['bool']['should'] );
 
 	return $query;
+}
+
+/**
+ * Swaps the default search against post content to filtered content.
+ *
+ * This means that reusable blocks will be parsed along with short codes and
+ * other functionalilty that can modify the end result of the post content.
+ *
+ * @param array $weight_config The default field weighting config.
+ * @return array
+ */
+function search_filtered_post_content( array $weight_config ) : array {
+	if ( ! isset( $weight_config['post_content'] ) ) {
+		return $weight_config;
+	}
+
+	$weight_config['post_content_filtered'] = $weight_config['post_content'];
+	unset( $weight_config['post_content'] );
+
+	return $weight_config;
 }
 
 /**
