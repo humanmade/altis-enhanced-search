@@ -147,8 +147,8 @@ function load_elasticpress() {
 		WP_CLI::add_hook( 'after_invoke:core multisite-install', __NAMESPACE__ . '\\setup_elasticpress_on_install' );
 	}
 
-	// Improve default analyzer with multilingual support.
-	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\elasticpress_mapping' );
+	// Improve default analyzer with multilingual support. After EP filters run.
+	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\elasticpress_mapping', 30 );
 
 	// Filter Options for Facet component settings.
 	add_filter( 'site_option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
@@ -194,7 +194,7 @@ function configure_documents_feature() {
  * it stores the search query unencoded causes the request signing to fail
  * when searching with unicode characters.
  *
- * @param array $args
+ * @param array $args EP request args.
  * @return array
  */
 function remove_ep_search_term_header( array $args ) : array {
@@ -613,7 +613,13 @@ function get_elasticpress_indexable_post_statuses( array $statuses ) : array {
  * @return array
  */
 function get_elasticpress_indexable_post_types( array $types ) : array {
-	return get_post_types();
+	$post_types = get_post_types();
+	$post_types = array_filter( $post_types, function ( $type ) {
+		return ! in_array( $type, [
+			'ep-synonym',
+		], true );
+	} );
+	return $post_types;
 }
 
 /**
@@ -1240,6 +1246,11 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 		return $query;
 	}
 
+	// Get algorithm version.
+	$algorithm_version = get_site_option( 'ep_search_algorithm_version', '3.5' );
+	$algorithm_version = apply_filters( 'ep_search_algorithm_version', $algorithm_version );
+
+	// Get config settings.
 	$strict = Altis\get_config()['modules']['search']['strict'] ?? true;
 	$mode = Altis\get_config()['modules']['search']['mode'] ?? 'simple';
 	$fuzziness = get_fuzziness();
@@ -1247,8 +1258,9 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 	// Get search fields.
 	$search_fields = $query['bool']['should'][0]['multi_match']['fields'];
 
-	if ( $mode === 'simple' && $strict ) {
+	if ( $mode === 'simple' && $strict && version_compare( $algorithm_version, '3.5', 'lt' ) ) {
 		// Remove the fuzzy matching of any word in the phrase.
+		// Deprecated with ElasticPress 3.5 but leaving in in case the search algorithm filter is used.
 		unset( $query['bool']['should'][2] );
 
 		// Set the full phrase match fuzziness to auto, this will auto adjust
