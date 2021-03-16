@@ -91,6 +91,9 @@ function load_elasticpress() {
 	// Add custom field boosting.
 	add_filter( 'ep_weighting_default_post_type_weights', __NAMESPACE__ . '\\add_field_boost_defaults', 10, 2 );
 
+	// Search against better default fields.
+	add_filter( 'ep_weighting_default_post_type_weights', __NAMESPACE__ . '\\search_filtered_post_content', 100 );
+
 	// Fix the mime type search query.
 	add_filter( 'ep_formatted_args', __NAMESPACE__ . '\\fix_mime_type_query', 11, 2 );
 
@@ -1211,6 +1214,26 @@ function add_field_boost_defaults( array $fields ) : array {
 	}
 
 	return $fields;
+}
+
+/**
+ * Swaps the default search against post content to filtered content.
+ *
+ * This means that reusable blocks will be parsed along with short codes and
+ * other functionalilty that can modify the end result of the post content.
+ *
+ * @param array $weight_config The default field weighting config.
+ * @return array
+ */
+function search_filtered_post_content( array $weight_config ) : array {
+	if ( ! isset( $weight_config['post_content'] ) ) {
+		return $weight_config;
+	}
+
+	$weight_config['post_content_filtered'] = $weight_config['post_content'];
+	unset( $weight_config['post_content'] );
+
+	return $weight_config;
 }
 
 /**
