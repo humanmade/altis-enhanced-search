@@ -160,6 +160,10 @@ function load_elasticpress() {
 	// Configure features.
 	add_action( 'init', __NAMESPACE__ . '\\configure_documents_feature', 1 );
 
+	// Use ElasticPress request intercepting to chunk large requests.
+	add_filter( 'ep_intercept_remote_request', '__return_true' );
+	add_filter( 'ep_do_intercept_request', __NAMESPACE__ . '\\split_large_ep_request', 10, 4 );
+
 	// Set up packages feature.
 	Packages\bootstrap();
 }
@@ -1627,4 +1631,100 @@ function custom_search_results_post_type_args( array $args, string $post_type ) 
 	$args['labels']['all_items'] = _x( 'Custom Search Results', 'post type menu name', 'altis' );
 
 	return $args;
+}
+
+/**
+ * Split elasticsearch requests that will be too large for the request limit.
+ *
+ * ElasticPress doesn't have support for limiting request / posts indexed based off
+ * a request size limit. We hook into ElasticPress every time it will make a request
+ * to check the payload size, and split it into multiple requests if needed.
+ *
+ *
+ * @param WP_Error|array $request The request to replace / override.
+ * @param array $query            The query to ElasticSearch.
+ * @param array $args             The request arguments.
+ * @param integer $failures       The current number of failures for this request.
+ * @return WP_Error|array         The overiden request.
+ */
+function split_large_ep_request( $request, array $query, array $args, int $failures ) {
+
+	if ( empty( $args['body'] ) || $args['method'] !== 'POST' || ! strpos( $query['url'], '/_bulk' ) ) {
+		return wp_remote_request( $query['url'], $args );
+	}
+
+	$body_size_limit = apply_filters( 'altis.search.request-size-limit', 1024 * 1024 * 9 ); // 9 MB
+	$combined_response = null;
+	$body = $args['body'];
+	$args['body'] = '';
+	$requests = [];
+	while ( $body ) {
+		$next_chunk_position = strpos( $body, "\n\n" ) + 2;
+		if ( $next_chunk_position === false ) {
+			$next_chunk_position = strlen( $body );
+		}
+
+		if ( $next_chunk_position > $body_size_limit ) {
+			$error_message = sprintf( 'Single chunk in ElasticPress bulk request (%d bytes) is larger than the request size limit of %d', $next_chunk_position, $body_size_limit );
+			if ( defined( 'WP_CLI' ) && WP_CLI ) {
+				WP_CLI::warning( $error_message );
+			}
+			trigger_error( $error_message, E_USER_WARNING );
+			$body = substr( $body, $next_chunk_position );
+			continue;
+		}
+
+		// If adding the next chunk would take the current chunk over the limit, send the request now.
+		if ( strlen( $args['body'] ) + $next_chunk_position > $body_size_limit ) {
+			$requests[] = wp_remote_request( $query['url'], $args );
+			$args['body'] = '';
+		}
+
+		$args['body'] .= substr( $body, 0, $next_chunk_position );
+		$body = substr( $body, $next_chunk_position );
+
+		// Final request
+		if ( ! $body ) {
+			$requests[] = wp_remote_request( $query['url'], $args );
+		}
+	}
+
+	$request = $requests[0];
+	if ( is_wp_error( $request ) ) {
+		return $request;
+	}
+
+	$response_data = [
+		'errors' => false,
+		'took' => 0,
+		'items' => [],
+	];
+
+	// Combine all request stats in to one.
+	foreach ( $requests as $r ) {
+		if ( is_wp_error( $r ) ) {
+			continue;
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $r ), true );
+		if ( ! is_array( $body ) ) {
+			continue;
+		}
+
+		if ( ! empty( $body['errors'] ) ) {
+			$response_data['errors'] = $body['errors'];
+		}
+
+		if ( isset( $body['items'] ) ) {
+			$response_data['items'] = array_merge( $response_data['items'], $body['items'] );
+		}
+
+		if ( isset( $body['took'] ) ) {
+			$response_data['took'] += $body['took'];
+		}
+	}
+
+	$request['body'] = json_encode( $response_data );
+
+	return $request;
 }
