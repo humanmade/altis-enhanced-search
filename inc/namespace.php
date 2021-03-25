@@ -72,8 +72,10 @@ function load_elasticpress() {
 		return set_url_scheme( $url, ELASTICSEARCH_PORT === 443 ? 'https' : 'http' );
 	});
 	add_action( 'ep_remote_request', __NAMESPACE__ . '\\log_remote_request_errors', 10, 2 );
-	add_filter( 'posts_request', __NAMESPACE__ . '\\noop_wp_query_on_failed_ep_request', 11, 2 );
-	add_filter( 'found_posts_query', __NAMESPACE__ . '\\noop_wp_query_on_failed_ep_request', 6, 2 );
+
+	// Noop queries that tried to use ES, but failed. Priority 11 to be after ElasticPress.
+	add_filter( 'posts_pre_query', __NAMESPACE__ . '\\noop_wp_query_on_failed_ep_request', 11, 2 );
+
 	add_filter( 'ep_admin_wp_query_integration', '__return_true' );
 	add_filter( 'ep_ajax_wp_query_integration', '__return_true' );
 	add_filter( 'ep_indexable_post_status', __NAMESPACE__ . '\\get_elasticpress_indexable_post_statuses' );
@@ -287,31 +289,16 @@ function log_remote_request_errors( array $request, ?string $type = null ) {
  * Default ElasticPress functionality is to fall-back to MySQL search when queries fail. We want to instead
  * no-op the query when this happens, as we don't want to put lots of load on to MySQL.
  *
- * @param string $request SQL query string.
+ * @param array $posts
  * @param WP_Query $query The current query object.
- * @return string
+ * @return array
  */
-function noop_wp_query_on_failed_ep_request( string $request, WP_Query $query ) : string {
-	if ( ! isset( $query->elasticsearch_success ) || $query->elasticsearch_success === true ) {
-		return $request;
+function noop_wp_query_on_failed_ep_request( $posts, WP_Query $query ) : ?array {
+	if ( $posts === null && $query->elasticsearch_success === false ) {
+		return [];
 	}
 
-	global $wpdb;
-	return "SELECT * FROM $wpdb->posts WHERE 1=0";
-}
-
-/**
- * No-op found rows query if ElasticSearch request fails.
- *
- * @param string $sql SQL query string.
- * @param WP_Query $query The current query object.
- * @return string
- */
-function noop_wp_query_found_rows_on_failed_ep_request( string $sql, WP_Query $query ) : string {
-	if ( ! isset( $query->elasticsearch_success ) || $query->elasticsearch_success === true ) {
-		return $sql;
-	}
-	return '';
+	return $posts;
 }
 
 /**
