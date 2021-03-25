@@ -1640,12 +1640,11 @@ function custom_search_results_post_type_args( array $args, string $post_type ) 
  * a request size limit. We hook into ElasticPress every time it will make a request
  * to check the payload size, and split it into multiple requests if needed.
  *
- *
  * @param WP_Error|array $request The request to replace / override.
- * @param array $query            The query to ElasticSearch.
- * @param array $args             The request arguments.
- * @param integer $failures       The current number of failures for this request.
- * @return WP_Error|array         The overiden request.
+ * @param array $query The query to ElasticSearch.
+ * @param array $args The request arguments.
+ * @param integer $failures The current number of failures for this request.
+ * @return WP_Error|array The overriden request.
  */
 function split_large_ep_request( $request, array $query, array $args, int $failures ) {
 
@@ -1653,6 +1652,7 @@ function split_large_ep_request( $request, array $query, array $args, int $failu
 		return wp_remote_request( $query['url'], $args );
 	}
 
+	// phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
 	$body_size_limit = apply_filters( 'altis.search.request-size-limit', 1024 * 1024 * 9 ); // 9 MB
 	$combined_response = null;
 	$body = $args['body'];
@@ -1683,7 +1683,7 @@ function split_large_ep_request( $request, array $query, array $args, int $failu
 		$args['body'] .= substr( $body, 0, $next_chunk_position );
 		$body = substr( $body, $next_chunk_position );
 
-		// Final request
+		// Final request.
 		if ( ! $body ) {
 			$requests[] = wp_remote_request( $query['url'], $args );
 		}
