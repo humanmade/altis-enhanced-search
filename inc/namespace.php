@@ -306,7 +306,7 @@ function log_remote_request_errors( array $request, ?string $type = null ) {
  * Default ElasticPress functionality is to fall-back to MySQL search when queries fail. We want to instead
  * no-op the query when this happens, as we don't want to put lots of load on to MySQL.
  *
- * @param array $posts
+ * @param ?array $posts List of posts or null if request failed.
  * @param WP_Query $query The current query object.
  * @return array
  */
