@@ -23,8 +23,6 @@ use WP_Query;
 use WP_Term_Query;
 use WP_User_Query;
 
-use function Altis\Analytics\Utils\flatten_array;
-
 /**
  * Bootstrap search module.
  *
@@ -493,6 +491,7 @@ function filter_index_name( string $index ) : string {
  * The documents ingest pipeline does not need to be site specific
  * as it is always the same.
  *
+ * @param string $id Current pipeline ID.
  * @return string
  */
 function filter_documents_pipeline_id( string $id ) : string {
@@ -1094,6 +1093,9 @@ function elasticpress_mapping( array $mapping ) : array {
 	// Ensure text fields with a field name have the `.sortable` field.
 	// Some ES version mappings are missing this.
 	foreach ( $mapping['mappings'] as $type => $map ) {
+		if ( ! isset( $map['properties'] ) ) {
+			continue;
+		}
 		foreach ( $map['properties'] as $name => $property ) {
 			if ( $property['type'] === 'text' && isset( $property['fields'] ) ) {
 				$mapping['mappings'][ $type ]['properties'][ $name ]['fields'] = array_merge_recursive_distinct( $property['fields'], [
