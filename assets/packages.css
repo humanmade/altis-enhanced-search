@@ -40,11 +40,11 @@
 }
 
 .es-package-status--active {
-	background-color: #3FCF8E;
+	background-color: #3fcf8e;
 	color: #000;
 }
 
 .es-package-status[class*="error"] {
-	background-color: #ED7B9D;
+	background-color: #ed7b9d;
 	color: #152a4e;
 }
