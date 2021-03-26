@@ -1,28 +1,34 @@
 /**
  * Elasticsearch Service Packages UI styles.
  */
+
 .columns {
     display: flex;
     flex-wrap: wrap;
 }
+
 .column {
     flex: 1 1 300px;
     margin-right: 20px;
     width: 300px;
 }
+
 .column textarea {
     width: 100%;
 }
+
 .column pre {
     background: #fff;
     border: 1px solid #152a4e;
     padding: 10px;
     overflow: auto;
 }
+
 .column ul li {
     list-style: disc;
     margin-left: 20px;
 }
+
 .es-package-status {
     background: #152a4e;
     border-radius: 3px;
@@ -32,10 +38,12 @@
     padding: 2px 5px;
     text-transform: uppercase;
 }
+
 .es-package-status--active {
     background-color: #3FCF8E;
     color: #000;
 }
+
 .es-package-status[class*="error"] {
     background-color: #ED7B9D;
     color: #152a4e;
