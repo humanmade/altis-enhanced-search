@@ -319,7 +319,8 @@ function handle_form() : void {
 		// Handle file upload.
 		if ( ! empty( $_FILES ) && isset( $_FILES[ $file_field ] ) && ! empty( $_FILES[ $file_field ]['tmp_name'] ) ) {
 			$file = get_package_path( "uploaded-{$type}", $for_network );
-			$result = move_uploaded_file( $_FILES[ $file_field ]['tmp_name'], $file );
+			// phpcs:ignore HM.Security.ValidatedSanitizedInput.InputNotSanitized
+			$result = move_uploaded_file( wp_unslash( $_FILES[ $file_field ]['tmp_name'] ), $file );
 			if ( ! $result ) {
 				$errors[] = new WP_Error(
 					'write_package_error',
