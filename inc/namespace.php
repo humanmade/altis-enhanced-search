@@ -1755,14 +1755,14 @@ function handle_autosuggest_endpoint() {
 	/**
 	 * Features instance.
 	 *
-	 * @var Features $features 
+	 * @var Features $features
 	 */
 	$features = Features::factory();
 
 	/**
 	 * Search feature instance.
 	 *
-	 * @var Feature\Search\Search $search 
+	 * @var Feature\Search\Search $search
 	 */
 	$search = $features->get_registered_feature( 'search' );
 
@@ -1792,7 +1792,7 @@ function handle_autosuggest_endpoint() {
 	$client = Elasticsearch::factory();
 
 	// Pass to EP.
-	$response = $client->remote_request( ep_get_index_name() . '/post/_search', [
+	$response = $client->remote_request( Indexables::factory()->get( 'post' )->get_index_name() . '/_search', [
 		'body'   => json_encode( $json ),
 		'method' => 'POST',
 	] );
