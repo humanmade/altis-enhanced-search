@@ -1752,10 +1752,18 @@ function handle_autosuggest_endpoint() {
 		wp_send_json( [], 200 );
 	}
 
-	/** @var Features $features Features instance. */
+	/**
+	 * Features instance.
+	 *
+	 * @var Features $features 
+	 */
 	$features = Features::factory();
 
-	/** @var Feature\Search\Search $search Search feature instance. */
+	/**
+	 * Search feature instance.
+	 *
+	 * @var Feature\Search\Search $search 
+	 */
 	$search = $features->get_registered_feature( 'search' );
 
 	// Force post filter value.
@@ -1776,7 +1784,11 @@ function handle_autosuggest_endpoint() {
 		],
 	];
 
-	/** @var Elasticsearch $client */
+	/**
+	 * Elasticsearch client object.
+	 *
+	 * @var Elasticsearch $client
+	 */
 	$client = Elasticsearch::factory();
 
 	// Pass to EP.
