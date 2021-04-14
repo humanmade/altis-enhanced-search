@@ -870,20 +870,6 @@ function handle_autosuggest_endpoint() {
 		wp_send_json( [], 200 );
 	}
 
-	/**
-	 * Features instance.
-	 *
-	 * @var Features $features
-	 */
-	$features = Features::factory();
-
-	/**
-	 * Search feature instance.
-	 *
-	 * @var Feature\Search\Search $search
-	 */
-	$search = $features->get_registered_feature( 'search' );
-
 	// Force post filter value.
 	$json['post_filter'] = [
 		'bool' => [
@@ -895,22 +881,15 @@ function handle_autosuggest_endpoint() {
 				],
 				[
 					'terms' => [
-						'post_type.raw' => array_values( $search->get_searchable_post_types() ),
+						'post_type.raw' => array_values( ep_get_searchable_post_types() ),
 					],
 				],
 			],
 		],
 	];
 
-	/**
-	 * Elasticsearch client object.
-	 *
-	 * @var Elasticsearch $client
-	 */
-	$client = Elasticsearch::factory();
-
 	// Pass to EP.
-	$response = $client->remote_request( Indexables::factory()->get( 'post' )->get_index_name() . '/_search', [
+	$response = ep_remote_request( ep_get_index_name() . '/post/_search', [
 		'body'   => json_encode( $json ),
 		'method' => 'POST',
 	] );
