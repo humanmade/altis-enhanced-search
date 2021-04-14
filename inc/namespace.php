@@ -1483,10 +1483,10 @@ function handle_autosuggest_endpoint() {
 		wp_send_json( [], 200 );
 	}
 
-	/** @var Features $features */
+	/** @var Features $features Features instance. */
 	$features = Features::factory();
 
-	/** @var Feature\Search\Search $search */
+	/** @var Feature\Search\Search $search Search feature instance. */
 	$search = $features->get_registered_feature( 'search' );
 
 	// Force post filter value.
