@@ -20,6 +20,7 @@ use Psr\Http\Message\RequestInterface;
 use WP_CLI;
 use WP_Error;
 use WP_Query;
+use WP_REST_Server;
 use WP_Term_Query;
 use WP_User_Query;
 
@@ -163,6 +164,9 @@ function load_elasticpress() {
 	// Use ElasticPress request intercepting to chunk large requests.
 	add_filter( 'ep_intercept_remote_request', '__return_true' );
 	add_filter( 'ep_do_intercept_request', __NAMESPACE__ . '\\split_large_ep_request', 10, 4 );
+
+	// Handle autosuggest requests.
+	add_action( 'template_redirect', __NAMESPACE__ . '\\handle_autosuggest_endpoint' );
 
 	// Set up packages feature.
 	Packages\bootstrap();
@@ -654,6 +658,10 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 
 	if ( ! isset( $features_activated[ $feature->slug ] ) ) {
 		return $is_active;
+	}
+
+	if ( $feature->slug === 'autosuggest' && $features_activated[ $feature->slug ] === true && ! defined( 'EP_AUTOSUGGEST_ENDPOINT' ) ) {
+		define( 'EP_AUTOSUGGEST_ENDPOINT', get_home_url( null, '/autosuggest/' ) );
 	}
 
 	return $features_activated[ $feature->slug ];
@@ -1716,4 +1724,69 @@ function split_large_ep_request( $request, array $query, array $args, int $failu
 	$request['body'] = json_encode( $response_data );
 
 	return $request;
+}
+
+/**
+ * Handle request forwarding to ES.
+ */
+function handle_autosuggest_endpoint() {
+	if ( '/autosuggest' !== $_SERVER['REQUEST_URI'] ) {
+		return;
+	}
+
+	// Check autosuggest is enabled.
+	$config = Altis\get_config()['modules']['search'];
+	if ( ! ( $config['autosuggest'] ?? false ) ) {
+		return;
+	}
+
+	// Check request is from same origin.
+	if ( parse_url( $_SERVER['HTTP_ORIGIN'], PHP_URL_HOST ) !== parse_url( get_home_url(), PHP_URL_HOST ) ) {
+		wp_send_json( [], 200 );
+	}
+
+	// Validate data.
+	$json = json_decode( WP_REST_Server::get_raw_data(), true );
+	if ( ! $json ) {
+		wp_send_json( [], 200 );
+	}
+
+	/** @var Features $features */
+	$features = Features::factory();
+
+	/** @var Feature\Search\Search $search */
+	$search = $features->get_registered_feature( 'search' );
+
+	// Force post filter value.
+	$json['post_filter'] = [
+		'bool' => [
+			'must' => [
+				[
+					'term' => [
+						'post_status' => 'publish',
+					],
+				],
+				[
+					'terms' => [
+						'post_type.raw' => array_values( $search->get_searchable_post_types() ),
+					],
+				],
+			],
+		],
+	];
+
+	/** @var Elasticsearch $client */
+	$client = Elasticsearch::factory();
+
+	// Pass to EP.
+	$response = $client->remote_request( ep_get_index_name() . '/post/_search', [
+		'body'   => json_encode( $json ),
+		'method' => 'POST',
+	] );
+
+	$body = wp_remote_retrieve_body( $response );
+	$data = json_decode( $body, true );
+
+	// Return JSON response.
+	wp_send_json( $data, 200 );
 }
