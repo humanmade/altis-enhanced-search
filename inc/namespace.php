@@ -859,7 +859,8 @@ function handle_autosuggest_endpoint() {
 	}
 
 	// Check request is from same origin.
-	if ( parse_url( $_SERVER['HTTP_ORIGIN'], PHP_URL_HOST ) !== parse_url( get_home_url(), PHP_URL_HOST ) ) {
+	$origin = get_http_origin();
+	if ( parse_url( $origin, PHP_URL_HOST ) !== parse_url( get_home_url(), PHP_URL_HOST ) ) {
 		wp_send_json( [], 200 );
 	}
 
