@@ -50,12 +50,7 @@ function load_elasticpress() {
 		return;
 	}
 	if ( ! defined( 'EP_HOST' ) ) {
-		define( 'EP_HOST', sprintf(
-			'%s://%s%s',
-			ELASTICSEARCH_PORT === 443 ? 'https' : 'http',
-			ELASTICSEARCH_HOST,
-			! in_array( ELASTICSEARCH_PORT, [ 80, 443 ], true ) ?  ( ':' . ELASTICSEARCH_PORT ) : ''
-		) );
+		define( 'EP_HOST', get_elasticsearch_url() );
 	}
 
 	if ( ! defined( 'EP_IS_NETWORK' ) ) {
@@ -703,7 +698,12 @@ function enable_slowlog_thresholds( array $mapping ) : array {
  * @return string
  */
 function get_elasticsearch_url() : string {
-	$host = sprintf( '%s://%s:%d', ELASTICSEARCH_PORT === 443 ? 'https' : 'http', ELASTICSEARCH_HOST, ELASTICSEARCH_PORT );
+	$host = sprintf(
+		'%s://%s%s',
+		ELASTICSEARCH_PORT === 443 ? 'https' : 'http',
+		ELASTICSEARCH_HOST,
+		! in_array( ELASTICSEARCH_PORT, [ 80, 443 ], true ) ?  ( ':' . ELASTICSEARCH_PORT ) : ''
+	);
 	return $host;
 }
 
