@@ -31,7 +31,10 @@ use WP_User_Query;
  */
 function bootstrap() {
 	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress', 4 );
-	add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
+	add_action( 'plugins_loaded', function () {
+		// Run healthchecks on indexes after ElasticPress is loaded.
+		add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
+	} );
 
 	// Load debug bar for ElasticPress if Query Monitor is enabled in the config.
 	if ( Altis\get_config()['modules']['dev-tools']['query-monitor'] ?? false ) {
@@ -555,7 +558,7 @@ function run_elasticpress_indexed_healthcheck() {
 	$sites = get_sites();
 	$not_exists = [];
 	foreach ( $sites as $site ) {
-		if ( ! Indexables::factory()->get( 'post' )->index_exists( $site->blog_id ) ) {
+		if ( Indexables::factory()->get( 'post' ) && ! Indexables::factory()->get( 'post' )->index_exists( $site->blog_id ) ) {
 			$not_exists[] = $site->domain . $site->path;
 		}
 	}
