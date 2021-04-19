@@ -22,10 +22,10 @@ wp site list --field=url | xargs -I % wp elasticpress index --url=% --setup && w
 
 ## CLI Recommendations
 
-When using CLI to perform re-indexes, it's recommended to set the `--posts-per-page` argument to a figure around `200`. By default, this figure is set to `350` which will often cause service timeouts. For example:
+When using CLI to perform re-indexes, it's recommended to set the `--per-page` argument to a figure around `200`. By default, this figure is set to `350` which will often cause service timeouts. For example:
 
 ```sh
-wp site list --field=url | xargs -I % wp elasticpress index --url=% --posts-per-page 200
+wp site list --field=url | xargs -I % wp elasticpress index --url=% --per-page=200
 ```
 
 See `wp help elasticpress` for all available CLI commands.
