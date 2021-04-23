@@ -237,6 +237,15 @@ function get_package_id( string $slug, bool $for_network = false ) : ?string {
 	 */
 	$package_id = apply_filters( 'altis.search.get_package_id', $package_id, $slug, $for_network );
 
+	// Check package file exists.
+	// In cases where a database has been imported the package file may not exist
+	// for the current stack so we apply a fail safe here.
+	$package_path = get_package_path( $slug, $for_network );
+	if ( ! empty( $package_id ) && ! file_exists( $package_path ) ) {
+		trigger_error( sprintf( 'Referenced package file "%s" does not exist.', $package_path ), E_USER_WARNING );
+		return null;
+	}
+
 	return $package_id;
 }
 
