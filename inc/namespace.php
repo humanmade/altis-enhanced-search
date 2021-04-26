@@ -712,7 +712,7 @@ function get_elasticsearch_url() : string {
 		'%s://%s%s',
 		ELASTICSEARCH_PORT === 443 ? 'https' : 'http',
 		ELASTICSEARCH_HOST,
-		! in_array( ELASTICSEARCH_PORT, [ 80, 443 ], true ) ?  ( ':' . ELASTICSEARCH_PORT ) : ''
+		! in_array( ELASTICSEARCH_PORT, [ 80, 443 ], true ) ? ( ':' . ELASTICSEARCH_PORT ) : ''
 	);
 	return $host;
 }
