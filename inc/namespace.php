@@ -1469,13 +1469,25 @@ function custom_search_results_post_type_args( array $args, string $post_type ) 
  * Handle request forwarding to ES.
  */
 function handle_autosuggest_endpoint() {
-	if ( '/autosuggest' !== $_SERVER['REQUEST_URI'] ) {
-		return;
-	}
-
 	// Check autosuggest is enabled.
 	$config = Altis\get_config()['modules']['search'];
 	if ( ! ( $config['autosuggest'] ?? false ) ) {
+		return;
+	}
+
+	// Ensure this is a POST request.
+	if ( $_SERVER['REQUEST_METHOD'] !== 'POST' ) {
+		return;
+	}
+
+	// Do we have an endpoint defined?
+	if ( ! defined( 'EP_AUTOSUGGEST_ENDPOINT' ) ) {
+		return;
+	}
+
+	// Ensure we include site path for subdirectory installs or sites.
+	$endpoint = wp_parse_url( EP_AUTOSUGGEST_ENDPOINT, PHP_URL_PATH );
+	if ( rtrim( $endpoint, '/' ) !== $_SERVER['REQUEST_URI'] ) {
 		return;
 	}
 
