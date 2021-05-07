@@ -1368,7 +1368,6 @@ function get_autosuggest_fields( ?string $type = null ) : array {
 	// Add default autosuggest fields.
 	if ( isset( $fields['post'] ) ) {
 		$fields['post'] = [ 'post_title' ];
-		$fields['post'] = [ 'post_name' ];
 	}
 	if ( isset( $fields['term'] ) ) {
 		$fields['term'] = [ 'name' ];
