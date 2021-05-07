@@ -118,6 +118,9 @@ function load_elasticpress() {
 	// Fix the mime type search query.
 	add_filter( 'ep_formatted_args', __NAMESPACE__ . '\\fix_mime_type_query', 11, 2 );
 
+	// Combine matching post type weighting queries. Weighting added on priority 20 by EP.
+	add_filter( 'ep_formatted_args', __NAMESPACE__ . '\\combine_weighting_queries', 21 );
+
 	// Back compat for ElasticPress v2 - change post index name to old version.
 	add_filter( 'ep_index_name', __NAMESPACE__ . '\\filter_index_name' );
 
@@ -1312,6 +1315,58 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 
 	// Ensure this is not a keyed array.
 	$query['bool']['should'] = array_values( $query['bool']['should'] );
+
+	return $query;
+}
+
+/**
+ * Combine equivalent post type search queries to improve search performance.
+ *
+ * @param array $query The Elasticsearch query array.
+ * @return array
+ */
+function combine_weighting_queries( array $query ) : array {
+	// No need to do anything if weighting was switched off or not run yet for some reason.
+	if ( ! did_action( 'ep_weighting_added' ) ) {
+		return $query;
+	}
+
+	$has_function_score = isset( $query['query']['function_score'] );
+	$queries = $has_function_score ? $query['query']['function_score']['query'] : $query['query'];
+
+	$combined = [];
+
+	foreach ( $queries['bool']['should'] as $type_query ) {
+		$post_type = $type_query['bool']['filter'][0]['match']['post_type.raw'];
+		$query_json = wp_json_encode( $type_query['bool']['must'] );
+		if ( ! isset( $combined[ $query_json ] ) ) {
+			$combined[ $query_json ] = [];
+		}
+		$combined[ $query_json ][] = $post_type;
+	}
+
+	$queries['bool']['should'] = [];
+
+	foreach ( $combined as $query_json => $post_types ) {
+		$queries['bool']['should'][] = [
+			'bool' => [
+				'must' => json_decode( $query_json, ARRAY_A ),
+				'filter' => [
+					[
+						'terms' => [
+							'post_type.raw' => $post_types,
+						],
+					],
+				],
+			],
+		];
+	}
+
+	if ( $has_function_score ) {
+		$query['query']['function_score']['query'] = $queries;
+	} else {
+		$query['query'] = $queries;
+	}
 
 	return $query;
 }
