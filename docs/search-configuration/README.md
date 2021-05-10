@@ -141,7 +141,7 @@ This option allows you to prevent transpositions from being counted as a single 
 
 ## Max Query Length
 
-Typically search queries can be as long as the user wishes. As a preventative measure against slow queries and search request spamming Altis limits search query strings to **80 characters** by default.
+Typically search queries can be as long as the user wishes. As a preventative measure against slow queries and search request spamming, Altis limits search query strings to **80 characters** by default.
 
 You can configure this value in 2 ways.
 
