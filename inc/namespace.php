@@ -1842,14 +1842,15 @@ function limit_search_query_length( WP_Query $query ) : void {
 	$search = $query->get( 's' );
 
 	// Get max length from config.
-	$max_length = Altis\get_config()['search']['max-query-length'] ?? 80;
+	$max_length = Altis\get_config()['search']['max-query-length'] ?? 100;
 
 	/**
 	 * Filters the maximum allowed query string length for searches.
 	 *
 	 * @param int $max_length The maximum allowed query string length.
+	 * @param string $search The current search term.
 	 */
-	$max_length = (int) apply_filters( 'altis.search.max_query_length', $max_length );
+	$max_length = (int) apply_filters( 'altis.search.max_query_length', $max_length, $search );
 
 	$search = mb_substr( $search, 0, $max_length );
 	$search = trim( $search );
