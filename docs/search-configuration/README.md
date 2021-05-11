@@ -138,3 +138,45 @@ If you have a prefix length of 0 you may wish to increase this value to get more
 **`transpositions`**
 
 This option allows you to prevent transpositions from being counted as a single edit. In the above example the transposition "act" to "cat" has an edit distance of 1. Setting this value to `false` would mean the same transposition would have an edit distance of 2 because 2 letters have been replaced.
+
+## Max Query Length
+
+Typically search queries can be as long as the user wishes. As a preventative measure against slow queries and search request spamming, Altis limits search query strings to **100 characters** by default.
+
+You can configure this value in 2 ways.
+
+Using the Altis Search config option `max-query-length`:
+
+```json
+{
+	"extra": {
+		"altis": {
+			"modules": {
+				"search": {
+					"max-query-length": 150
+				}
+			}
+		}
+	}
+}
+```
+
+Using the filter `altis.search.max_query_length`:
+
+Note that the filter method will take precedence and can be used for applying conditional logic.
+
+```php
+add_filter( 'altis.search.max_query_length', function ( int $max_length, string $search ) {
+	// Allow long search strings in the admin.
+	if ( is_admin() ) {
+		return 1000;
+	}
+
+	// Allow long search queries if they are URLs.
+	if ( preg_match( '#https?://[a-z0-9/_-.]+#', $search ) ) {
+		return mb_strlen( $search );
+	}
+
+	return 50;
+} );
+```

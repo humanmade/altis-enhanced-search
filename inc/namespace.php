@@ -130,6 +130,9 @@ function load_elasticpress() {
 	// Ensure non ElasticPress indexes are not affected by global edits using *.
 	add_filter( 'ep_pre_request_url', __NAMESPACE__ . '\\protect_non_ep_indexes', 10, 5 );
 
+	// Limit search query length.
+	add_action( 'pre_get_posts', __NAMESPACE__ . '\\limit_search_query_length', 1000 );
+
 	require_once Altis\ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
@@ -1877,4 +1880,35 @@ function handle_autosuggest_endpoint() {
 
 	// Return JSON response.
 	wp_send_json( $data, 200 );
+}
+
+/**
+ * Limit search query string length.
+ *
+ * Prevents overly complex queries that can be slow to process and tie up resources.
+ *
+ * @param WP_Query $query The WP_Query instance (passed by reference).
+ */
+function limit_search_query_length( WP_Query $query ) : void {
+	if ( empty( $query->get( 's' ) ) ) {
+		return;
+	}
+
+	$search = $query->get( 's' );
+
+	// Get max length from config.
+	$max_length = Altis\get_config()['search']['max-query-length'] ?? 100;
+
+	/**
+	 * Filters the maximum allowed query string length for searches.
+	 *
+	 * @param int $max_length The maximum allowed query string length.
+	 * @param string $search The current search term.
+	 */
+	$max_length = (int) apply_filters( 'altis.search.max_query_length', $max_length, $search );
+
+	$search = mb_substr( $search, 0, $max_length );
+	$search = trim( $search );
+
+	$query->set( 's', $search );
 }
