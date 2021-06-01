@@ -23,14 +23,3 @@ add_filter( 'ep_post_sync_args_post_prepare_meta', function ( array $post_data, 
 ```
 
 This will mean the searchable data stored in the index will include the country name.
-
-## Searching Additional Data
-
-By default, when using the CMS search APIs such as `WP_Query` only the default search fields will be used, not any additional data stored using the above method. To include posts matching the `country` field, use the `ep_search_fields` hook to include your custom field.
-
-```php
-add_filter( 'ep_search_fields', function ( array $fields ) : array {
-	$fields[] = 'country';
-	return $fields;
-} );
-```
