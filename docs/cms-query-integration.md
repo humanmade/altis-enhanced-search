@@ -37,6 +37,70 @@ add_action( 'pre_get_posts', function ( WP_Query $query ) {
 }, 20 );
 ```
 
+## Customising Searched Fields
+
+Altis will search key content fields by default, including those defined in the [field boosting config](./search-configuration/README.md#field-boosting), depending on the type of content.
+
+### Using Query Parameters
+
+`WP_Query`, `WP_Term_Query` and `WP_User_Query` support a `search_fields` parameter. This can be used override the default searched fields and even to modify how the fields are boosted using the `<field>^<boost value>` syntax.
+
+```php
+$posts = new WP_Query( [
+	'ep_integrate' => true, // Use Elasticsearch.
+	'post_type' => 'project',
+	'search_fields' => [
+		'post_title',
+		'meta.client.value^2',
+	],
+] );
+```
+
+Note that when using the `search_fields` parameter the `ep_search_fields` filter will be run and can modify the end results.
+
+### Using Filters
+
+As noted above the `ep_search_fields` filter can be used to further customise queries that use the `search_fields` parameter:
+
+```php
+add_filter( 'ep_search_fields', function ( array $fields ) : array {
+	$fields[] = 'alt';
+	$fields[] = 'meta.keywords.value';
+	return $fields;
+} );
+```
+
+To modify the default searchable fields (when the `search_fields` parameter is _not_ used) you need to use the `ep_weighting_default_post_type_weights` filter. The filter has 2 parameters, a keyed array of fields including their enabled status and weight, and the post type.
+
+```php
+add_filter( 'ep_weighting_default_post_type_weights', function ( array $fields, string $post_type ) : array {
+	// Add fields for all post types.
+	$fields['meta.keywords.value'] = [
+		'enabled' => true,
+		'weight' => 1.0,
+	];
+
+	// Add fields for specific post types.
+	switch ( $post_type ) {
+		case 'attachment':
+			$fields['alt'] = [
+				'enabled' => true,
+				'weight' => 1.5,
+			];
+			break;
+		case 'project':
+			$fields['meta.client.value'] = [
+				'enabled' => true,
+				'weight' => 1.0,
+			];
+			break;
+	}
+
+	return $fields;
+}, 10, 2 );
+```
+
+
 ## Autosuggest
 Because of the default way that Elasticsearch analyses text it performs better with complete search terms, as you might expect to be submitted from a search form.
 
