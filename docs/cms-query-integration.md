@@ -43,7 +43,7 @@ Altis will search key content fields by default, including those defined in the 
 
 ### Using Query Parameters
 
-`WP_Query`, `WP_Term_Query` and `WP_User_Query` support a `search_fields` parameter. This can be used override the default searched fields and even to modify how the fields are boosted using the `<field>^<boost value>` syntax.
+`WP_Query`, `WP_Term_Query` and `WP_User_Query` support a `search_fields` parameter. This can be used to override the default searched fields and even to modify how the fields are boosted using the `<field>^<boost value>` syntax.
 
 ```php
 $posts = new WP_Query( [
@@ -56,7 +56,7 @@ $posts = new WP_Query( [
 ] );
 ```
 
-Note that when using the `search_fields` parameter the `ep_search_fields` filter will be run and can modify the end results.
+When using the `search_fields` parameter, the `ep_search_fields` filter will be run which can modify the list of searched fields.
 
 ### Using Filters
 
