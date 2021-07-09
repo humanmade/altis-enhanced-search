@@ -1270,10 +1270,20 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 	// Get search fields.
 	$search_fields = $query['bool']['should'][0]['multi_match']['fields'];
 
-	if ( $mode === 'simple' && $strict && version_compare( $algorithm_version, '3.5', 'lt' ) ) {
+	if ( $mode === 'simple' && $strict && ( $type !== 'post' || version_compare( $algorithm_version, '3.5', 'lt' ) ) ) {
 		// Remove the fuzzy matching of any word in the phrase.
 		// Deprecated with ElasticPress 3.5 but leaving in in case the search algorithm filter is used.
 		unset( $query['bool']['should'][2] );
+
+		// Fill in new algorithm settings for non post indexables.
+		if ( $type !== 'post' ) {
+			$query['bool']['should'][1]['multi_match'] = [
+				'query'  => $args['s'],
+				'fields' => $search_fields,
+				'type'   => 'phrase',
+				'slop'   => 5,
+			];
+		}
 
 		// Set the full phrase match fuzziness to auto, this will auto adjust
 		// the allowed Levenshtein distance depending on the query length.
