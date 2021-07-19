@@ -1286,17 +1286,17 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 				'type'   => 'phrase',
 				'slop'   => 5,
 			];
+		} else {
+			// Set the full phrase match fuzziness to auto, this will auto adjust
+			// the allowed Levenshtein distance depending on the query length.
+			// - 0-3 chars = 0 edits.
+			// - 4-6 chars = 1 edit.
+			// - 7+ chars = 2 edits.
+			$query['bool']['should'][1]['multi_match']['fuzziness'] = $fuzziness['distance'];
+			$query['bool']['should'][1]['multi_match']['prefix_length'] = $fuzziness['prefix-length'];
+			$query['bool']['should'][1]['multi_match']['max_expansions'] = $fuzziness['max-expansions'];
+			$query['bool']['should'][1]['multi_match']['fuzzy_transpositions'] = $fuzziness['transpositions'];
 		}
-
-		// Set the full phrase match fuzziness to auto, this will auto adjust
-		// the allowed Levenshtein distance depending on the query length.
-		// - 0-3 chars = 0 edits.
-		// - 4-6 chars = 1 edit.
-		// - 7+ chars = 2 edits.
-		$query['bool']['should'][1]['multi_match']['fuzziness'] = $fuzziness['distance'];
-		$query['bool']['should'][1]['multi_match']['prefix_length'] = $fuzziness['prefix-length'];
-		$query['bool']['should'][1]['multi_match']['max_expansions'] = $fuzziness['max-expansions'];
-		$query['bool']['should'][1]['multi_match']['fuzzy_transpositions'] = $fuzziness['transpositions'];
 	}
 
 	if ( $mode === 'advanced' ) {
