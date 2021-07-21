@@ -133,6 +133,12 @@ function load_elasticpress() {
 	// Limit search query length.
 	add_action( 'pre_get_posts', __NAMESPACE__ . '\\limit_search_query_length', 1000 );
 
+	// Ensure upgrades aren't attempted during install due to db access.
+	if ( defined( 'WP_INITIAL_INSTALL' ) && WP_INITIAL_INSTALL ) {
+		add_filter( 'pre_site_option_ep_version', '__return_false' );
+		add_filter( 'pre_site_option_ep_last_sync', '__return_false' );
+	}
+
 	require_once Altis\ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
