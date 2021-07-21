@@ -130,6 +130,12 @@ function load_elasticpress() {
 	// Ensure non ElasticPress indexes are not affected by global edits using *.
 	add_filter( 'ep_pre_request_url', __NAMESPACE__ . '\\protect_non_ep_indexes', 10, 5 );
 
+	// Ensure upgrades aren't attempted during install due to db access.
+	if ( defined( 'WP_INITIAL_INSTALL' ) && WP_INITIAL_INSTALL ) {
+		add_filter( 'pre_site_option_ep_version', '__return_false' );
+		add_filter( 'pre_site_option_ep_last_sync', '__return_false' );
+	}
+
 	require_once Altis\ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
