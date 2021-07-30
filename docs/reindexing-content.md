@@ -14,6 +14,8 @@ wp site list --field=url | xargs -I % wp elasticpress index --url=%
 
 `wp site list --field=url` will print each site URL on a new line and ingested by `xargs` to be processed individually.
 
+**Note:** During the indexing process, the site will not use the Elasticsearch index for searches/queries, so some features like faceting or autosuggest will not work as expected until the process is finished.
+
 To re-sychronise the index and update mappings (needed when the mapping has been modified via filters, site language has been changed or a user dictionary has been added and not reindexed successfully):
 
 ```sh
