@@ -51,8 +51,7 @@ function get_analyzers() : array {
 			],
 			'bn_stem_filter' => [
 				'type' => 'stemmer',
-				// The light_bengali stemmer was removed in Elasticsearch version 7.6.
-				'name' => version_compare( $version, '7.6', '<' ) ? 'light_bengali' : 'bengali',
+				'name' => 'bengali',
 			],
 			'br_stop_filter' => [
 				'type' => 'stop',
