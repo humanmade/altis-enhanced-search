@@ -1042,9 +1042,10 @@ function remove_ep_dashboard_notices( array $notices ) : array {
 		'no_sync',
 		'upgrade_sync',
 		'using_autosuggest_defaults',
+		'es_above_compat',
 	];
 
-	return array_diff( $notices, $hidden );
+	return array_diff_key( $notices, array_flip( $hidden ) );
 }
 
 /**
