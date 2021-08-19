@@ -86,6 +86,9 @@ It is also possible to modify the specific fields stored for each post to provid
 ## Using Elasticsearch
 Elasticsearch is used to provide the search index, as such as a developer you can make direct use of Elasticsearch for advanced feature development. See [Using Elasticsearch](using-elasticsearch.md) for details.
 
+## Using Google Analytics (GA)
+Google Analytics can be configured to ingest search queries for further analysis and insights. This will inform future weightings and search configuration modifications. When configuring GA, the default query parameter value is `s`, see [Google Analytics - Set up Site Search](https://support.google.com/analytics/answer/1012264) for more information.
+
 ## Additional Configuration Options
 The following options can be enabled/disabled via the search configuration.
 
