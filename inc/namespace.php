@@ -134,8 +134,8 @@ function load_elasticpress() {
 		WP_CLI::add_hook( 'after_invoke:core multisite-install', __NAMESPACE__ . '\\setup_elasticpress_on_install' );
 	}
 
-	// Improve default analyzer with multilingual support.
-	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\elasticpress_mapping' );
+	// Improve default analyzer with multilingual support. After EP filters run.
+	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\elasticpress_mapping', 30, 2 );
 
 	// Filter Options for Facet component settings.
 	add_filter( 'site_option_ep_feature_settings', __NAMESPACE__ . '\\filter_facet_settings' );
@@ -808,9 +808,26 @@ function elasticpress_analyzer_language() : string {
  * and override the default analyzer.
  *
  * @param array $mapping Mapping array.
+ * @param string|null $index The current index this mapping is for.
  * @return array
  */
-function elasticpress_mapping( array $mapping ) : array {
+function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
+	// Derive current mapping type.
+	$mapping_type = null;
+	if ( ! empty( $index ) ) {
+		$indexables = Indexables::factory()->get_all( null, true );
+		preg_match( '/.+-(' . implode( '|', $indexables ) . ')-\d+$/', $index, $matches );
+		if ( isset( $matches[1] ) ) {
+			$mapping_type = $matches[1];
+		}
+	}
+
+	if ( empty( $mapping_type ) ) {
+		trigger_error( sprintf( 'No matching indexable type for the index named "%s" found', $index ) );
+		return $mapping;
+	}
+
+	$es_version = Elasticsearch::factory()->get_elasticsearch_version();
 
 	// Merge filters, tokenizers and analyzers from JSON config.
 	$settings = Analysis\get_analyzers();
@@ -981,41 +998,127 @@ function elasticpress_mapping( array $mapping ) : array {
 		}
 	}
 
-	// Add autosuggest ngram analyzer by default, used for attachment search.
+	if ( version_compare( $es_version, '7', '<' ) ) {
+		$new_mapping = $mapping['mappings'][ $mapping_type ];
+	} else {
+		$new_mapping = $mapping['mappings'];
+	}
+
+	// Add autosuggest ngram analyzer by default, used for attachment, user and term search.
 	$autosuggest_fields = get_autosuggest_fields();
 	$search_analyzer = ! empty( $mapping['settings']['analysis']['analyzer']['default_search'] ) ? 'default_search' : 'default';
-	foreach ( $autosuggest_fields as $type => $fields ) {
-		// Check this is the mapping for this type.
-		if ( empty( $mapping['mappings'][ $type ] ) ) {
-			continue;
-		}
+	foreach ( $autosuggest_fields[ $mapping_type ] as $field ) {
 
 		// Ensure each field is represented in the mapping to avoid generating the
 		// default mapping.
-		foreach ( $fields as $field ) {
-			if ( ! isset( $mapping['mappings'][ $type ]['properties'][ $field ] ) ) {
-				$mapping['mappings'][ $type ]['properties'][ $field ] = [
+		$field_mapping = [
+			'type' => 'text',
+			'fields' => [
+				'suggest' => [
 					'type' => 'text',
-				];
+					'analyzer' => 'edge_ngram_analyzer',
+					'search_analyzer' => $search_analyzer,
+				],
+			],
+		];
+
+		// Field mapping already exists so just merge our suggest field.
+		if ( isset( $new_mapping['properties'][ $field ] ) ) {
+			if ( $new_mapping['properties'][ $field ]['type'] === 'text' ) {
+				$new_mapping['properties'][ $field ] = array_merge_recursive_distinct(
+					$new_mapping['properties'][ $field ],
+					$field_mapping
+				);
 			}
-			if ( ! isset( $mapping['mappings'][ $type ]['properties'][ $field ]['fields'] ) ) {
-				$mapping['mappings'][ $type ]['properties'][ $field ]['fields'] = [
-					'keyword' => [
-						'type' => 'keyword',
-						'ignore_above' => 256,
-					],
-					'raw' => [
-						'type' => 'keyword',
-						'ignore_above' => 256,
-					],
-				];
-			}
-			$mapping['mappings'][ $type ]['properties'][ $field ]['fields']['suggest'] = [
-				'type' => 'text',
-				'analyzer' => 'edge_ngram_analyzer',
-				'search_analyzer' => $search_analyzer,
-			];
+			continue;
 		}
+
+		// Split field on dots in case this is a nested property.
+		$sub_fields = explode( '.', $field );
+
+		// Check dynamic templates to get the intended mapping.
+		// https://www.elastic.co/guide/en/elasticsearch/reference/6.8/dynamic-templates.html for ref.
+		$start_field = $sub_fields[0];
+		$end_field = $sub_fields[ count( $sub_fields ) - 1 ];
+		foreach ( ( $current_mapping['dynamic_templates'] ?? [] ) as $template ) {
+			$template = wp_parse_args( $template[ array_keys( $template )[0] ], [
+				'match_pattern' => null,
+				'match' => '',
+				'unmatch' => '',
+				'path_match' => '',
+				'path_unmatch' => '',
+			] );
+			// If `match_pattern` is `regex` then check `match` against the end field as a regular expression.
+			if ( $template['match_pattern'] === 'regex' && ! preg_match( "/{$template['match']}/", $end_field ) ) {
+				continue;
+			}
+			// Check end field against `match` only allowing for wildcards.
+			if ( $template['match'] && $template['match_pattern'] !== 'regex' && ! fnmatch( $template['match'], $end_field ) ) {
+				continue;
+			}
+			// Check end field against `unmatch` to exclude patterns after matching.
+			if ( $template['unmatch'] && fnmatch( $template['unmatch'], $end_field ) ) {
+				continue;
+			}
+			// Check full field path for wildcard matches against `path_match`.
+			if ( $template['path_match'] && ! fnmatch( $template['path_match'], $field ) ) {
+				continue;
+			}
+			// Check full field path against `path_unmatch` to exclude patterns after matching.
+			if ( $template['path_unmatch'] && fnmatch( $template['path_unmatch'], $field ) ) {
+				continue;
+			}
+
+			// We have a matching template so update the field mapping for a text field or object property.
+			if ( ( $template['mapping']['type'] ?? false ) === 'text' ) {
+				$field_mapping = array_merge_recursive_distinct( $template['mapping'], $field_mapping );
+			}
+			if ( $template['mapping']['properties'][ $end_field ] ?? false ) {
+				$template['mapping']['properties'][ $end_field ] = array_merge_recursive_distinct(
+					$template['mapping']['properties'][ $end_field ],
+					$field_mapping
+				);
+				$field_mapping = [ 'properties' => $template['mapping']['properties'] ];
+				// Remove end field from $sub_fields if matched.
+				array_pop( $sub_fields );
+			}
+		}
+
+		// This is a path mapping.
+		if ( count( $sub_fields ) > 1 ) {
+			// Remove the first part of the path as it is handled below.
+			array_shift( $sub_fields );
+			$sub_fields = array_reverse( $sub_fields );
+			$field_mapping = array_reduce( $sub_fields, function ( $carry, $field ) {
+				return [ 'properties' => [ $field => $carry ] ];
+			}, $field_mapping );
+		}
+
+		// Merge mapping.
+		$new_mapping['properties'] = array_merge_recursive_distinct(
+			$new_mapping['properties'],
+			[ $start_field => $field_mapping ]
+		);
+	}
+
+	// Ensure text fields with a field name have the `.sortable` field.
+	// Some ES version mappings are missing this.
+	foreach ( $new_mapping['properties'] as $name => $property ) {
+		if ( $property['type'] === 'text' && isset( $property['fields'] ) ) {
+			$new_mapping['properties'][ $name ]['fields'] = array_merge_recursive_distinct( $property['fields'], [
+				'sortable' => [
+					'type'         => 'keyword',
+					'ignore_above' => 10922,
+					'normalizer'   => 'lowerasciinormalizer',
+				],
+			] );
+		}
+	}
+
+	if ( version_compare( $es_version, '7', '<' ) ) {
+		$mapping['mappings'][ $type ] = $new_mapping;
+	} else {
+		$mapping['mappings'] = $new_mapping;
 	}
 
 	return $mapping;
