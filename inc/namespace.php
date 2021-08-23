@@ -814,7 +814,10 @@ function elasticpress_analyzer_language() : string {
 function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 	// Derive current mapping type.
 	$indexables = Indexables::factory()->get_all( null, true );
-	preg_match( '/.+-(' . implode( '|', $indexables ) . ')-\d+$/', $index, $matches );
+	$escaped_indexables = array_map( function ( $item ) {
+		return preg_quote( $item, '/' );
+	}, $indexables );
+	preg_match( '/.+-(' . implode( '|', $escaped_indexables ) . ')-\d+$/', $index, $matches );
 	if ( isset( $matches[1] ) ) {
 		$mapping_type = $matches[1];
 	} else {
