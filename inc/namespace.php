@@ -22,6 +22,8 @@ use WP_Error;
 use WP_Query;
 use WP_REST_Server;
 
+const SORTABLE_MAX_LENGTH = 10922;
+
 /**
  * Bootstrap search module.
  *
@@ -1106,7 +1108,7 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 			$new_mapping['properties'][ $name ]['fields'] = array_merge_recursive_distinct( $property['fields'], [
 				'sortable' => [
 					'type'         => 'keyword',
-					'ignore_above' => 10922,
+					'ignore_above' => SORTABLE_MAX_LENGTH,
 					'normalizer'   => 'lowerasciinormalizer',
 				],
 			] );
