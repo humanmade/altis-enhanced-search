@@ -1141,7 +1141,7 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 	}
 
 	if ( version_compare( $es_version, '7', '<' ) ) {
-		$mapping['mappings'][ $type ] = $new_mapping;
+		$mapping['mappings'][ $mapping_type ] = $new_mapping;
 	} else {
 		$mapping['mappings'] = $new_mapping;
 	}
