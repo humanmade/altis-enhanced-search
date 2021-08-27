@@ -671,7 +671,7 @@ function get_search_config_option( string $option_key, $default_value = null ) {
 }
 
 /**
- * Enables the required settings for slowlog queries to be captured.
+ * Enables the required settings for slowlog indexing / queries to be captured.
  *
  * @param array $mapping ElasticSearch index mapping.
  * @return array
@@ -683,6 +683,8 @@ function enable_slowlog_thresholds( array $mapping ) : array {
 		$mapping['settings']['index.search.slowlog.threshold.query.warn'] = '5s';
 		$mapping['settings']['index.search.slowlog.threshold.fetch.info'] = '2s';
 		$mapping['settings']['index.search.slowlog.threshold.fetch.warn'] = '5s';
+		$mapping['settings']['index.indexing.slowlog.threshold.index.info'] = '5s';
+		$mapping['settings']['index.indexing.slowlog.threshold.index.warn'] = '10s';
 	}
 	return $mapping;
 }
