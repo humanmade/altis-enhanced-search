@@ -934,9 +934,7 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 	$synonyms = [];
 	$stopwords = [];
 	$kuromoji_dictionary = null;
-	$inline_index_settings = version_compare( $es_version, '7.4', '>=' )
-		? get_search_config_option( 'inline-index-settings', true )
-		: false;
+	$inline_index_settings = should_inline_settings();
 
 	foreach ( [ 'synonyms', 'stopwords', 'user-dictionary' ] as $type ) {
 		foreach ( [ 'uploaded', 'manual' ] as $sub_type ) {
@@ -1187,6 +1185,19 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 	}
 
 	return $mapping;
+}
+
+/**
+ * Returns where inline settings should be used.
+ *
+ * @return bool
+ */
+function should_inline_settings() : bool {
+	$es_version = Elasticsearch::factory()->get_elasticsearch_version();
+
+	return version_compare( $es_version, '7.4', '>=' )
+		? (bool) get_search_config_option( 'inline-index-settings', true )
+		: false;
 }
 
 /**

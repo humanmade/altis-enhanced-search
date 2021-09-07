@@ -13,6 +13,9 @@ use ElasticPress\Indexables;
 use ElasticPress\Utils;
 use WP_Error;
 
+// Maximum package file size recommended for inline settings.
+const MAX_INLINE_SETTINGS_SIZE_RECOMMENDED = 100 * 1024;
+
 /**
  * Bind hooks for ElasticSearch Packages.
  *

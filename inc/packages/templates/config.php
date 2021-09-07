@@ -5,6 +5,10 @@
  * @package altis/search
  */
 
+use const Altis\Enhanced_Search\Packages\MAX_INLINE_SETTINGS_SIZE_RECOMMENDED;
+
+use function Altis\Enhanced_Search\should_inline_settings;
+
 ?>
 <div class="wrap">
 	<h1><?php esc_html_e( 'Search Configuration', 'altis' ); ?></h1>
@@ -82,6 +86,20 @@
 								gmdate( get_option( 'date_format', 'Y-m-d H:i:s' ), $types['user_dictionary']['file_date'] )
 							) );
 							?>
+							<?php if ( should_inline_settings() && filesize( $types['user_dictionary']['uploaded_file'] ) > MAX_INLINE_SETTINGS_SIZE_RECOMMENDED ) : ?>
+								<p>
+									<strong>
+										<?php
+											echo esc_html( sprintf(
+												// translators: %s is replaced by the file upload date.
+												__( 'Current file size (%.2fKB) exceeds recommended file size for inline settings (%.2fKB), consider disabling inline settings for optimal performance.', 'altis' ),
+												filesize( $types['user_dictionary']['uploaded_file'] ) / 1024,
+												MAX_INLINE_SETTINGS_SIZE_RECOMMENDED / 1024
+											) );
+										?>
+									</strong>
+								</p>
+							<?php endif; ?>
 						</p>
 						<input type="submit" class="components-button is-link is-destructive" name="user-dictionary-remove" value="<?php esc_attr_e( 'Remove user dictionary file', 'altis' ); ?>" />
 					<?php endif; ?>
@@ -164,6 +182,20 @@ sea biscuit, sea biscit => seabiscuit</pre>
 						) );
 						?>
 					</p>
+					<?php if ( should_inline_settings() && filesize( $types['synonyms']['uploaded_file'] ) > MAX_INLINE_SETTINGS_SIZE_RECOMMENDED ) : ?>
+						<p>
+							<strong>
+								<?php
+									echo esc_html( sprintf(
+										// translators: %s is replaced by the file upload date.
+										__( 'Current file size (%.2fKB) exceeds recommended file size for inline settings (%.2fKB), consider disabling inline settings for optimal performance.', 'altis' ),
+										filesize( $types['synonyms']['uploaded_file'] ) / 1024,
+										MAX_INLINE_SETTINGS_SIZE_RECOMMENDED / 1024
+									) );
+								?>
+							</strong>
+						</p>
+					<?php endif; ?>
 					<input type="submit" class="components-button is-link is-destructive" name="synonyms-remove" value="<?php esc_attr_e( 'Remove synonyms file', 'altis' ); ?>" />
 				<?php endif; ?>
 				<p>
@@ -229,6 +261,20 @@ please</pre>
 						) );
 						?>
 					</p>
+					<?php if ( should_inline_settings() && filesize( $types['stopwords']['uploaded_file'] ) > MAX_INLINE_SETTINGS_SIZE_RECOMMENDED ) : ?>
+						<p>
+							<strong>
+								<?php
+									echo esc_html( sprintf(
+										// translators: %s is replaced by the file upload date.
+										__( 'Current file size (%.2fKB) exceeds recommended file size for inline settings (%.2fKB), consider disabling inline settings for optimal performance.', 'altis' ),
+										filesize( $types['stopwords']['uploaded_file'] ) / 1024,
+										MAX_INLINE_SETTINGS_SIZE_RECOMMENDED / 1024
+									) );
+								?>
+							</strong>
+						</p>
+					<?php endif; ?>
 					<input type="submit" class="components-button is-link is-destructive" name="stopwords-remove" value="<?php esc_attr_e( 'Remove stop words file', 'altis' ); ?>" />
 				<?php endif; ?>
 				<p>
