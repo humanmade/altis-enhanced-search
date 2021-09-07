@@ -2,11 +2,29 @@
 
 The search module supports 3 types of custom dictionaries for helping to tune search results for your content. These are synonyms, stop words and custom text analysis for Japanese.
 
-In the website admin, you can upload text files (`.txt` only) and, in the case of stop words and synonyms, also manually enter them on the [Search Configuration](admin://admin.php?page=search-config) screen.
+In the website admin, you can upload text files (`.txt` only) and/or manually enter them on the [Search Configuration](admin://admin.php?page=search-config) screen.
 
-Note that only a file upload is supported for the Japanese user dictionary, as it is used by the [kuromoji tokenizer](https://www.elastic.co/guide/en/elasticsearch/plugins/6.3/analysis-kuromoji-tokenizer.html) that splits words up during analysis. Synonyms and stop words are "filters" so multiple files (uploaded and manually entered) can be used for those.
+Altis includes support for a Japanese user dictionary to be used by the [kuromoji tokenizer](https://www.elastic.co/guide/en/elasticsearch/plugins/6.3/analysis-kuromoji-tokenizer.html) that splits words up during analysis. Synonyms and stop words are "filters" so multiple files (uploaded and manually entered) can be used for those.
 
 User dictionaries can be configured for [the entire network](admin://network/admin.php?page=search-config) (provided the subsites match the primary site language) or at an individual site level.
+
+Note that for the user dictionary, manual entries will override any uploaded files. So make sure to use one or the other, not both, unlike what you can do with synonyms and stop words.
+
+By default, Altis uses inline index settings to include all of these dictionaries, however, it is recommended to turn such feature off in case uploaded files are bigger than 100KB for the sake of performance and ES cluster sizes ( see below ). Altis will notify you if your file size exceeds the recommended limit within the configuration page.
+
+```
+{
+    "extra": {
+        "altis": {
+            "modules": {
+                "search": {
+                    "inline-index-settings": false
+                }
+            }
+        }
+    }
+}
+```
 
 ## Updating User Dictionaries
 
