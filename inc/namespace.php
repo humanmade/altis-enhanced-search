@@ -24,6 +24,8 @@ use WP_REST_Server;
 use WP_Term_Query;
 use WP_User_Query;
 
+use function Altis\Enhanced_Search\Packages\get_package_contents;
+
 const SORTABLE_MAX_LENGTH = 10922;
 
 /**
@@ -931,15 +933,21 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 	$is_network_language = get_site_option( 'WPLANG', 'en_US' ) === get_option( 'WPLANG', 'en_US' );
 	$synonyms = [];
 	$stopwords = [];
-	$ja_user_dictionary = null;
+	$kuromoji_dictionary = null;
+	$inline_index_settings = version_compare( $es_version, '7.4', '>=' )
+		? get_search_config_option( 'inline-index-settings', true )
+		: false;
 
 	foreach ( [ 'synonyms', 'stopwords', 'user-dictionary' ] as $type ) {
 		foreach ( [ 'uploaded', 'manual' ] as $sub_type ) {
 			// Get package file path.
-			$package_id = Packages\get_package_id( "{$sub_type}-{$type}" );
+			$package_slug = "{$sub_type}-{$type}";
+			$package_id = Packages\get_package_id( $package_slug );
+			$is_network_package = false;
 			// Check for network default.
 			if ( ! $package_id && $is_network_language ) {
-				$package_id = Packages\get_package_id( "{$sub_type}-{$type}", true );
+				$package_id = Packages\get_package_id( $package_slug, true );
+				$is_network_package = true;
 			}
 
 			// Check for a package ID.
@@ -947,32 +955,65 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 				continue;
 			}
 
+			if ( $inline_index_settings ) {
+				$package_contents = get_package_contents( $package_slug, $is_network_package );
+				if ( ! $package_contents ) {
+					trigger_error( sprintf( 'Could not fetch %s package contents of "%s".', $type, $package_id ) );
+					continue;
+				}
+				$package_contents = preg_split( '[\r\n]', $package_contents );
+			} else {
+				$package_contents = null;
+			}
+
 			switch ( $type ) {
 				case 'synonyms':
-					$synonyms[ "{$sub_type}_{$type}_filter" ] = [
-						'type' => 'synonym_graph',
-						'synonyms_path' => $package_id,
-					];
+					if ( $inline_index_settings ) {
+						$synonyms[ "{$sub_type}_{$type}_filter" ] = [
+							'type' => 'synonym_graph',
+							'synonyms' => $package_contents,
+						];
+					} else {
+						$synonyms[ "{$sub_type}_{$type}_filter" ] = [
+							'type' => 'synonym_graph',
+							'synonyms_path' => $package_id,
+						];
+					}
 					break;
 				case 'stopwords':
-					$stopwords[ "{$sub_type}_{$type}_filter" ] = [
-						'type' => 'stop',
-						'ignore_case' => true,
-						'stopwords_path' => $package_id,
-					];
+					if ( $inline_index_settings ) {
+						$stopwords[ "{$sub_type}_{$type}_filter" ] = [
+							'type' => 'stop',
+							'ignore_case' => true,
+							'stopwords' => implode( ',', $package_contents ),
+						];
+					} else {
+						$stopwords[ "{$sub_type}_{$type}_filter" ] = [
+							'type' => 'stop',
+							'ignore_case' => true,
+							'stopwords_path' => $package_id,
+						];
+					}
 					break;
 				case 'user-dictionary':
 					if ( $language !== 'ja' ) {
 						break;
 					}
-					$ja_user_dictionary = $package_id;
+					if ( $inline_index_settings ) {
+						$kuromoji_dictionary['user_dictionary_rules'] = $package_contents;
+					} else {
+						$kuromoji_dictionary['user_dictionary'] = $package_id;
+					}
 					break;
 			}
 		}
 	}
 
-	if ( ! empty( $ja_user_dictionary ) ) {
-		$mapping['settings']['analysis']['tokenizer']['kuromoji']['user_dictionary'] = $ja_user_dictionary;
+	if ( ! empty( $kuromoji_dictionary ) ) {
+		$mapping['settings']['analysis']['tokenizer']['kuromoji'] = array_merge(
+			$mapping['settings']['analysis']['tokenizer']['kuromoji'],
+			$kuromoji_dictionary
+		);
 	}
 
 	if ( ! empty( $synonyms ) || ! empty( $stopwords ) ) {
