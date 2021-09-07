@@ -924,20 +924,6 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 		unset( $mapping['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
 	}
 
-	// Handle user dictionary for Japanese sites.
-	if ( $language === 'ja' ) {
-		$is_network_japanese = get_site_option( 'WPLANG', 'en_US' ) === 'ja';
-		$user_dictionary_package_id = Packages\get_package_id( 'uploaded-user-dictionary' );
-		if ( ! $user_dictionary_package_id && $is_network_japanese ) {
-			$user_dictionary_package_id = Packages\get_package_id( 'uploaded-user-dictionary', true );
-		}
-
-		// Check for a package ID and add it to the kuromoji tokenizer.
-		if ( $user_dictionary_package_id ) {
-			$mapping['settings']['analysis']['tokenizer']['kuromoji']['user_dictionary'] = $user_dictionary_package_id;
-		}
-	}
-
 	// Add a default search analyzer if any custom stopwords or synonyms are provided.
 	//
 	// Synonyms and stopwords are quick enough to be applied at search time and avoid
@@ -945,8 +931,9 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 	$is_network_language = get_site_option( 'WPLANG', 'en_US' ) === get_option( 'WPLANG', 'en_US' );
 	$synonyms = [];
 	$stopwords = [];
+	$ja_user_dictionary = null;
 
-	foreach ( [ 'synonyms', 'stopwords' ] as $type ) {
+	foreach ( [ 'synonyms', 'stopwords', 'user-dictionary' ] as $type ) {
 		foreach ( [ 'uploaded', 'manual' ] as $sub_type ) {
 			// Get package file path.
 			$package_id = Packages\get_package_id( "{$sub_type}-{$type}" );
@@ -974,8 +961,18 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 						'stopwords_path' => $package_id,
 					];
 					break;
+				case 'user-dictionary':
+					if ( $language !== 'ja' ) {
+						break;
+					}
+					$ja_user_dictionary = $package_id;
+					break;
 			}
 		}
+	}
+
+	if ( ! empty( $ja_user_dictionary ) ) {
+		$mapping['settings']['analysis']['tokenizer']['kuromoji']['user_dictionary'] = $ja_user_dictionary;
 	}
 
 	if ( ! empty( $synonyms ) || ! empty( $stopwords ) ) {

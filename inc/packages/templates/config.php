@@ -88,6 +88,26 @@
 					<p>
 						<input type="file" accept="text/plain" id="user-dictionary-file" name="user-dictionary-file" />
 					</p>
+					<h3>
+					<label for="user-dictionary-text"><?php esc_html_e( 'Manual entry', 'altis' ); ?></label>
+						<?php if ( $types['user_dictionary']['manual_status'] ) : ?>
+							<span class="es-package-status es-package-status--<?php echo esc_attr( strtolower( $types['user_dictionary']['manual_status'] ) ); ?>">
+								<?php
+									// translators: %s replaced by status name e.g. 'ACTIVE', 'ERROR'.
+									echo esc_html( sprintf( __( 'Status: %s', 'altis' ), $types['user_dictionary']['manual_status'] ) );
+								?>
+							</span>
+						<?php endif; ?>
+					</h3>
+					<?php if ( $types['user_dictionary']['manual_error'] ) : ?>
+						<div class="notice notice-error">
+							<p><?php echo esc_html( $types['user_dictionary']['manual_error'] ); ?></p>
+						</div>
+					<?php endif; ?>
+					<textarea id="user-dictionary-text" name="user-dictionary-text" rows="10" cols="100%"><?php echo esc_textarea( $types['user_dictionary']['text'] ); ?></textarea>
+					<div class="notice-info">
+						<p><strong><?php echo esc_html__( 'Note that manual entry overrides uploaded dictionary file.', 'altis' ); ?></strong></p>
+					</div>
 					<p>
 						<input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Update user dictionary', 'altis' ); ?>" />
 					</p>
