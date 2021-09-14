@@ -12,7 +12,7 @@ Note that for the user dictionary, manual entries will override any uploaded fil
 
 By default, Altis uses inline index settings to include all of these dictionaries, however, it is recommended to turn such feature off in case uploaded files are bigger than 100KB for the sake of performance and ES cluster sizes ( see below ). Altis will notify you if your file size exceeds the recommended limit within the configuration page.
 
-```
+```json
 {
     "extra": {
         "altis": {
