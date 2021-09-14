@@ -983,7 +983,7 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 						$stopwords[ "{$sub_type}_{$type}_filter" ] = [
 							'type' => 'stop',
 							'ignore_case' => true,
-							'stopwords' => implode( ',', $package_contents ),
+							'stopwords' => $package_contents,
 						];
 					} else {
 						$stopwords[ "{$sub_type}_{$type}_filter" ] = [
