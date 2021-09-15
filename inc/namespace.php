@@ -1193,6 +1193,7 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 function should_inline_settings() : bool {
 	$es_version = Elasticsearch::factory()->get_elasticsearch_version();
 
+	// Elasticsearch 7.4 is where the inline user_dictionary_rules config option was introduced.
 	return version_compare( $es_version, '7.4', '>=' )
 		? (bool) get_search_config_option( 'inline-index-settings', true )
 		: false;
