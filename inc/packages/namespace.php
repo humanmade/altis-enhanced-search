@@ -13,6 +13,9 @@ use ElasticPress\Indexables;
 use ElasticPress\Utils;
 use WP_Error;
 
+// Maximum package file size recommended for inline settings.
+const MAX_INLINE_SETTINGS_SIZE_RECOMMENDED = 100 * 1024;
+
 /**
  * Bind hooks for ElasticSearch Packages.
  *
@@ -247,6 +250,28 @@ function get_package_id( string $slug, bool $for_network = false ) : ?string {
 	}
 
 	return $package_id;
+}
+
+/**
+ * Returns the contents of a package using its slug and network-wide flag.
+ *
+ * @param string $slug The package slug to get the package ID for.
+ * @param bool $for_network If true get the network level package ID.
+ *
+ * @return string|null
+ */
+function get_package_contents( string $slug, bool $for_network = false ) : ?string {
+	$path = get_package_path( $slug, $for_network );
+	if ( empty( $path ) ) {
+		return null;
+	}
+
+	if ( ! file_exists( $path ) ) {
+		trigger_error( sprintf( 'Package file "%s" does not exist at "%s".', $slug, $path ) );
+		return null;
+	}
+
+	return file_get_contents( $path ) ?: null;
 }
 
 /**

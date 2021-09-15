@@ -924,20 +924,6 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 		unset( $mapping['mappings']['post']['properties']['post_title']['fields']['post_title']['analyzer'] );
 	}
 
-	// Handle user dictionary for Japanese sites.
-	if ( $language === 'ja' ) {
-		$is_network_japanese = get_site_option( 'WPLANG', 'en_US' ) === 'ja';
-		$user_dictionary_package_id = Packages\get_package_id( 'uploaded-user-dictionary' );
-		if ( ! $user_dictionary_package_id && $is_network_japanese ) {
-			$user_dictionary_package_id = Packages\get_package_id( 'uploaded-user-dictionary', true );
-		}
-
-		// Check for a package ID and add it to the kuromoji tokenizer.
-		if ( $user_dictionary_package_id ) {
-			$mapping['settings']['analysis']['tokenizer']['kuromoji']['user_dictionary'] = $user_dictionary_package_id;
-		}
-	}
-
 	// Add a default search analyzer if any custom stopwords or synonyms are provided.
 	//
 	// Synonyms and stopwords are quick enough to be applied at search time and avoid
@@ -945,14 +931,19 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 	$is_network_language = get_site_option( 'WPLANG', 'en_US' ) === get_option( 'WPLANG', 'en_US' );
 	$synonyms = [];
 	$stopwords = [];
+	$kuromoji_dictionary = null;
+	$inline_index_settings = should_inline_settings();
 
-	foreach ( [ 'synonyms', 'stopwords' ] as $type ) {
+	foreach ( [ 'synonyms', 'stopwords', 'user-dictionary' ] as $type ) {
 		foreach ( [ 'uploaded', 'manual' ] as $sub_type ) {
 			// Get package file path.
-			$package_id = Packages\get_package_id( "{$sub_type}-{$type}" );
+			$package_slug = "{$sub_type}-{$type}";
+			$package_id = Packages\get_package_id( $package_slug );
+			$is_network_package = false;
 			// Check for network default.
 			if ( ! $package_id && $is_network_language ) {
-				$package_id = Packages\get_package_id( "{$sub_type}-{$type}", true );
+				$package_id = Packages\get_package_id( $package_slug, true );
+				$is_network_package = true;
 			}
 
 			// Check for a package ID.
@@ -960,22 +951,65 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 				continue;
 			}
 
+			if ( $inline_index_settings ) {
+				$package_contents = Packages\get_package_contents( $package_slug, $is_network_package );
+				if ( ! $package_contents ) {
+					trigger_error( sprintf( 'Could not fetch %s package contents of "%s".', $type, $package_id ) );
+					continue;
+				}
+				$package_contents = preg_split( '[\r\n]', $package_contents );
+			} else {
+				$package_contents = null;
+			}
+
 			switch ( $type ) {
 				case 'synonyms':
-					$synonyms[ "{$sub_type}_{$type}_filter" ] = [
-						'type' => 'synonym_graph',
-						'synonyms_path' => $package_id,
-					];
+					if ( $inline_index_settings ) {
+						$synonyms[ "{$sub_type}_{$type}_filter" ] = [
+							'type' => 'synonym_graph',
+							'synonyms' => $package_contents,
+						];
+					} else {
+						$synonyms[ "{$sub_type}_{$type}_filter" ] = [
+							'type' => 'synonym_graph',
+							'synonyms_path' => $package_id,
+						];
+					}
 					break;
 				case 'stopwords':
-					$stopwords[ "{$sub_type}_{$type}_filter" ] = [
-						'type' => 'stop',
-						'ignore_case' => true,
-						'stopwords_path' => $package_id,
-					];
+					if ( $inline_index_settings ) {
+						$stopwords[ "{$sub_type}_{$type}_filter" ] = [
+							'type' => 'stop',
+							'ignore_case' => true,
+							'stopwords' => $package_contents,
+						];
+					} else {
+						$stopwords[ "{$sub_type}_{$type}_filter" ] = [
+							'type' => 'stop',
+							'ignore_case' => true,
+							'stopwords_path' => $package_id,
+						];
+					}
+					break;
+				case 'user-dictionary':
+					if ( $language !== 'ja' ) {
+						break;
+					}
+					if ( $inline_index_settings ) {
+						$kuromoji_dictionary['user_dictionary_rules'] = $package_contents;
+					} else {
+						$kuromoji_dictionary['user_dictionary'] = $package_id;
+					}
 					break;
 			}
 		}
+	}
+
+	if ( ! empty( $kuromoji_dictionary ) ) {
+		$mapping['settings']['analysis']['tokenizer']['kuromoji'] = array_merge(
+			$mapping['settings']['analysis']['tokenizer']['kuromoji'],
+			$kuromoji_dictionary
+		);
 	}
 
 	if ( ! empty( $synonyms ) || ! empty( $stopwords ) ) {
@@ -1149,6 +1183,20 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 	}
 
 	return $mapping;
+}
+
+/**
+ * Returns where inline settings should be used.
+ *
+ * @return bool
+ */
+function should_inline_settings() : bool {
+	$es_version = Elasticsearch::factory()->get_elasticsearch_version();
+
+	// Elasticsearch 7.4 is where the inline user_dictionary_rules config option was introduced.
+	return version_compare( $es_version, '7.4', '>=' )
+		? (bool) get_search_config_option( 'inline-index-settings', true )
+		: false;
 }
 
 /**
