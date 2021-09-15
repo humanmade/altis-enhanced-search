@@ -24,8 +24,6 @@ use WP_REST_Server;
 use WP_Term_Query;
 use WP_User_Query;
 
-use function Altis\Enhanced_Search\Packages\get_package_contents;
-
 const SORTABLE_MAX_LENGTH = 10922;
 
 /**
@@ -954,7 +952,7 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 			}
 
 			if ( $inline_index_settings ) {
-				$package_contents = get_package_contents( $package_slug, $is_network_package );
+				$package_contents = Packages\get_package_contents( $package_slug, $is_network_package );
 				if ( ! $package_contents ) {
 					trigger_error( sprintf( 'Could not fetch %s package contents of "%s".', $type, $package_id ) );
 					continue;

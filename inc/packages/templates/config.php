@@ -5,10 +5,6 @@
  * @package altis/search
  */
 
-use const Altis\Enhanced_Search\Packages\MAX_INLINE_SETTINGS_SIZE_RECOMMENDED;
-
-use function Altis\Enhanced_Search\should_inline_settings;
-
 ?>
 <div class="wrap">
 	<h1><?php esc_html_e( 'Search Configuration', 'altis' ); ?></h1>
@@ -86,7 +82,7 @@ use function Altis\Enhanced_Search\should_inline_settings;
 								gmdate( get_option( 'date_format', 'Y-m-d H:i:s' ), $types['user_dictionary']['file_date'] )
 							) );
 							?>
-							<?php if ( should_inline_settings() && filesize( $types['user_dictionary']['uploaded_file'] ) > MAX_INLINE_SETTINGS_SIZE_RECOMMENDED ) : ?>
+							<?php if ( Altis\Enhanced_Search\should_inline_settings() && filesize( $types['user_dictionary']['uploaded_file'] ) > Altis\Enhanced_Search\Packages\MAX_INLINE_SETTINGS_SIZE_RECOMMENDED ) : ?>
 								<p>
 									<strong>
 										<?php
@@ -94,7 +90,7 @@ use function Altis\Enhanced_Search\should_inline_settings;
 												// translators: %s is replaced by the file upload date.
 												__( 'Current file size (%.2fKB) exceeds recommended file size for inline settings (%.2fKB), consider disabling inline settings for optimal performance.', 'altis' ),
 												filesize( $types['user_dictionary']['uploaded_file'] ) / 1024,
-												MAX_INLINE_SETTINGS_SIZE_RECOMMENDED / 1024
+												Altis\Enhanced_Search\Packages\MAX_INLINE_SETTINGS_SIZE_RECOMMENDED / 1024
 											) );
 										?>
 									</strong>
@@ -182,7 +178,7 @@ sea biscuit, sea biscit => seabiscuit</pre>
 						) );
 						?>
 					</p>
-					<?php if ( should_inline_settings() && filesize( $types['synonyms']['uploaded_file'] ) > MAX_INLINE_SETTINGS_SIZE_RECOMMENDED ) : ?>
+					<?php if ( Altis\Enhanced_Search\should_inline_settings() && filesize( $types['synonyms']['uploaded_file'] ) > Altis\Enhanced_Search\Packages\MAX_INLINE_SETTINGS_SIZE_RECOMMENDED ) : ?>
 						<p>
 							<strong>
 								<?php
@@ -190,7 +186,7 @@ sea biscuit, sea biscit => seabiscuit</pre>
 										// translators: %s is replaced by the file upload date.
 										__( 'Current file size (%.2fKB) exceeds recommended file size for inline settings (%.2fKB), consider disabling inline settings for optimal performance.', 'altis' ),
 										filesize( $types['synonyms']['uploaded_file'] ) / 1024,
-										MAX_INLINE_SETTINGS_SIZE_RECOMMENDED / 1024
+										Altis\Enhanced_Search\Packages\MAX_INLINE_SETTINGS_SIZE_RECOMMENDED / 1024
 									) );
 								?>
 							</strong>
@@ -261,7 +257,7 @@ please</pre>
 						) );
 						?>
 					</p>
-					<?php if ( should_inline_settings() && filesize( $types['stopwords']['uploaded_file'] ) > MAX_INLINE_SETTINGS_SIZE_RECOMMENDED ) : ?>
+					<?php if ( Altis\Enhanced_Search\should_inline_settings() && filesize( $types['stopwords']['uploaded_file'] ) > Altis\Enhanced_Search\Packages\MAX_INLINE_SETTINGS_SIZE_RECOMMENDED ) : ?>
 						<p>
 							<strong>
 								<?php
@@ -269,7 +265,7 @@ please</pre>
 										// translators: %s is replaced by the file upload date.
 										__( 'Current file size (%.2fKB) exceeds recommended file size for inline settings (%.2fKB), consider disabling inline settings for optimal performance.', 'altis' ),
 										filesize( $types['stopwords']['uploaded_file'] ) / 1024,
-										MAX_INLINE_SETTINGS_SIZE_RECOMMENDED / 1024
+										Altis\Enhanced_Search\Packages\MAX_INLINE_SETTINGS_SIZE_RECOMMENDED / 1024
 									) );
 								?>
 							</strong>
