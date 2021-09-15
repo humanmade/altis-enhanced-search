@@ -10,7 +10,9 @@ User dictionaries can be configured for [the entire network](admin://network/adm
 
 Note that for the user dictionary, manual entries will override any uploaded files. So make sure to use one or the other, not both, unlike what you can do with synonyms and stop words.
 
-By default, Altis uses inline index settings to include all of these dictionaries, however, it is recommended to turn such feature off in case uploaded files are bigger than 100KB for the sake of performance and ES cluster sizes ( see below ). Altis will notify you if your file size exceeds the recommended limit within the configuration page.
+By default, Altis uses inline index settings to include all of these dictionaries, however, it is recommended to turn this feature off in case uploaded files are bigger than 100KB. This helps to improve the performance and ES cluster sizes (see below). Altis will notify you if your file size exceeds the recommended limit within the configuration page.
+
+**Note**: If you do not use inline index settings you will need to manually reindex your content after making changes to synonyms, stopwords or the Japanese user dictionary.
 
 ```json
 {
