@@ -28,7 +28,7 @@ By setting `mode` to "advanced" it is possible to write more complex search term
 - A word followed by `*` will match anything with that prefix
 - A word preceded by `-` will be excluded from the results
 
-For example the following search would return results with exact matches for "the law", or the words "judge" and "dred" and excluding the word "marvel".
+For example the following search would return results with exact matches for "the law", or the words "judge" and "dredd" and excluding the word "marvel".
 
 ```
 "the law" OR (judge AND dredd) -marvel
