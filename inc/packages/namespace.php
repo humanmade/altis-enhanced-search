@@ -533,9 +533,6 @@ function delete_package( string $slug, bool $for_network = false ) {
 		);
 	}
 
-	// Update the index settings on successful deletion.
-	do_settings_update( $for_network, strpos( $slug, 'user-dictionary' ) !== false );
-
 	/**
 	 * Action triggered when a package is deleted.
 	 *
