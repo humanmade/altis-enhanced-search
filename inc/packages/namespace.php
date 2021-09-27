@@ -295,7 +295,7 @@ function handle_form() : void {
 		$package_id = null;
 
 		// Handle manual entry.
-		if ( ! empty( $_POST[ $text_field ] ) ) {
+		if ( isset( $_POST[ $text_field ] ) ) {
 			$text = sanitize_textarea_field( wp_unslash( $_POST[ $text_field ] ) );
 			$file = get_package_path( "manual-{$type}", $for_network );
 			$has_changed = true;
@@ -308,18 +308,27 @@ function handle_form() : void {
 
 			// Write to uploads.
 			if ( $has_changed ) {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
-				$result = file_put_contents( $file, $text );
-				if ( ! $result ) {
-					$errors[] = new WP_Error(
-						'write_package_error',
-						// translators: %s replaced by search file package path.
-						sprintf( __( 'Could not write search package file to %s', 'altis' ), $file )
-					);
+				if ( empty( $text ) ) {
+					if ( file_exists( $file ) ) {
+						$deleted = delete_package( "manual-{$type}", $for_network );
+						if ( is_wp_error( $deleted ) ) {
+							$errors[] = $deleted;
+						}
+					}
 				} else {
-					$package_id = create_package( "manual-{$type}", $file, $for_network );
-					if ( is_wp_error( $package_id ) ) {
-						$errors[] = $package_id;
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_file_put_contents
+					$result = file_put_contents( $file, $text );
+					if ( ! $result ) {
+						$errors[] = new WP_Error(
+							'write_package_error',
+							// translators: %s replaced by search file package path.
+							sprintf( __( 'Could not write search package file to %s', 'altis' ), $file )
+						);
+					} else {
+						$package_id = create_package( "manual-{$type}", $file, $for_network );
+						if ( is_wp_error( $package_id ) ) {
+							$errors[] = $package_id;
+						}
 					}
 				}
 			}
