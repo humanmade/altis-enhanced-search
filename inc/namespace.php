@@ -74,6 +74,10 @@ function load_elasticpress() {
 		define( 'EP_DASHBOARD_SYNC', false );
 	}
 
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		add_action( 'elasticpress_loaded', __NAMESPACE__ . '\\add_elasticpress_get_mapping_subcommand' );
+	}
+
 	add_filter( 'http_request_args', __NAMESPACE__ . '\\remove_ep_search_term_header', 1 );
 	add_filter( 'http_request_args', __NAMESPACE__ . '\\on_http_request_args', 10, 2 );
 	add_filter( 'ep_pre_request_url', function ( $url ) {
@@ -210,6 +214,39 @@ function configure_documents_feature() {
 
 	// Remove default document search integration.
 	remove_filter( 'pre_get_posts', [ $documents_feature, 'setup_document_search' ] );
+}
+
+/**
+ * Add a new ElasticPress WP-CLI subcommand for querying mappings.
+ *
+ * @return void
+ */
+function add_elasticpress_get_mapping_subcommand() {
+	// Check if command already exists.
+	if ( is_array( WP_CLI::get_runner()->find_command_to_run( 'elasticpress get-mapping' ) ) ) {
+		return;
+	}
+
+	/**
+	 * Return all mappings as JSON. If an index is specified, return its mappings only.
+	 *
+	 * @synopsis [--index-name]
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	WP_CLI::add_command( 'elasticpress get-mapping', function ( $args, $assoc_args ) {
+		$path = '_mapping';
+
+		if ( ! empty( $assoc_args['index-name'] ) ) {
+			$path = $assoc_args['index-name'] . '/' . $path;
+		}
+
+		$response = Elasticsearch::factory()->remote_request( $path );
+
+		$body = wp_remote_retrieve_body( $response );
+
+		WP_CLI::line( $body );
+	} );
 }
 
 /**
