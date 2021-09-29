@@ -15,6 +15,7 @@ use ElasticPress\Elasticsearch;
 use ElasticPress\Feature;
 use ElasticPress\Features;
 use ElasticPress\Indexables;
+use ElasticPress\Utils;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use WP_CLI;
@@ -235,11 +236,21 @@ function add_elasticpress_get_mapping_subcommand() {
 	 * @param array $assoc_args Associative CLI args.
 	 */
 	WP_CLI::add_command( 'elasticpress get-mapping', function ( $args, $assoc_args ) {
-		$path = '_mapping';
+		$index_names = (array) ( $assoc_args['index-name'] ?? [] );
+		if ( ! $index_names ) {
+			$sites = is_multisite() ? Utils\get_sites() : [ 'blog_id' => get_current_blog_id() ];
+			foreach ( $sites as $site ) {
+				$index_names[] = Indexables::factory()->get( 'post' )->get_index_name( $site['blog_id'] );
+				$index_names[] = Indexables::factory()->get( 'term' )->get_index_name( $site['blog_id'] );
+			}
 
-		if ( ! empty( $assoc_args['index-name'] ) ) {
-			$path = $assoc_args['index-name'] . '/' . $path;
+			$user_indexable = Indexables::factory()->get( 'user' );
+			if ( ! empty( $user_indexable ) ) {
+				$index_names[] = $user_indexable->get_index_name();
+			}
 		}
+
+		$path = join( ',', $index_names ) . '/_mapping';
 
 		$response = Elasticsearch::factory()->remote_request( $path );
 
