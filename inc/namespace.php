@@ -15,6 +15,7 @@ use ElasticPress\Elasticsearch;
 use ElasticPress\Feature;
 use ElasticPress\Features;
 use ElasticPress\Indexables;
+use ElasticPress\Utils;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use WP_CLI;
@@ -72,6 +73,10 @@ function load_elasticpress() {
 	// Disable being able to use the admin to run a full data sync.
 	if ( ! defined( 'EP_DASHBOARD_SYNC' ) ) {
 		define( 'EP_DASHBOARD_SYNC', false );
+	}
+
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		add_action( 'elasticpress_loaded', __NAMESPACE__ . '\\add_elasticpress_get_mapping_subcommand' );
 	}
 
 	add_filter( 'http_request_args', __NAMESPACE__ . '\\remove_ep_search_term_header', 1 );
@@ -210,6 +215,49 @@ function configure_documents_feature() {
 
 	// Remove default document search integration.
 	remove_filter( 'pre_get_posts', [ $documents_feature, 'setup_document_search' ] );
+}
+
+/**
+ * Add a new ElasticPress WP-CLI subcommand for querying mappings.
+ *
+ * @return void
+ */
+function add_elasticpress_get_mapping_subcommand() {
+	// Check if command already exists.
+	if ( is_array( WP_CLI::get_runner()->find_command_to_run( 'elasticpress get-mapping' ) ) ) {
+		return;
+	}
+
+	/**
+	 * Return all mappings as JSON. If an index is specified, return its mappings only.
+	 *
+	 * @synopsis [--index-name]
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	WP_CLI::add_command( 'elasticpress get-mapping', function ( $args, $assoc_args ) {
+		$index_names = (array) ( $assoc_args['index-name'] ?? [] );
+		if ( ! $index_names ) {
+			$sites = is_multisite() ? Utils\get_sites() : [ 'blog_id' => get_current_blog_id() ];
+			foreach ( $sites as $site ) {
+				$index_names[] = Indexables::factory()->get( 'post' )->get_index_name( $site['blog_id'] );
+				$index_names[] = Indexables::factory()->get( 'term' )->get_index_name( $site['blog_id'] );
+			}
+
+			$user_indexable = Indexables::factory()->get( 'user' );
+			if ( ! empty( $user_indexable ) ) {
+				$index_names[] = $user_indexable->get_index_name();
+			}
+		}
+
+		$path = join( ',', $index_names ) . '/_mapping';
+
+		$response = Elasticsearch::factory()->remote_request( $path );
+
+		$body = wp_remote_retrieve_body( $response );
+
+		WP_CLI::line( $body );
+	} );
 }
 
 /**

@@ -88,6 +88,26 @@ It is also possible to modify the specific fields stored for each post to provid
 ## Using Elasticsearch
 Elasticsearch is used to provide the search index, as such as a developer you can make direct use of Elasticsearch for advanced feature development. See [Using Elasticsearch](using-elasticsearch.md) for details.
 
+## Elasticsearch Mapping
+To verify one or all Elasticsearch mappings are as expected, you can use the `wp elasticpress get-mapping` subcommand. The command will print all mappings as a JSON string, which is in line with how index data is provided.
+
+By passing an optional index name, the response includes mappings for that index only:
+
+```shell
+wp elasticpress get-mapping --index-name=ep-mysitealtisdev-post-1
+```
+
+To format this in a human-readable way, you may want to pipe the output to a script that allows for pretty-printing JSON, for example, like so:
+
+- `wp elasticpress get-mapping | jq .` (see [`jq`](https://stedolan.github.io/jq/))
+- `wp elasticpress get-mapping | json` (see [`json`](https://trentm.com/json/))
+
+This also works when executing the WP-CLI command within Local Server from your host:
+
+```shell
+composer server cli -- elasticpress get-mapping | jq .
+```
+
 ## Using Google Analytics (GA)
 Google Analytics can be configured to ingest search queries for further analysis and insights. This will inform future weightings and search configuration modifications. When configuring GA, the default query parameter value is `s`, see [Google Analytics - Set up Site Search](https://support.google.com/analytics/answer/1012264) for more information.
 
