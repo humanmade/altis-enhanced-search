@@ -26,5 +26,8 @@ add_action( 'altis.modules.init', function () {
 		'terms' => true,
 		'inline-index-settings' => true,
 	];
-	Altis\register_module( 'search', __DIR__, 'Search', $default_settings, __NAMESPACE__ . '\\bootstrap' );
+	$options = [
+		'defaults' => $default_settings,
+	];
+	Altis\register_module( 'search', __DIR__, 'Search', $options, __NAMESPACE__ . '\\bootstrap' );
 } );
