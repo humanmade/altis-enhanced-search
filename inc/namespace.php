@@ -1978,6 +1978,8 @@ function handle_autosuggest_endpoint() {
 	$search = $features->get_registered_feature( 'search' );
 
 	// Force post filter value.
+	// This is necessary because the ES query is passed frmo the client side,
+	// and we want to ensure only published, searchable content.
 	$json['post_filter'] = [
 		'bool' => [
 			'must' => [
@@ -1994,6 +1996,16 @@ function handle_autosuggest_endpoint() {
 			],
 		],
 	];
+
+	
+	/**
+	 * Filter the autosuggest query JSON.
+	 *
+	 * This is the data that is json encoded and passed as the elasticsearch request body.
+	 *
+	 * @param array $json ES Query.
+	 */
+	$json = apply_filters( 'altis.search.autosuggest_json', $json );
 
 	/**
 	 * Elasticsearch client object.
