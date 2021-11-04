@@ -1978,8 +1978,8 @@ function handle_autosuggest_endpoint() {
 	$search = $features->get_registered_feature( 'search' );
 
 	// Force post filter value.
-	// This is necessary because the ES query is passed frmo the client side,
-	// and we want to ensure only published, searchable content.
+	// This is necessary because the ES query is passed from the client side,
+	// and we want to ensure only published, searchable content is returned.
 	$json['post_filter'] = [
 		'bool' => [
 			'must' => [
@@ -1997,7 +1997,6 @@ function handle_autosuggest_endpoint() {
 		],
 	];
 
-	
 	/**
 	 * Filter the autosuggest query JSON.
 	 *
