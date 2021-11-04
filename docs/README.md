@@ -133,3 +133,16 @@ Depending on the configuration specified for `facets`, if the `match-type` prope
 
 ### Search Form Auto Suggest
 This feature enhances search forms on the website to show a dropdown list of suggestions as users type.
+
+Because the query is sent from the client side the `post_filter` part of the query is hardcoded to only allow publicly searchable posts with the status `publish` to be returned.
+
+The query can be modified using the `altis.search.autosuggest_query` filter, for example:
+
+```php
+add_filter( 'altis.search.autosuggest_query', function ( array $query ) : array {
+	$query['post_filter']['bool']['must_not'] = [
+		[ 'term' => [ 'post.meta._hide.raw' => '1' ] ]
+	];
+	return $query;
+} );
+```
