@@ -1958,8 +1958,8 @@ function handle_autosuggest_endpoint() {
 	}
 
 	// Validate data.
-	$json = json_decode( WP_REST_Server::get_raw_data(), true );
-	if ( ! $json ) {
+	$query = json_decode( WP_REST_Server::get_raw_data(), true );
+	if ( ! $query ) {
 		wp_send_json( [], 200 );
 	}
 
@@ -1980,7 +1980,7 @@ function handle_autosuggest_endpoint() {
 	// Force post filter value.
 	// This is necessary because the ES query is passed from the client side,
 	// and we want to ensure only published, searchable content is returned.
-	$json['post_filter'] = [
+	$query['post_filter'] = [
 		'bool' => [
 			'must' => [
 				[
@@ -1998,13 +1998,13 @@ function handle_autosuggest_endpoint() {
 	];
 
 	/**
-	 * Filter the autosuggest query JSON.
+	 * Filter the autosuggest query.
 	 *
-	 * This is the data that is json encoded and passed as the elasticsearch request body.
+	 * This is the data that is json encoded and passed as the Elasticsearch request body.
 	 *
-	 * @param array $json ES Query.
+	 * @param array $query ES Query.
 	 */
-	$json = apply_filters( 'altis.search.autosuggest_json', $json );
+	$query = apply_filters( 'altis.search.autosuggest_query', $query );
 
 	/**
 	 * Elasticsearch client object.
@@ -2015,7 +2015,7 @@ function handle_autosuggest_endpoint() {
 
 	// Pass to EP.
 	$response = $client->remote_request( Indexables::factory()->get( 'post' )->get_index_name() . '/_search', [
-		'body'   => json_encode( $json ),
+		'body'   => json_encode( $query ),
 		'method' => 'POST',
 	] );
 
