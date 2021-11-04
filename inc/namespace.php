@@ -224,7 +224,7 @@ function configure_documents_feature() {
  */
 function add_elasticpress_get_mapping_subcommand() {
 	// Check if command already exists.
-	if ( is_array( WP_CLI::get_runner()->find_command_to_run( 'elasticpress get-mapping' ) ) ) {
+	if ( is_array( WP_CLI::get_runner()->find_command_to_run( [ 'elasticpress', 'get-mapping' ] ) ) ) {
 		return;
 	}
 
