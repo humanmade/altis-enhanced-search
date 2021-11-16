@@ -132,6 +132,9 @@ function load_elasticpress() {
 	// Ensure non ElasticPress indexes are not affected by global edits using *.
 	add_filter( 'ep_pre_request_url', __NAMESPACE__ . '\\protect_non_ep_indexes', 10, 5 );
 
+	// Sanitize query arguments.
+	add_action( 'pre_get_posts', __NAMESPACE__ . '\\sanitize_query_args', 1000 );
+
 	// Ensure upgrades aren't attempted during install due to db access.
 	if ( defined( 'WP_INITIAL_INSTALL' ) && WP_INITIAL_INSTALL ) {
 		add_filter( 'pre_site_option_ep_version', '__return_false' );
@@ -1914,4 +1917,37 @@ function handle_autosuggest_endpoint() {
 
 	// Return JSON response.
 	wp_send_json( $data, 200 );
+}
+
+/**
+ * Sanitizes array type query args to ensure there are no empty values.
+ *
+ * Empty values in `terms` queries will cause an ES query to error.
+ *
+ * @param \WP_Query $query The WP_Query instance (passed by reference).
+ */
+function sanitize_query_args( WP_Query $query ) : void {
+	$keys_to_sanitize = [
+		'author__in',
+		'author__not_in',
+		'category__and',
+		'category__in',
+		'category__not_in',
+		'tag__and',
+		'tag__in',
+		'tag__not_in',
+		'tag_slug__and',
+		'tag_slug__in',
+		'post_parent__in',
+		'post_parent__not_in',
+		'post__in',
+		'post__not_in',
+		'post_name__in',
+	];
+	foreach ( $keys_to_sanitize as $key ) {
+		if ( empty( $query->get( $key ) ) ) {
+			continue;
+		}
+		$query->set( $key, array_values( array_filter( (array) $query->get( $key ) ) ) );
+	}
 }
