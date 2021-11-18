@@ -1212,8 +1212,8 @@ function combine_weighting_queries( array $query ) : array {
 	$has_function_score = isset( $query['query']['function_score'] );
 	$queries = $has_function_score ? $query['query']['function_score']['query'] : $query['query'];
 
-	// Check search query is present.
-	if ( ! isset( $query['bool'], $query['bool']['should'] ) ) {
+	// Check weighted query is present.
+	if ( empty( $query['bool']['should'][0]['bool']['filter'][0]['match']['post_type.raw'] ?? false ) ) {
 		return $query;
 	}
 
