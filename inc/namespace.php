@@ -123,6 +123,9 @@ function load_elasticpress() {
 	// Combine matching post type weighting queries. Weighting added on priority 20 by EP.
 	add_filter( 'ep_formatted_args', __NAMESPACE__ . '\\combine_weighting_queries', 21 );
 
+	// Fix term query sorting.
+	add_filter( 'ep_term_formatted_args', __NAMESPACE__ . '\\fix_term_query_sorting', 20 );
+
 	// Back compat for ElasticPress v2 - change post index name to old version.
 	add_filter( 'ep_index_name', __NAMESPACE__ . '\\filter_index_name' );
 
@@ -1511,6 +1514,34 @@ function enable_term_query_autosuggest( WP_Term_Query $term_query ) {
 		return;
 	}
 	$term_query->query_vars['autosuggest'] = true;
+}
+
+/**
+ * Correct term query sorting for ES 7.
+ *
+ * @param array $query The full ES query in array format.
+ * @return array
+ */
+function fix_term_query_sorting( array $query ) : array {
+	if ( ! isset( $query['sort'] ) || ! is_array( $query['sort'] ) ) {
+		return $query;
+	}
+
+	foreach ( $query['sort'] as $maybe_field => $sort_group ) {
+		if ( is_numeric( $maybe_field ) ) {
+			foreach ( $sort_group as $field => $sort ) {
+				$field_name = strstr( $field, '.long', true );
+				unset( $query['sort'][ $maybe_field ][ $field ] );
+				$query['sort'][ $maybe_field ][ $field_name ?: $field ] = $sort;
+			}
+		} else {
+			$field_name = strstr( $maybe_field, '.long', true );
+			unset( $query['sort'][ $maybe_field ] );
+			$query['sort'][ $field_name ?: $maybe_field ] = $sort_group;
+		}
+	}
+
+	return $query;
 }
 
 /**
