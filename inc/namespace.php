@@ -1377,6 +1377,11 @@ function combine_weighting_queries( array $query ) : array {
 	$has_function_score = isset( $query['query']['function_score'] );
 	$queries = $has_function_score ? $query['query']['function_score']['query'] : $query['query'];
 
+	// Check search query is present.
+	if ( ! isset( $query['bool'], $query['bool']['should'] ) ) {
+		return $query;
+	}
+
 	$combined = [];
 
 	foreach ( $queries['bool']['should'] as $type_query ) {
