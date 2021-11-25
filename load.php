@@ -3,6 +3,8 @@
  * Altis Search Module.
  *
  * @package altis/search
+ *
+ * phpcs:disable PSR1.Files.SideEffects
  */
 
 namespace Altis\Enhanced_Search;
@@ -35,6 +37,7 @@ add_action( 'altis.loaded_autoloader', function () {
 	if ( ! defined( 'WP_CLI' ) || ! WP_CLI || ! isset( $_SERVER['argv'] ) ) {
 		return;
 	}
+	// phpcs:ignore HM.Security.ValidatedSanitizedInput -- Comparing $_SERVER value to a string directly.
 	if ( ( $_SERVER['argv'][1] ?? '' ) === 'elasticpress' ) {
 		defined( 'WP_DEBUG' ) or define( 'WP_DEBUG', false );
 	}
