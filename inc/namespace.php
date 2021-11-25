@@ -34,9 +34,12 @@ function bootstrap() {
 		add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
 	} );
 
-	// Load debug bar for ElasticPress if Query Monitor is enabled in the config.
-	if ( Altis\get_config()['modules']['dev-tools']['query-monitor'] ?? false ) {
-
+	// Load debug bar for ElasticPress if Query Monitor is enabled in the config and not a CLI request.
+	if (
+		( Altis\get_config()['modules']['dev-tools']['enabled'] ?? false ) &&
+		( Altis\get_config()['modules']['dev-tools']['query-monitor'] ?? false ) &&
+		( ! defined( 'WP_CLI' ) || ! WP_CLI )
+	) {
 		// Enable debugging for Elastic Press Debug Bar to display query logs.
 		if ( ! defined( 'WP_EP_DEBUG' ) ) {
 			define( 'WP_EP_DEBUG', true );
