@@ -378,7 +378,7 @@ function fix_mime_type_query( array $query, array $args ) : array {
 		}
 		// Extract base regex mime type if present.
 		if ( ! empty( $sub_query['regexp']['post_mime_type'] ) ) {
-			$mime_types = [ $sub_query['terms']['post_mime_type'] ];
+			$mime_types = [ $sub_query['regexp']['post_mime_type'] ];
 		}
 
 		if ( empty( $mime_types ) ) {
