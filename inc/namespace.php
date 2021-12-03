@@ -1116,6 +1116,11 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 		}
 	}
 
+	// Short circuit early if we're only dealing with settings.
+	if ( ! isset( $mapping['mappings'] ) ) {
+		return $mapping;
+	}
+
 	if ( version_compare( $es_version, '7', '<' ) ) {
 		$new_mapping = $mapping['mappings'][ $mapping_type ];
 	} else {
