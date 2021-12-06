@@ -187,7 +187,8 @@ function add_error_message( WP_Error $error, bool $for_network = false ) : void 
  * @return string
  */
 function get_packages_dir() : string {
-	$path = WP_CONTENT_DIR . '/uploads/es-packages';
+	$upload_dir = wp_get_upload_dir();
+	$path = $upload_dir['basedir'] . '/es-packages';
 
 	/**
 	 * Filter the path at which Elasticsearch package files are stored.
@@ -326,7 +327,8 @@ function handle_form() : void {
 			$has_changed = true;
 
 			// Check for updates.
-			if ( file_exists( $file ) ) {
+			// phpcs:ignore -- Allow error suppression for existing ID check when file exists.
+			if ( file_exists( $file ) && ! empty( @get_package_id( "manual-{$type}", $for_network ) ) ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 				$has_changed = $text !== file_get_contents( $file );
 			}
@@ -580,7 +582,9 @@ function get_site_indices( ?int $blog_id = null ) : string {
  */
 function do_settings_update( bool $for_network = false, bool $update_data = false ) : void {
 	// Get latest settings.
-	$mapping = Enhanced_Search\elasticpress_mapping( [] );
+	// We use 'x-post-1' one here to mimic an index name so that our generic customised settings
+	// can be returned without needing to replicate the code in EP's put_mapping methods.
+	$mapping = Enhanced_Search\elasticpress_mapping( [], 'x-post-1' );
 	$settings = $mapping['settings'];
 
 	if ( $for_network ) {
@@ -629,6 +633,7 @@ function update_index_settings( string $index, array $settings, bool $update_dat
 	$client->remote_request( $index . '/_settings', [
 		'method' => 'PUT',
 		'body' => wp_json_encode( $settings ),
+		'timeout' => 15,
 	], [], 'put_settings' );
 
 	// Open the index.
