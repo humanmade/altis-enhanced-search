@@ -847,12 +847,14 @@ function elasticpress_analyzer_language() : string {
  * @return array
  */
 function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
-	// Derive current mapping type.
+	// Get site level indexables like post, term etc...
 	$indexables = Indexables::factory()->get_all( null, true );
+	// Add the global indexables like user.
 	$indexables = array_merge( $indexables, Indexables::factory()->get_all( true, true ) );
 	$escaped_indexables = array_map( function ( $item ) {
 		return preg_quote( $item, '/' );
 	}, $indexables );
+	// Derive current mapping type.
 	preg_match( '/.+-(' . implode( '|', $escaped_indexables ) . ')(-\d+)?$/', $index, $matches );
 	if ( isset( $matches[1] ) ) {
 		$mapping_type = $matches[1];
