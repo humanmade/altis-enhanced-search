@@ -327,7 +327,7 @@ function handle_form() : void {
 			$has_changed = true;
 
 			// Check for updates.
-			// phpcs:ignore -- Allow error supporession for existing ID check when file exists.
+			// phpcs:ignore -- Allow error suppression for existing ID check when file exists.
 			if ( file_exists( $file ) && ! empty( @get_package_id( "manual-{$type}", $for_network ) ) ) {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 				$has_changed = $text !== file_get_contents( $file );
@@ -582,6 +582,8 @@ function get_site_indices( ?int $blog_id = null ) : string {
  */
 function do_settings_update( bool $for_network = false, bool $update_data = false ) : void {
 	// Get latest settings.
+	// We use 'x-post-1' one here to mimic an index name so that our generic customised settings
+	// can be returned without needing to replicate the code in EP's put_mapping methods.
 	$mapping = Enhanced_Search\elasticpress_mapping( [], 'x-post-1' );
 	$settings = $mapping['settings'];
 
