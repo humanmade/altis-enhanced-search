@@ -898,12 +898,15 @@ function elasticpress_analyzer_language() : string {
  * @return array
  */
 function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
-	// Derive current mapping type.
+	// Get site level indexables like post, term etc...
 	$indexables = Indexables::factory()->get_all( null, true );
+	// Add the global indexables like user.
+	$indexables = array_merge( $indexables, Indexables::factory()->get_all( true, true ) );
 	$escaped_indexables = array_map( function ( $item ) {
 		return preg_quote( $item, '/' );
 	}, $indexables );
-	preg_match( '/.+-(' . implode( '|', $escaped_indexables ) . ')-\d+$/', $index, $matches );
+	// Derive current mapping type.
+	preg_match( '/.+-(' . implode( '|', $escaped_indexables ) . ')(-\d+)?$/', $index, $matches );
 	if ( isset( $matches[1] ) ) {
 		$mapping_type = $matches[1];
 	} else {
@@ -1158,7 +1161,7 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 		// https://www.elastic.co/guide/en/elasticsearch/reference/6.8/dynamic-templates.html for ref.
 		$start_field = $sub_fields[0];
 		$end_field = $sub_fields[ count( $sub_fields ) - 1 ];
-		foreach ( ( $current_mapping['dynamic_templates'] ?? [] ) as $template ) {
+		foreach ( ( $new_mapping['dynamic_templates'] ?? [] ) as $template ) {
 			$template = wp_parse_args( $template[ array_keys( $template )[0] ], [
 				'match_pattern' => null,
 				'match' => '',
@@ -1166,6 +1169,7 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 				'path_match' => '',
 				'path_unmatch' => '',
 			] );
+
 			// If `match_pattern` is `regex` then check `match` against the end field as a regular expression.
 			if ( $template['match_pattern'] === 'regex' && ! preg_match( "/{$template['match']}/", $end_field ) ) {
 				continue;
