@@ -58,14 +58,14 @@ class ElasticSearchCest {
 		$I->see( 'Alpha', '.column-primary' );
 
 		$I->submitForm( '#wpbody .search-form', [
-			's' => 'theda',
+			's' => 'the',
 		] );
 		$I->see( 'Theta', '.column-primary' );
 
 		$I->submitForm( '#wpbody .search-form', [
-			's' => 'Omaga',
+			's' => 'thet',
 		] );
-		$I->see( 'Omega', '.column-primary' );
+		$I->see( 'Theta', '.column-primary' );
 	}
 
 	/**
