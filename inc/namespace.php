@@ -20,6 +20,7 @@ use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
 use WP_CLI;
 use WP_Error;
+use WP_Post;
 use WP_Query;
 use WP_REST_Server;
 use WP_Term_Query;
@@ -97,6 +98,7 @@ function load_elasticpress() {
 	add_filter( 'ep_indexable_post_status', __NAMESPACE__ . '\\get_elasticpress_indexable_post_statuses' );
 	add_filter( 'ep_indexable_post_types', __NAMESPACE__ . '\\get_elasticpress_indexable_post_types' );
 	add_filter( 'ep_indexable_taxonomies', __NAMESPACE__ . '\\get_elasticpress_indexable_taxonomies' );
+	add_filter( 'ep_sync_taxonomies', __NAMESPACE__ . '\\get_elasticpress_syncable_taxonomies', 10, 2 );
 	add_filter( 'ep_feature_active', __NAMESPACE__ . '\\override_elasticpress_feature_activation', 10, 3 );
 	add_filter( 'ep_config_mapping', __NAMESPACE__ . '\\enable_slowlog_thresholds' );
 	add_filter( 'ep_admin_notices', __NAMESPACE__ . '\\remove_ep_dashboard_notices' );
@@ -702,6 +704,21 @@ function get_elasticpress_indexable_post_types( array $types ) : array {
  */
 function get_elasticpress_indexable_taxonomies( array $taxonomies ) : array {
 	return get_taxonomies();
+}
+
+/**
+ * Override syncable taxonomies from ElasticPress.
+ *
+ * By default, ElasticPress only indexes public content, but
+ * we want to index all content as we are using ElasticPress
+ * in the WordPress admin too.
+ *
+ * @param array $taxonomies List of registered taxnonomy names.
+ * @param WP_Post $post The current post object being indexed.
+ * @return array
+ */
+function get_elasticpress_syncable_taxonomies( array $taxonomies, WP_Post $post ) : array {
+	return get_object_taxonomies( $post->post_type, 'objects' );
 }
 
 /**
