@@ -26,6 +26,7 @@ add_action( 'altis.modules.init', function () {
 		'fuzziness' => 'auto:4,7',
 		'users' => true,
 		'terms' => true,
+		'comments' => false,
 		'inline-index-settings' => true,
 	];
 	$options = [

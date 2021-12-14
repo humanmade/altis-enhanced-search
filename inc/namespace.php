@@ -745,6 +745,7 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 		'protected_content' => false,
 		'terms' => (bool) ( $config['terms'] ?? true ),
 		'users' => (bool) ( $config['users'] ?? true ),
+		'comments' => (bool) ( $config['comments'] ?? false ),
 	];
 
 	if ( ! isset( $features_activated[ $feature->slug ] ) ) {

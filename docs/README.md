@@ -50,6 +50,11 @@ Content that is indexed in the search index by default:
 - Terms
 - Term Meta
 
+The following data is not indexed by default but can be enabled via your config:
+
+- Comments
+- Comment Meta
+
 **Note:** Post meta that is "protected" - i.e. has a key beginning with `_` - will not be indexed automatically. To index these fields, use the `ep_prepare_meta_allowed_protected_keys` filter. It will accept a value of boolean `true` (which will index *all* protected meta) or an array containing the keys of specific protected meta fields you want to index.
 
 When used in conjunction with the [Media Rekognition](docs://media/image-recognition.md) feature, all images are processed for automatic keyword detection and stored in the search index too.
@@ -120,6 +125,7 @@ The following options can be enabled/disabled via the search configuration.
 - `"autosuggest": true|false (default)`
 - `"users": true (default)|false`
 - `"terms": true (default)|false`
+- `"comments": true|false (default)`
 
 ### Related Posts
 To find related posts leveraging Elastic Search use the `ep_find_related()` function. The function requires a single parameter ( `$post_id` ) with another optional parameter ( `$return` ). The `$post_id` will be used to find the posts that are related to it, with `$return` specifying the number of related posts to return, which defaults to 5.
