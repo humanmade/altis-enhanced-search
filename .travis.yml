@@ -54,7 +54,7 @@ branches:
 
 before_script:
   # Install Altis and start the local server
-  - composer create-project altis/skeleton:dev-$TRAVIS_BRANCH --stability=dev $HOME/test-root || exit 1
+  - composer create-project altis/skeleton:dev-$TRAVIS_BRANCH --stability=dev $HOME/test-root || composer create-project altis/skeleton:dev-master --stability=dev $HOME/test-root || exit 1
   # Require the current module and alias the branch to be tested to the target version main branch
   - cd $HOME/test-root && composer require "$ALTIS_PACKAGE:dev-${TRAVIS_PULL_REQUEST_BRANCH:-$TRAVIS_BRANCH} as dev-$TRAVIS_BRANCH"
 
