@@ -35,7 +35,7 @@ cache:
 # Ensure correct node version is used for build
 before_install:
   # Exit early if no tests are found
-  - test -n "$(find $TRAVIS_BUILD_DIR/tests -name '*.suite.yml' 2>/dev/null)" || exit 0
+  - test -n "$(find -maxdepth 1 $TRAVIS_BUILD_DIR/tests -name '*.suite.yml' 2>/dev/null)" || exit 0
   - nvm install v12
   - nvm use v12
   # Authenticate with docker hub.
