@@ -153,7 +153,14 @@ function load_elasticpress() {
 
 	// Ensure upgrades aren't attempted during install due to db access.
 	if ( defined( 'WP_INITIAL_INSTALL' ) && WP_INITIAL_INSTALL ) {
-		add_filter( 'pre_site_option_ep_version', '__return_false' );
+		// Set a really high version number so that upgrade routines are skipped.
+		add_filter( 'pre_update_site_option_ep_version', function () {
+			return '10000';
+		} );
+		add_filter( 'pre_site_option_ep_version', function () {
+			return '10000';
+		} );
+		add_filter( 'pre_update_site_option_ep_last_sync', '__return_false' );
 		add_filter( 'pre_site_option_ep_last_sync', '__return_false' );
 	}
 
@@ -813,7 +820,7 @@ function get_elasticsearch_url() : string {
  */
 function setup_elasticpress_on_install() {
 	WP_CLI::line( 'Setting up ElasticPress...' );
-	$response = WP_CLI::runcommand( 'elasticpress index --setup --network-wide', [
+	$response = WP_CLI::runcommand( 'elasticpress index --setup --network-wide --yes', [
 		'return' => true,
 	] );
 	WP_CLI::line( $response );
