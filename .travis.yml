@@ -8,4 +8,4 @@ import:
 before_script:
   - cd $HOME/test-root && composer config repositories.wp composer https://wpackagist.org
   - cd $HOME/test-root && composer require wpackagist-theme/twentytwentyone
-  - cd $HOME/test-root && jq '. + {"extra":{"altis":{"modules":{"cms":{"default-theme":"twentytwentyone"}}}}}' composer.json
+  - cd $HOME/test-root && cat <<< $(jq '. + {"extra":{"altis":{"modules":{"cms":{"default-theme":"twentytwentyone"}}}}}' composer.json) > composer.json
