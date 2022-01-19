@@ -6,4 +6,5 @@ import:
 
 # Add your custom config below, which will merge with the default module config from the section above.
 before_script:
-  - cd $HOME/test-root && composer server cli theme install twentytwentyone -- --activate 
+  - cd $HOME/test-root && composer config repositories.wp composer https://wpackagist.org
+  - cd $HOME/test-root && composer require wpackagist-theme/twentytwentyone
