@@ -820,7 +820,7 @@ function get_elasticsearch_url() : string {
  */
 function setup_elasticpress_on_install() {
 	WP_CLI::line( 'Setting up ElasticPress...' );
-	$response = WP_CLI::runcommand( 'elasticpress index --network-wide --yes', [
+	$response = WP_CLI::runcommand( 'elasticpress index --setup --network-wide --yes', [
 		'return' => true,
 	] );
 	WP_CLI::line( $response );
