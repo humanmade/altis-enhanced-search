@@ -38,17 +38,13 @@ class ElasticSearchCest {
 			'Omega',
 		];
 
-		// Create terms.
-		foreach ( $tags as $tag ) {
-			$I->haveTermInDatabase( $tag, 'post_tag' );
-		}
-		$I->seeTermInDatabase( [ 'slug' => 'theta' ] );
-
-		$this->_index();
-
 		$I->loginAsAdmin();
 		$I->amOnAdminPage( 'edit-tags.php?taxonomy=post_tag' );
 		foreach ( $tags as $tag ) {
+			$I->submitForm( '#addtag', [
+				'tag-name' => $tag,
+			] );
+			$I->seeTermInDatabase( [ 'slug' => strtolower( $tag ) ] );
 			$I->see( $tag, '.column-primary' );
 		}
 
@@ -58,12 +54,17 @@ class ElasticSearchCest {
 		$I->see( 'Alpha', '.column-primary' );
 
 		$I->submitForm( '#wpbody .search-form', [
-			's' => 'the',
+			's' => 'alp',
+		] );
+		$I->see( 'Alpha', '.column-primary' );
+
+		$I->submitForm( '#wpbody .search-form', [
+			's' => 'thet',
 		] );
 		$I->see( 'Theta', '.column-primary' );
 
 		$I->submitForm( '#wpbody .search-form', [
-			's' => 'thet',
+			's' => 'theto',
 		] );
 		$I->see( 'Theta', '.column-primary' );
 	}
@@ -337,7 +338,7 @@ class ElasticSearchCest {
 	protected function _index( string $options = '' ) {
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 		exec( sprintf(
-			'WPBROWSER_HOST_REQUEST=1 wp elasticpress index --network-wide --setup %s',
+			'WPBROWSER_HOST_REQUEST=1 wp elasticpress index --network-wide --setup --yes %s',
 			$options
 		), $output );
 	}
