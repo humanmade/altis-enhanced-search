@@ -101,7 +101,7 @@ class ElasticSearchCest {
 			'synonyms-text' => 'cat, dog, hamster',
 		] );
 
-		$this->_index();
+		$I->reindexContent();
 
 		$I->amOnPage( '/?s=cat' );
 
@@ -141,7 +141,7 @@ class ElasticSearchCest {
 			'synonyms-text' => "cat, dog, hamster\nsneaker, trainer, shoe, loafer",
 		] );
 
-		$this->_index();
+		$I->reindexContent();
 
 		$I->amOnPage( '/?s=loaffer' );
 
@@ -180,7 +180,7 @@ class ElasticSearchCest {
 			'stopwords-text' => 'ignore',
 		] );
 
-		$this->_index();
+		$I->reindexContent();
 
 		$I->amOnPage( '/?s=ignore' );
 		$I->dontSee( 'Ignore this', '.entry-title' );
@@ -206,7 +206,7 @@ class ElasticSearchCest {
 			],
 		] );
 
-		$this->_index();
+		$I->reindexContent();
 
 		$I->loginAsAdmin();
 		$I->amOnAdminPage( 'users.php' );
@@ -255,7 +255,7 @@ class ElasticSearchCest {
 			] );
 		}
 
-		$this->_index();
+		$I->reindexContent();
 
 		$I->loginAsAdmin();
 		$I->amOnAdminPage( 'post-new.php?post_type=ep-pointer' );
@@ -295,7 +295,7 @@ class ElasticSearchCest {
 			'post_content' => sprintf( '<!-- wp:block {"ref":%d} /-->', $block_id ),
 		] );
 
-		$this->_index();
+		$I->reindexContent();
 
 		$I->amOnPage( '/?s=reusable' );
 		$I->see( 'I am content!', '.entry-title' );
@@ -325,22 +325,6 @@ class ElasticSearchCest {
 			$config['modules']['cloud']['cavalcade'] = false;
 			return $config;
 		} );
-	}
-
-	/**
-	 * Run ElasticPress indexing command.
-	 *
-	 * Also ensure user dicts are removed.
-	 *
-	 * @param string $options Additional arguments to append to the indexing command.
-	 * @return void
-	 */
-	protected function _index( string $options = '' ) {
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
-		exec( sprintf(
-			'WPBROWSER_HOST_REQUEST=1 wp elasticpress index --network-wide --setup --yes %s',
-			$options
-		), $output );
 	}
 
 }
