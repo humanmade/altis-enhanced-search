@@ -101,7 +101,7 @@ class ElasticSearchCest {
 			'synonyms-text' => 'cat, dog, hamster',
 		] );
 
-		$I->reindexElastic();
+		$I->reindexContent();
 
 		$I->amOnPage( '/?s=cat' );
 
@@ -141,7 +141,7 @@ class ElasticSearchCest {
 			'synonyms-text' => "cat, dog, hamster\nsneaker, trainer, shoe, loafer",
 		] );
 
-		$I->reindexElastic();
+		$I->reindexContent();
 
 		$I->amOnPage( '/?s=loaffer' );
 
@@ -180,7 +180,7 @@ class ElasticSearchCest {
 			'stopwords-text' => 'ignore',
 		] );
 
-		$I->reindexElastic();
+		$I->reindexContent();
 
 		$I->amOnPage( '/?s=ignore' );
 		$I->dontSee( 'Ignore this', '.entry-title' );
@@ -206,7 +206,7 @@ class ElasticSearchCest {
 			],
 		] );
 
-		$I->reindexElastic();
+		$I->reindexContent();
 
 		$I->loginAsAdmin();
 		$I->amOnAdminPage( 'users.php' );
@@ -255,7 +255,7 @@ class ElasticSearchCest {
 			] );
 		}
 
-		$I->reindexElastic();
+		$I->reindexContent();
 
 		$I->loginAsAdmin();
 		$I->amOnAdminPage( 'post-new.php?post_type=ep-pointer' );
@@ -295,7 +295,7 @@ class ElasticSearchCest {
 			'post_content' => sprintf( '<!-- wp:block {"ref":%d} /-->', $block_id ),
 		] );
 
-		$I->reindexElastic();
+		$I->reindexContent();
 
 		$I->amOnPage( '/?s=reusable' );
 		$I->see( 'I am content!', '.entry-title' );
