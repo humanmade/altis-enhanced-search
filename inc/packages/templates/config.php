@@ -128,7 +128,7 @@ sea biscuit, sea biscit => seabiscuit</pre>
 						</span>
 					<?php endif; ?>
 				</h3>
-				<p class="description"><?php esc_html_e( 'If you have a large number of synonyms in the order of 1000s a file upload is recommended.' ); ?></p>
+				<p class="description"><?php esc_html_e( 'If you have a large number of synonyms in the order of 1000s a file upload is recommended. Only text files are accepted.' ); ?></p>
 				<?php if ( $types['synonyms']['file_date'] ) : ?>
 					<?php if ( $types['synonyms']['uploaded_error'] ) : ?>
 						<div class="notice notice-error">
@@ -193,7 +193,7 @@ please</pre>
 						</span>
 					<?php endif; ?>
 				</h3>
-				<p class="description"><?php esc_html_e( 'If you have a large number of stop words in the order of 1000s a file upload is recommended.' ); ?></p>
+				<p class="description"><?php esc_html_e( 'If you have a large number of stop words in the order of 1000s a file upload is recommended. Only text files are accepted.' ); ?></p>
 				<?php if ( $types['stopwords']['file_date'] ) : ?>
 					<?php if ( $types['stopwords']['uploaded_error'] ) : ?>
 						<div class="notice notice-error">
