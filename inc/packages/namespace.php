@@ -363,23 +363,34 @@ function handle_form() : void {
 
 		// Handle file upload.
 		if ( ! empty( $_FILES ) && isset( $_FILES[ $file_field ] ) && ! empty( $_FILES[ $file_field ]['tmp_name'] ) ) {
-			$file = get_package_path( "uploaded-{$type}", $for_network );
-			// phpcs:ignore HM.Security.ValidatedSanitizedInput.InputNotSanitized
-			$result = move_uploaded_file( wp_unslash( $_FILES[ $file_field ]['tmp_name'] ), $file );
-			if ( ! $result ) {
+			// phpcs:ignore HM.Security.ValidatedSanitizedInput
+			$mime_type = mime_content_type( $_FILES[ $file_field ]['tmp_name'] );
+			if ( $mime_type !== 'text/plain' ) {
 				$errors[] = new WP_Error(
-					'write_package_error',
+					'file_type_incorrect',
 					// translators: %s replaced by search package file path.
-					sprintf( __( 'Could not write search package file to %s', 'altis' ), $file )
+					sprintf( __( 'Detected unsupported file type %, only text files are supported.', 'altis' ), $mime_type )
 				);
+
 			} else {
-				$package_id = create_package( "uploaded-{$type}", $file, $for_network );
-				if ( is_wp_error( $package_id ) ) {
-					$errors[] = $package_id;
+				$file = get_package_path( "uploaded-{$type}", $for_network );
+				// phpcs:ignore HM.Security.ValidatedSanitizedInput.InputNotSanitized
+				$result = move_uploaded_file( wp_unslash( $_FILES[ $file_field ]['tmp_name'] ), $file );
+				if ( ! $result ) {
+					$errors[] = new WP_Error(
+						'write_package_error',
+						// translators: %s replaced by search package file path.
+						sprintf( __( 'Could not write search package file to %s', 'altis' ), $file )
+					);
 				} else {
-					// User dictionary update means we should update the indexed data.
-					if ( $type === 'user-dictionary' ) {
-						$should_update_indexes = true;
+					$package_id = create_package( "uploaded-{$type}", $file, $for_network );
+					if ( is_wp_error( $package_id ) ) {
+						$errors[] = $package_id;
+					} else {
+						// User dictionary update means we should update the indexed data.
+						if ( $type === 'user-dictionary' ) {
+							$should_update_indexes = true;
+						}
 					}
 				}
 			}
