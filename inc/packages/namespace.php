@@ -337,12 +337,12 @@ function handle_form() : void {
 		// Handle file upload.
 		if ( ! empty( $_FILES ) && isset( $_FILES[ $file_field ] ) && ! empty( $_FILES[ $file_field ]['tmp_name'] ) ) {
 			// phpcs:ignore HM.Security.ValidatedSanitizedInput
-			$mime_type = \mime_content_type( $_FILES[ $file_field ]['tmp_name'] );
+			$mime_type = mime_content_type( $_FILES[ $file_field ]['tmp_name'] );
 			if ( $mime_type !== 'text/plain' ) {
 				$errors[] = new WP_Error(
 					'file_type_incorrect',
 					// translators: %s replaced by search package file path.
-					sprintf( __( 'Detected unsupported file type %, only textual files are supported.', 'altis' ), $mime_type )
+					sprintf( __( 'Detected unsupported file type %, only text files are supported.', 'altis' ), $mime_type )
 				);
 
 			} else {
