@@ -1,6 +1,11 @@
-# Using Elasticsearch
+---
+title: Custom Queries
+order: 100
+---
+# Custom Queries and Elasticsearch Usage
 
 When working with custom data types or advanced search implementations, you may want to build direct integrations with Elasticsearch, rather than using the higher level features and APIs provided for CMS content.
+
 
 ## Making HTTP Requests
 
