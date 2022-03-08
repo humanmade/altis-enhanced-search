@@ -12,6 +12,12 @@ When searching, results can be ordered by relevancy score. This score is based o
 To help adjust relevancy, Altis provides [various configuration settings to tune relevancy and search behaviour](./tuning.md), allowing for stricter or more permissive matching, advanced query operators, and fuzzy matching.
 
 
+## Date Decay
+
+For most use cases, you'll want to treat newer results as more relevant than older ones. Altis includes [date decay functionality](./date-decay.md) which automatically adjusts relevancy scores based on dates. These parameters can be tuned as part of the configuration.
+
+
+
 ## User Dictionaries
 
 When indexing content, Elasticsearch uses analyzers to convert text from a raw string into data which can be queried. Altis provides [analyzers for common languages](../language-support.md) out of the box.
