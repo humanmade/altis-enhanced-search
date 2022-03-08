@@ -8,6 +8,28 @@ Altis automatically indexes your content as it changes to keep search indexes in
 Before data can be indexed, the index "mapping" must be created. This works like a table definition in MySQL, containing a list of fields, their data types, and any field settings. The index mappings can be created by running `wp elasticpress put-mapping`.
 
 
+## Verifying Mappings
+
+To verify one or all Elasticsearch mappings are as expected, you can use the `wp elasticpress get-mapping` subcommand. The command will print all mappings as a JSON string, which is in line with how index data is provided.
+
+By passing an optional index name, the response includes mappings for that index only:
+
+```shell
+wp elasticpress get-mapping --index-name=ep-mysitealtisdev-post-1
+```
+
+To format this in a human-readable way, you may want to pipe the output to a script that allows for pretty-printing JSON, for example, like so:
+
+- `wp elasticpress get-mapping | jq .` (see [`jq`](https://stedolan.github.io/jq/))
+- `wp elasticpress get-mapping | json` (see [`json`](https://trentm.com/json/))
+
+This also works when executing the WP-CLI command within [Local Server](docs://local-server/) from your host:
+
+```shell
+composer server cli -- elasticpress get-mapping | jq .
+```
+
+
 ## Reindexing
 
 Occasionally, a "reindex" may be required. This can occur if data is out of sync in Elasticsearch, if data is updated directly in the database, or when conducting imports.
