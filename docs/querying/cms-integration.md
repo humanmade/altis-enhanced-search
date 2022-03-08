@@ -99,39 +99,3 @@ add_filter( 'ep_weighting_default_post_type_weights', function ( array $fields, 
 	return $fields;
 }, 10, 2 );
 ```
-
-
-## Autosuggest
-Because of the default way that Elasticsearch analyses text it performs better with complete search terms, as you might expect to be submitted from a search form.
-
-In some cases you might want to provide a dynamic interface where results are fetched as the user types. The standard method of search will not produce good results until a full word has been typed out, so Altis provides a means of analysing and fetching results based on partial search terms.
-
-In the same way as `ep_integrate` can be passed to any query class, you can pass the parameter `autosuggest` along with the `s` parameter (or `search` for user and term queries):
-
-```php
-$posts = new WP_Query( [
-	'autosuggest' => true,
-	// A partial search term.
-	// Setting `s` will cause `ep_integrate` to be added and set to true.
-	's' => 'str',
-] );
-```
-
-The `autosuggest` parameter defaults to true in the following circumstances:
-
-- If the `DOING_AJAX` constant is defined and `true`, to allow for search as you type functionality
-- Media library searches
-- User searches
-- Term searches
-
-### Filters
-
-By default only a subset of fields are analysed for autosuggest searches, but this can be filtered to add additional fields for each indexable object type.
-
-**`altis.search.autosuggest_post_fields : array`** defaults to `post_title`.
-
-**`altis.search.autosuggest_term_fields : array`** defaults to `name`.
-
-**`altis.search.autosuggest_user_fields : array`** defaults to `user_nicename`, `display_name`, `user_login`, `meta.first_name.value`, `meta.last_name.value` and `meta.nickname.value`.
-
-**Note:** if the above filters are used the site content will need to be re-indexed for autosuggestions to work properly.
