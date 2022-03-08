@@ -1,12 +1,21 @@
-# CMS Query Integration
+# CMS Integration
 
-The Search module overrides the default search functionality to query the specialized search index in place of a standard MySQL query. This means all default search operations using the CMS search APIs for posts, users and terms such as `WP_Query`, `WP_User_Query`, `WP_Term_Query` and the REST API search endpoints will transparently make use of the search index by default.
+The Search module automatically integrates with the search functionality in the CMS, transparently upgrading requests to use Elasticsearch where possible.
 
-It is possible to control this behaviour and thus use the search index for non-search queries. The reason for doing this is to improve performance when running complex queries, such as meta queries, that would otherwise be too slow to do in the database.
+(This feature is provided by ElasticPress, with additions from Altis.)
 
-Each query class accepts an array of parameters. ElasticPress checks for the value of an `ep_integrate` parameter. If this is true, the query is performed by Elasticsearch instead of MySQL. If the `s` (search) parameter is present `ep_integrate` will be set to `true` automatically.
 
-The following example sets `ep_integrate` to true for a non-search query where the `s` parameter is not used.
+## Querying with ElasticPress
+
+By default, all search operations using the query APIs will transparently make use of the search index. This includes `WP_Query`, `WP_User_Query`, `WP_Term_Query`, and REST API queries, **where the search parameter is specified** (typically `s`).
+
+You may want to manually enable this behaviour to use the search index for non-search queries. This may improve performance when running complex queries, such as meta queries, that would otherwise be too slow to do in the database.
+
+**Note:** This usage is advanced, and may have wide-ranging implications for your queries, as you're querying the indexed fields rather than the original, source fields. Ensure you test this behaviour extensively.
+
+To enable the use of ElasticPress integration, set the `ep_integrate` query param to `true`. (If the `s` (search) parameter is present `ep_integrate` will be set to `true` automatically.)
+
+For example, the following query finds projects based on meta value, but does not contain search parameters. By default, ElasticPress would not be used, but is enabled explicitly by setting `ep_integrate` to `true`.
 
 ```php
 $posts = new WP_Query( [
@@ -22,24 +31,24 @@ $posts = new WP_Query( [
 ] );
 ```
 
-Note that in the above example you would need a PHP Code Sniffer exception for using the meta query to pass [Automated Code Review](docs://guides/code-review/README.md).
+**Note:** This example may trigger [Automated Code Review](docs://guides/code-review/README.md) warnings due to the use of a meta query. While meta queries have a lower performance impact with Elasticsearch, it's important to test performance characteristics.
 
-You can also circumvent the use of Elasticsearch for searches by explicitly setting `ep_integrate` to false in the query arguments or by using the `pre_get_posts` action and checking for certain conditions:
+The automatic integration can be disabled on a per query basis by explicitly setting `ep_integrate` to false in the query arguments or on the `pre_get_posts` action. For example:
 
 ```php
 add_action( 'pre_get_posts', function ( WP_Query $query ) {
 	// Avoid using Elasticsearch for the 'project' post type.
-	if ( ! $query->is_search() || $query->get( 'post_type' ) !== 'project' ) {
-		return;
+	if ( $query->is_search() && $query->get( 'post_type' ) === 'project' ) {
+		$query->set( 'ep_integrate', false );;
 	}
-
-	$query->set( 'ep_integrate', false );
-}, 20 );
+} );
 ```
+
 
 ## Customising Searched Fields
 
-Altis will search key content fields by default, including those defined in the [field boosting config](./search-configuration/README.md#field-boosting), depending on the type of content.
+Altis will search key content fields by default, including those defined in the [field boosting config](../search-configuration/README.md#field-boosting), depending on the type of content.
+
 
 ### Using Query Parameters
 
@@ -57,6 +66,7 @@ $posts = new WP_Query( [
 ```
 
 When using the `search_fields` parameter, the `ep_search_fields` filter will be run which can modify the list of searched fields.
+
 
 ### Using Filters
 
