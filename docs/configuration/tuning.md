@@ -193,3 +193,8 @@ add_filter( 'altis.search.max_query_length', function ( int $max_length, string 
 	return 50;
 } );
 ```
+
+
+## Date Decay
+
+For most use cases, you'll want to treat newer results as more relevant than older ones. Altis includes [date decay functionality](./date-decay.md) which automatically adjusts relevancy scores based on dates.
