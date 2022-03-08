@@ -44,4 +44,9 @@ Altis includes analyzers for the following languages:
 - Thai
 - Ukrainian
 
-**Note:** Altis Support cannot provide assistance with tuning relevancy scores, or language analysis in languages other than English. Altis Partners may be able to provide consultation on these languages; contact your account manager for more information.
+**Note:** Altis Support cannot provide assistance with tuning relevancy scores, or language analysis in languages other than English. Altis Partners may be able to provide consultation for these languages; contact your account manager for more information.
+
+
+## Japanese
+
+The Search module includes the Japanese language analyzer (kuromoji), as well as the [custom user dictionary tools](./configuration/custom-dictionaries.md) designed specifically for Japanese support.
