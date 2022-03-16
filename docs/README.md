@@ -34,7 +34,7 @@ Guides contained in this documentation are on a best-effort basis; for help with
 
 Altis includes the Search module (`altis/enhanced-search`) which is built upon a WordPress plugin called ElasticPress, made by our friends at [10up](https://10up.com). Altis adds additional functionality, including deep integration into the Altis platform.
 
-The Altis Cloud includes Elasticsearch backend servers, which are a database tuned specifically for search. The Search module sets up a connection to the Elasticsearch servers.
+Altis Cloud includes Elasticsearch backend servers, which are a database tuned specifically for search. The Search module sets up a connection to the Elasticsearch servers.
 
 When content is created or updated, that content is **indexed** into Elasticsearch. This works similar to caching, where a copy of your original data is stored within Elasticsearch in an **index** (effectively, a database table). Unlike your original data, the index can also contain additional data just for search, including generated or rendered data. Each item of content is stored as a **document** which has **fields** containing the data.
 
