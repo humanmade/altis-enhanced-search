@@ -1,8 +1,14 @@
-# Search Configuration
+# Tuning Relevancy
 
-Depending on your use case and requirements there are many ways you may wish to configure the search engine. The following built in configuration options aim to provide some flexibility out of the box however more advanced customisations may require some development work and deep knowledge of Elasticsearch.
+Altis provides a set of default configuration for relevancy scoring based on experience and customer feedback.
+
+Depending on your use case and requirements, you may wish to tune relevancy to provide more relevant results to visitors. The following built-in configuration options aim to provide some high-level levers for tuning.
+
+**Note:** Relevancy scoring is a highly subjective process, and Altis support cannot assist with this except for clearly identified bugs. The Altis team can help you find partners with Elasticsearch experience if needed.
+
 
 ## Search Mode
+
 The mode setting determines whether or not the search will allow the use of advanced search syntax. The default mode is "simple" search. To enable advanced mode you would use the configuration below.
 
 ```json
@@ -34,7 +40,9 @@ For example the following search would return results with exact matches for "th
 "the law" OR (judge AND dredd) -marvel
 ```
 
+
 ## Strict Search
+
 By default searching will match _all_ the provided search terms.
 
 This means the more specific a search query is the fewer results will be provided. For example "the quick brown fox" will be interpreted as "the `AND` quick `AND` brown `AND` fox".
@@ -57,7 +65,9 @@ Setting `strict` to `false` will change the behaviour to match each individual w
 
 Strict matching is recommended if you have a user interface that allows sorting search results by anything other than relevance such as date.
 
+
 ## Field Boosting
+
 By default the post title, excerpt, content, author name and taxonomy terms are searched against. Field boosting allows you to modify the importance of those fields with regards to search results. The following configuration will increase the important of the post title, excerpt and a custom meta field above the default value of 1.
 
 ```json
@@ -80,7 +90,9 @@ By default the post title, excerpt, content, author name and taxonomy terms are 
 
 It is important to note that the field names should match the fields in the elasticsearch index and do not always correspond 1:1 with database fields.
 
+
 ## Fuzzy Matching
+
 By default some degree of fuzzy matching is allowed so that simple spelling errors can still return some results, for example "breif" would match "brief". This can sometimes result in unwanted search results however with short words and acronyms.
 
 Fuzzy matching works by providing an _edit distance_ as an integer from 0-2. The number indicates how many edits are allowed for a term to match. Edits can be one of the following:
@@ -139,6 +151,7 @@ If you have a prefix length of 0 you may wish to increase this value to get more
 
 This option allows you to prevent transpositions from being counted as a single edit. In the above example the transposition "act" to "cat" has an edit distance of 1. Setting this value to `false` would mean the same transposition would have an edit distance of 2 because 2 letters have been replaced.
 
+
 ## Max Query Length
 
 Typically search queries can be as long as the user wishes. As a preventative measure against slow queries and search request spamming, Altis limits search query strings to **100 characters** by default.
@@ -180,3 +193,8 @@ add_filter( 'altis.search.max_query_length', function ( int $max_length, string 
 	return 50;
 } );
 ```
+
+
+## Date Decay
+
+For most use cases, you'll want to treat newer results as more relevant than older ones. Altis includes [date decay functionality](./date-decay.md) which automatically adjusts relevancy scores based on dates.

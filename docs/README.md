@@ -18,7 +18,53 @@ The benefits of using Elasticsearch over MySQL search queries include:
 
 The default Search index and related functionality is provided by the [ElasticPress plugin](https://github.com/10up/ElasticPress) and the multilingual support is derived from [the WordPress.com Elasticsearch library](https://github.com/Automattic/wpes-lib).
 
-If you do not wish to use the search module it can be deactivated via your config:
+
+## Support
+
+Altis provides the Search module and underlying Elasticsearch server to facilitate search on your site, with default configuration to meet a majority of use cases.
+
+Using developer features of the Search module **requires understanding how Elasticsearch works**. We recommend reading the [Elasticsearch guide by Elastic](https://www.elastic.co/guide/en/elasticsearch/).
+
+Modifying and tuning search queries for relevance is a subjective process. Additionally, much like writing complex database queries, building custom Elasticsearch queries requires a deep understanding of how Elasticsearch works.
+
+Guides contained in this documentation are on a best-effort basis; for help with tuning or customising search results, the Altis team can help you find a partner to facilitate your use. Altis support cannot help with tuning results, tweaking configuration, or writing custom Elasticsearch queries.
+
+
+## Terminology
+
+Altis includes the Search module (`altis/enhanced-search`) which is built upon a WordPress plugin called ElasticPress, made by our friends at [10up](https://10up.com). Altis adds additional functionality, including deep integration into the Altis platform.
+
+Altis Cloud includes Elasticsearch backend servers, which are a database tuned specifically for search. The Search module sets up a connection to the Elasticsearch servers.
+
+When content is created or updated, that content is **indexed** into Elasticsearch. This works similar to caching, where a copy of your original data is stored within Elasticsearch in an **index** (effectively, a database table). Unlike your original data, the index can also contain additional data just for search, including generated or rendered data. Each item of content is stored as a **document** which has **fields** containing the data.
+
+When a user searches for content on your site, Altis converts this into a **query**. The query is run in Elasticsearch against your indexed content, which generates results with a **relevancy score**. Relevancy scores are based on the index configuration, field configuration, the query being run, and the indexed data.
+
+
+## Indexing
+
+The indexing process is performed automatically for you by Altis, indexing [most forms of content on your site](./indexing/README.md). Content can be [reindexed if necessary](./indexing/reindexing.md), and [additional data can be indexed](./indexing/additional-data.md).
+
+
+## Querying
+
+Altis [automatically integrates with search queries](./querying/cms-integration.md), as well as providing [autosuggest functionality automatically for your search forms](./querying/autosuggest.md).
+
+Developers can also use [custom queries](./querying/custom-queries.md) for advanced feature development.
+
+
+## Configuration
+
+Altis provides [various configuration options](./configuration/README.md) to allow adjusting ElasticPress and Elasticsearch behaviour.
+
+You can also use these options to [tune relevancy scoring](./configuration/tuning.md), including [date-based "decay"](./configuration/date-decay.md).
+
+Users can also use the [custom user dictionary settings](./configuration/custom-dictionaries.md) to adjust how text is analyzed, including support for synonyms, stop words and custom text analysis for Japanese.
+
+
+## Disabling Search
+
+The Search module works by overriding default WordPress search, which uses MySQL full-text search. If you would prefer to use MySQL search, you can deactivate the search module via your config:
 
 ```json
 {
@@ -36,119 +82,4 @@ If you do not wish to use the search module it can be deactivated via your confi
 
 **Note:** turning this module off does not remove the Elasticsearch server. This can still be used for [Native Analytics](docs://analytics/native/README.md) and any custom use cases.
 
-Content that is indexed in the search index by default:
-
-- Posts
-- Pages
-- Media
-- Custom Post Types (registered with `show_in_search` or `public`)
-- Post Meta
-- Post Terms
-- Post Author
-- Users
-- User Meta
-- Terms
-- Term Meta
-
-The following data is not indexed by default but can be enabled via your config:
-
-- Comments
-- Comment Meta
-
-**Note:** Post meta that is "protected" - i.e. has a key beginning with `_` - will not be indexed automatically. To index these fields, use the `ep_prepare_meta_allowed_protected_keys` filter. It will accept a value of boolean `true` (which will index *all* protected meta) or an array containing the keys of specific protected meta fields you want to index.
-
-When used in conjunction with the [Media Rekognition](docs://media/image-recognition.md) feature, all images are processed for automatic keyword detection and stored in the search index too.
-
-## CMS Query Integration
-The method for determining whether CMS queries are handled by Elasticsearch or MySQL uses sensible defaults, but can also be controlled in more granular ways through code. Special handling is required for supporting partial search terms common in autosuggest or "typeahead" interfaces.
-
-[Find out how to control Elasticsearch query integration and how to use autosuggest search here](./cms-query-integration.md).
-
-## Search Configuration
-The default search behavior can be tuned to allow for stricter or more permissive matching, as well as enabling advanced search query capabilities such as using quoted strings for exact matches. You can also tune the relevancy of specific fields and how fuzzy matching works.
-
-See [Search Configuration](./search-configuration/README.md) for full details.
-
-### Custom User Dictionaries
-A subset of search configuration is the ability to upload [custom user dictionaries](./search-configuration/custom-dictionaries.md) for adding synonyms, stop words and custom text analysis for Japanese to further tune and improve search results.
-
-## Document Indexing
-All documents that are uploaded to the media library can also be parsed and indexed. For example, if you upload a PDF file, the PDF content will be read and included in the search index. Searches for keywords and phrases that are included in the document will be then be included in search results.
-
-The following document types are parsed and their content is added to the search index:
-
-- PDF
-- PPT
-- PPTX
-- XLS
-- XLSX
-- DOC
-- DOCX
-
-To enable the indexing of document content, set the `modules.search.index-documents` setting to `true`.
-
-## Search Index Modification
-It is also possible to modify the specific fields stored for each post to provide extra search data that is not included by default. See [Search Index Modification](posts-index-modification.md) for details.
-
-## Using Elasticsearch
-Elasticsearch is used to provide the search index, as such as a developer you can make direct use of Elasticsearch for advanced feature development. See [Using Elasticsearch](using-elasticsearch.md) for details.
-
-## Elasticsearch Mapping
-To verify one or all Elasticsearch mappings are as expected, you can use the `wp elasticpress get-mapping` subcommand. The command will print all mappings as a JSON string, which is in line with how index data is provided.
-
-By passing an optional index name, the response includes mappings for that index only:
-
-```shell
-wp elasticpress get-mapping --index-name=ep-mysitealtisdev-post-1
-```
-
-To format this in a human-readable way, you may want to pipe the output to a script that allows for pretty-printing JSON, for example, like so:
-
-- `wp elasticpress get-mapping | jq .` (see [`jq`](https://stedolan.github.io/jq/))
-- `wp elasticpress get-mapping | json` (see [`json`](https://trentm.com/json/))
-
-This also works when executing the WP-CLI command within Local Server from your host:
-
-```shell
-composer server cli -- elasticpress get-mapping | jq .
-```
-
-## Using Google Analytics (GA)
-Google Analytics can be configured to ingest search queries for further analysis and insights. This will inform future weightings and search configuration modifications. When configuring GA, the default query parameter value is `s`, see [Google Analytics - Set up Site Search](https://support.google.com/analytics/answer/1012264) for more information.
-
-## Additional Configuration Options
-The following options can be enabled/disabled via the search configuration.
-
-- `"related-posts": true|false (default)`
-- `"facets": true|false|['match-type' => "all" (default)|...]`
-- `"woocommerce": true|false (default)`
-- `"autosuggest": true|false (default)`
-- `"users": true (default)|false`
-- `"terms": true (default)|false`
-- `"comments": true|false (default)`
-
-### Related Posts
-To find related posts leveraging Elastic Search use the `ep_find_related()` function. The function requires a single parameter ( `$post_id` ) with another optional parameter ( `$return` ). The `$post_id` will be used to find the posts that are related to it, with `$return` specifying the number of related posts to return, which defaults to 5.
-
-If an out of the box solution is desired, a widget `ElasticPress - Related Posts` is created that can be added to your site's sidebar. In order for the widget to work correctly it needs to be added to the sidebar which will be displayed for a single post.
-
-### Facets
-Facets are a feature in ElasticPress which add control to filter content by one or more taxonomies. A widget can be added so when viewing a content list (archive), the taxonomy and all of its terms will be displayed. This will allow a vistors to further filter content.
-
-Depending on the configuration specified for `facets`, if the `match-type` property is set to `any`, it will force the results to match any selected taxonomy term. If set to `all`, it will match to results with all of the selected terms.
-
-### Search Form Auto Suggest
-This feature enhances search forms on the website to show a dropdown list of suggestions as users type.
-
-Because the query is sent from the client side the `post_filter` part of the query is hardcoded to only allow publicly searchable posts with the status `publish` to be returned.
-
-The query can be modified using the `altis.search.autosuggest_query` filter, for example:
-
-```php
-add_filter( 'altis.search.autosuggest_query', function ( array $query ) : array {
-	$query['post_filter']['bool']['must_not'] = [
-		[ 'term' => [ 'post.meta._hide.raw' => '1' ] ]
-	];
-	return $query;
-} );
-```
+Additionally, this will increase load on your database servers. Depending on your Altis subscription, this may incur extra cost.
