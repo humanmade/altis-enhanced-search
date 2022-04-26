@@ -302,6 +302,25 @@ class ElasticSearchCest {
 	}
 
 	/**
+	 * Test the autosuggest dropdown functionality.
+	 *
+	 * @param AcceptanceTester $I Actor object.
+	 * @return void
+	 */
+	public function testAutosuggestDropdown( AcceptanceTester $I ) {
+		$I->wantToTest( 'Autosuggest search dropdown works.' );
+
+		$I->amOnPage( '/?s=hello' );
+		$I->seeElement( 'input[name="s"]' );
+
+		// Start typing.
+		$I->click( 'input[name="s"]' );
+		$I->type( 'Hello', 1 );
+		$I->seeElement( '.ep-autosuggest' );
+		$I->see( 'Hello world!', '.ep-autosuggest ul li' );
+	}
+
+	/**
 	 * Bootstraps the Altis config with advanced search mode.
 	 *
 	 * @return void
@@ -323,6 +342,18 @@ class ElasticSearchCest {
 		define( 'DISABLE_WP_CRON', true );
 		add_filter( 'altis.config', function ( array $config ) : array {
 			$config['modules']['cloud']['cavalcade'] = false;
+			return $config;
+		} );
+	}
+
+	/**
+	 * Bootstraps the Altis config with autosuggest on.
+	 *
+	 * @return void
+	 */
+	public static function _setAutosuggestOn() {
+		add_filter( 'altis.config', function ( array $config ) : array {
+			$config['modules']['search']['autosuggest'] = true;
 			return $config;
 		} );
 	}

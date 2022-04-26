@@ -11,9 +11,7 @@
 	],
 	"require": {
 		"php": ">=7.1",
-		"10up/elasticpress": "4.0.1",
-		"humanmade/debug-bar-elasticpress": "~1.6.3",
-		"openeuropa/composer-artifacts": "^1.0 || ^2.0"
+		"humanmade/debug-bar-elasticpress": "~1.6.3"
 	},
 	"autoload" : {
 		"files": [
@@ -25,17 +23,8 @@
 	"extra": {
 		"altis": {
 			"install-overrides": [
-				"10up/elasticpress",
 				"humanmade/debug-bar-elasticpress"
 			]
-		},
-		"artifacts": {
-            "10up/elasticpress": {
-				"dist": {
-					"url": "https://github.com/10up/ElasticPress/releases/download/{version}/{project-name}-{version}.zip",
-					"type": "zip"
-				}
-            }
-        }
+		}
 	}
 }
