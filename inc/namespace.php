@@ -1118,10 +1118,20 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 				0,
 				array_keys( $stopwords )
 			);
+			array_splice(
+				$mapping['settings']['analysis']['analyzer']['edge_ngram_analyzer']['filter'],
+				array_search( 'icu_normalizer', $mapping['settings']['analysis']['analyzer']['edge_ngram_analyzer']['filter'], true ) + 1,
+				0,
+				array_keys( $stopwords )
+			);
 		} else {
 			$mapping['settings']['analysis']['analyzer']['default_search']['filter'] = array_merge(
 				array_keys( $stopwords ),
 				$mapping['settings']['analysis']['analyzer']['default_search']['filter']
+			);
+			$mapping['settings']['analysis']['analyzer']['edge_ngram_analyzer']['filter'] = array_merge(
+				array_keys( $stopwords ),
+				$mapping['settings']['analysis']['analyzer']['edge_ngram_analyzer']['filter']
 			);
 		}
 
@@ -1428,7 +1438,7 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 	}
 
 	// Get algorithm version.
-	$algorithm_version = get_site_option( 'ep_search_algorithm_version', '3.5' );
+	$algorithm_version = get_site_option( 'ep_search_algorithm_version', '4.0' );
 	$algorithm_version = apply_filters( 'ep_search_algorithm_version', $algorithm_version );
 
 	// Get config settings.
@@ -1478,6 +1488,9 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 			$query['bool']['should'][1]['multi_match']['prefix_length'] = $fuzziness['prefix-length'];
 			$query['bool']['should'][1]['multi_match']['max_expansions'] = $fuzziness['max-expansions'];
 			$query['bool']['should'][1]['multi_match']['fuzzy_transpositions'] = $fuzziness['transpositions'];
+
+			// Remove the standard analyzer from the cross fields match.
+			unset( $query['bool']['should'][2]['multi_match']['analyzer'] );
 		}
 	}
 
