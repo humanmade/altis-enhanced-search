@@ -164,7 +164,7 @@ function load_elasticpress() {
 		add_filter( 'pre_site_option_ep_last_sync', '__return_false' );
 	}
 
-	require_once Altis\ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
+	require_once dirname( __DIR__ ) . '/lib/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
 
@@ -1468,7 +1468,7 @@ function enhance_search_query( array $query, array $args, string $type = 'post' 
 			$query['bool']['should'][1]['multi_match']['max_expansions'] = $fuzziness['max-expansions'];
 			$query['bool']['should'][1]['multi_match']['fuzzy_transpositions'] = $fuzziness['transpositions'];
 
-		} elseif ( version_compare( $algorithm_version, '4.0', 'gte' ) ) {
+		} elseif ( version_compare( $algorithm_version, '4.0', '>=' ) ) {
 			// Set the full phrase match fuzziness to auto, this will auto adjust
 			// the allowed Levenshtein distance depending on the query length.
 			// - 0-3 chars = 0 edits.
