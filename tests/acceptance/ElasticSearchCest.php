@@ -7,6 +7,8 @@
  * phpcs:disable WordPress.Files, WordPress.NamingConventions, PSR1.Classes.ClassDeclaration.MissingNamespace, HM.Functions.NamespacedFunctions
  */
 
+use Codeception\Scenario;
+
 /**
  * Search tests.
  */
@@ -302,6 +304,35 @@ class ElasticSearchCest {
 	}
 
 	/**
+	 * Test the autosuggest dropdown functionality.
+	 *
+	 * @param AcceptanceTester $I Actor object.
+	 * @param Scenario $scenario The current scenario object.
+	 * @return void
+	 */
+	public function testAutosuggestDropdown( AcceptanceTester $I, Scenario $scenario ) {
+		$scenario->incomplete( 'This test works locally but inconsistently. Needs work.' );
+
+		$I->wantToTest( 'Autosuggest search dropdown works.' );
+
+		$rollback = $I->bootstrapWith( [ __CLASS__, '_setAutosuggestOn' ] );
+
+		// Get to the front end.
+		$I->amOnPage( '/' );
+		$I->seeElementInDOM( '#elasticpress-autosuggest-js' );
+		$I->seeElement( '.ep-autosuggest-container input[name="s"]' );
+
+		// Start typing.
+		$I->click( '.ep-autosuggest-container input[name="s"]' );
+		$I->type( 'hell', 1 );
+		// @todo work out why the below assertions don't work.
+		$I->wait( 5 );
+		$I->see( 'Hello world!', '.autosuggest-link' );
+
+		$rollback();
+	}
+
+	/**
 	 * Bootstraps the Altis config with advanced search mode.
 	 *
 	 * @return void
@@ -323,6 +354,18 @@ class ElasticSearchCest {
 		define( 'DISABLE_WP_CRON', true );
 		add_filter( 'altis.config', function ( array $config ) : array {
 			$config['modules']['cloud']['cavalcade'] = false;
+			return $config;
+		} );
+	}
+
+	/**
+	 * Bootstraps the Altis config with autosuggest on.
+	 *
+	 * @return void
+	 */
+	public static function _setAutosuggestOn() {
+		add_filter( 'altis.config', function ( array $config ) : array {
+			$config['modules']['search']['autosuggest'] = true;
 			return $config;
 		} );
 	}
