@@ -1950,7 +1950,7 @@ function custom_search_results_post_type_args( array $args, string $post_type ) 
 function split_large_ep_request( $request, array $query, array $args, int $failures ) {
 
 	if ( empty( $args['body'] ) || $args['method'] !== 'POST' || ! strpos( $query['url'], '/_bulk' ) ) {
-		return wp_remote_request( $query['url'], $args );
+		return $request;
 	}
 
 	// phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
