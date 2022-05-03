@@ -1,5 +1,5 @@
 # Import Travis configuration from dev-tools repo
 version: ~> 1.0
 import:
-  - source: humanmade/altis-dev-tools:travis/module.yml@deaed48
+  - source: humanmade/altis-dev-tools:travis/module.yml@c7a250c
     mode: deep_merge_append
