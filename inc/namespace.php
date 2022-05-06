@@ -202,7 +202,7 @@ function load_elasticpress() {
 	add_action( 'init', __NAMESPACE__ . '\\configure_documents_feature', 1 );
 
 	// Use ElasticPress request intercepting to chunk large requests.
-	add_filter( 'ep_intercept_remote_request', '__return_true' );
+	add_filter( 'ep_intercept_remote_request', '__return_true', 11 );
 	add_filter( 'ep_do_intercept_request', __NAMESPACE__ . '\\split_large_ep_request', 10, 4 );
 
 	// Handle autosuggest requests.
@@ -1950,12 +1950,11 @@ function custom_search_results_post_type_args( array $args, string $post_type ) 
 function split_large_ep_request( $request, array $query, array $args, int $failures ) {
 
 	if ( empty( $args['body'] ) || $args['method'] !== 'POST' || ! strpos( $query['url'], '/_bulk' ) ) {
-		return wp_remote_request( $query['url'], $args );
+		return is_wp_error( $request ) ? wp_remote_request( $query['url'], $args ) : $request;
 	}
 
 	// phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores
 	$body_size_limit = apply_filters( 'altis.search.request-size-limit', 1024 * 1024 * 9 ); // 9 MB
-	$combined_response = null;
 	$body = $args['body'];
 	$args['body'] = '';
 	$requests = [];
