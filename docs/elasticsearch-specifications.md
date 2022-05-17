@@ -4,13 +4,11 @@
 
 The following versions of Elasticsearch are supported:
 
-- 6.2
-- 6.0
-- 5.5
-- 5.3
-- 5.1
-- 2.3
-- 1.5
+- 7.10
+- 6.8
+- 6.3
+
+Existing applications will remain on their current version (6.2) until an update is requested via support.
 
 It's recommended to use the most up-to-date version. The specific version you want to use should be communicated to the Human Made team when requesting Elasticsearch be enabled.
 
