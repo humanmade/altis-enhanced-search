@@ -28,6 +28,7 @@ add_action( 'altis.modules.init', function () {
 		'terms' => true,
 		'comments' => false,
 		'inline-index-settings' => true,
+		'instant-results' => false,
 	];
 	$options = [
 		'defaults' => $default_settings,
