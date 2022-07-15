@@ -11,6 +11,7 @@
 	],
 	"require": {
 		"php": ">=7.1",
+		"10up/elasticpress": "~4.2.1",
 		"humanmade/debug-bar-elasticpress": "~1.6.3"
 	},
 	"autoload" : {
@@ -23,6 +24,7 @@
 	"extra": {
 		"altis": {
 			"install-overrides": [
+				"10up/elasticpress",
 				"humanmade/debug-bar-elasticpress"
 			]
 		}
