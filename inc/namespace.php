@@ -202,8 +202,9 @@ function load_elasticpress() {
 	add_action( 'init', __NAMESPACE__ . '\\configure_documents_feature', 1 );
 
 	// Use ElasticPress request intercepting to chunk large requests.
+	// Priority 11 to force these after ElasticPress\Feature\Autosuggest's dummy interceptions.
 	add_filter( 'ep_intercept_remote_request', '__return_true', 11 );
-	add_filter( 'ep_do_intercept_request', __NAMESPACE__ . '\\split_large_ep_request', 10, 4 );
+	add_filter( 'ep_do_intercept_request', __NAMESPACE__ . '\\split_large_ep_request', 11, 4 );
 
 	// Handle autosuggest requests.
 	add_action( 'template_redirect', __NAMESPACE__ . '\\handle_autosuggest_endpoint' );
