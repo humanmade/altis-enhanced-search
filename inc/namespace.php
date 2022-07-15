@@ -164,7 +164,7 @@ function load_elasticpress() {
 		add_filter( 'pre_site_option_ep_last_sync', '__return_false' );
 	}
 
-	require_once dirname( __DIR__ ) . '/lib/elasticpress/elasticpress.php';
+	require_once Altis\ROOT_DIR . '/vendor/10up/elasticpress/elasticpress.php';
 
 	// Now ElasticPress has been included, we can remove some of it's filters.
 
