@@ -369,7 +369,7 @@ function handle_form() : void {
 				$errors[] = new WP_Error(
 					'file_type_incorrect',
 					// translators: %s replaced by search package file path.
-					sprintf( __( 'Detected unsupported file type %, only text files are supported.', 'altis' ), $mime_type )
+					sprintf( __( 'Detected unsupported file type %s, only text files are supported.', 'altis' ), $mime_type )
 				);
 
 			} else {
