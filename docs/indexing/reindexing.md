@@ -55,11 +55,15 @@ To re-sychronise the index and update mappings, run:
 wp elasticpress index --setup
 ```
 
-To run across the entire network, use `xargs` as above. You'll also need to create the "network alias", which is a special index which allows cross-site searching:
+To run across the entire network, use `xargs` with the above command. Given that the user index is a global one, it will be recreated for every single site. This is unnecessary, so you should only recreate this for one (the main) site. You'll also need to create the "network alias", which is a special index which allows cross-site searching.
+
+Overall, this would look like so:
 
 ```sh
-wp site list --field=url | xargs -I % wp elasticpress index --url=% --setup && wp elasticpress recreate-network-alias
+wp site list --field=url | xargs -I % wp elasticpress index --url=% --setup --indexables=post,term && wp elasticpress index --setup --indexables=user && wp elasticpress recreate-network-alias
 ```
+
+If you have enhanced search enabled for comments as well, you may want to add `comment` to `--indexables`.
 
 **Note:** Changing the mapping requires deleting the index and recreating it, which will remove all existing documents from your index. Performing this process may take significant time.
 
@@ -81,7 +85,7 @@ wp site list --field=url | xargs -I % wp elasticpress index --url=%
 To recreate mappings across the entire network:
 
 ```sh
-wp site list --field=url | xargs -I % wp elasticpress index --url=% --setup && wp elasticpress recreate-network-alias
+wp site list --field=url | xargs -I % wp elasticpress index --url=% --setup --indexables=post,term && wp elasticpress index --setup --indexables=user && wp elasticpress recreate-network-alias
 ```
 
 This also recreates the "network alias", which is a special index which allows cross-site searching.
