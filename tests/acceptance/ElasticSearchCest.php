@@ -15,13 +15,13 @@ use Codeception\Scenario;
 class ElasticSearchCest {
 
 	/**
-	 * Disable cavalcade for all tests.
+	 * Disable Cavalcade and query caching for all tests.
 	 *
 	 * @param AcceptanceTester $I Actor object.
 	 * @return void
 	 */
 	public function _before( AcceptanceTester $I ) {
-		$I->bootstrapWith( [ __CLASS__, '_disableCavalcade' ] );
+		$I->bootstrapWith( [ __CLASS__, '_defaultBootstrap' ] );
 	}
 
 	/**
@@ -333,12 +333,23 @@ class ElasticSearchCest {
 	}
 
 	/**
+	 * Default bootstrap method for all tests.
+	 *
+	 * @return void
+	 */
+	public static function _defaultBootstrap() {
+		self::_disableCavalcade();
+		self::_disableQueryCache();
+	}
+
+	/**
 	 * Bootstraps the Altis config with advanced search mode.
 	 *
 	 * @return void
 	 */
 	public static function _setAdvancedMode() {
-		self::_disableCavalcade();
+		self::_defaultBootstrap();
+
 		add_filter( 'altis.config', function ( array $config ) : array {
 			$config['modules']['search']['mode'] = 'advanced';
 			return $config;
@@ -359,15 +370,27 @@ class ElasticSearchCest {
 	}
 
 	/**
+	 * Disable internal WP_Query results caching.
+	 *
+	 * @return void
+	 */
+	public static function _disableQueryCache() {
+		add_action( 'pre_get_posts', function( $query ) {
+			$query->query_vars['cache_results'] = false;
+		} );
+	}
+
+	/**
 	 * Bootstraps the Altis config with autosuggest on.
 	 *
 	 * @return void
 	 */
 	public static function _setAutosuggestOn() {
+		self::_defaultBootstrap();
+
 		add_filter( 'altis.config', function ( array $config ) : array {
 			$config['modules']['search']['autosuggest'] = true;
 			return $config;
 		} );
 	}
-
 }
