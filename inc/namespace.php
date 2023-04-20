@@ -104,7 +104,7 @@ function load_elasticpress() {
 	add_filter( 'ep_admin_notices', __NAMESPACE__ . '\\remove_ep_dashboard_notices' );
 
 	// Modify the default search query to use preset modes.
-	add_filter( 'ep_formatted_args_query', __NAMESPACE__ . '\\enhance_search_query', 10, 2 );
+	add_filter( 'ep_post_formatted_args_query', __NAMESPACE__ . '\\enhance_search_query', 10, 2 );
 	add_filter( 'ep_term_formatted_args_query', __NAMESPACE__ . '\\enhance_term_search_query', 10, 2 );
 	add_filter( 'ep_user_formatted_args_query', __NAMESPACE__ . '\\enhance_user_search_query', 10, 2 );
 
