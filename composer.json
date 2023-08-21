@@ -11,7 +11,7 @@
 	],
 	"require": {
 		"php": ">=7.1",
-		"10up/elasticpress": "~4.6.1",
+		"10up/elasticpress": "~4.7.0",
 		"humanmade/debug-bar-elasticpress": "~1.6.3"
 	},
 	"autoload" : {
