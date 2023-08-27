@@ -18,7 +18,8 @@
 		"files": [
 			"inc/namespace.php",
 			"inc/analysis/namespace.php",
-			"inc/packages/namespace.php"
+			"inc/packages/namespace.php",
+			"inc/instant_results/namespace.php"
 		]
 	},
 	"extra": {
