@@ -39,7 +39,7 @@ When making changes the data or analyzers that are stored in the search index, y
 Re-indexing is done via CLI commands, as they are potentially long running, high memory usage tasks. To reindex a site, run:
 
 ```sh
-wp elasticpress index
+wp elasticpress sync
 ```
 
 **Note:** During the indexing process, the site will not use the Elasticsearch index for searches/queries, so some features like faceting or autosuggest will not work as expected until the process is finished.
@@ -52,7 +52,7 @@ If your index mapping changes, the mapping will need to be recreated. This may b
 To re-sychronise the index and update mappings, run:
 
 ```sh
-wp elasticpress index --setup
+wp elasticpress sync --setup
 ```
 
 To run across the entire network, use `xargs` with the above command. Given that the user index is a global one, it will be recreated for every single site. This is unnecessary, so you should only recreate this for one (the main) site. You'll also need to create the "network alias", which is a special index which allows cross-site searching.
@@ -60,7 +60,7 @@ To run across the entire network, use `xargs` with the above command. Given that
 Overall, this would look like so:
 
 ```sh
-wp site list --field=url | xargs -I % wp elasticpress index --url=% --setup --indexables=post,term && wp elasticpress index --setup --indexables=user && wp elasticpress recreate-network-alias
+wp site list --field=url | xargs -I % wp elasticpress sync --url=% --setup --indexables=post,term --yes  && wp elasticpress sync --setup --indexables=user && wp elasticpress recreate-network-alias
 ```
 
 If you have enhanced search enabled for comments as well, you may want to add `comment` to `--indexables`.
@@ -79,13 +79,13 @@ To better manage memory, it is recommended to use an `xargs` pipeline to process
 To perform a reindex across all sites:
 
 ```sh
-wp site list --field=url | xargs -I % wp elasticpress index --url=%
+wp site list --field=url | xargs -I % wp elasticpress sync --url=%
 ```
 
 To recreate mappings across the entire network:
 
 ```sh
-wp site list --field=url | xargs -I % wp elasticpress index --url=% --setup --indexables=post,term && wp elasticpress index --setup --indexables=user && wp elasticpress recreate-network-alias
+wp site list --field=url | xargs -I % wp elasticpress sync --url=% --setup --indexables=post,term && wp elasticpress sync --setup --indexables=user && wp elasticpress recreate-network-alias
 ```
 
 This also recreates the "network alias", which is a special index which allows cross-site searching.
@@ -96,7 +96,11 @@ This also recreates the "network alias", which is a special index which allows c
 When using CLI to perform re-indexes, it's recommended to set the `--per-page` argument to a figure around `200`. By default, this figure is set to `350` which will often cause service timeouts. For example:
 
 ```sh
-wp site list --field=url | xargs -I % wp elasticpress index --url=% --per-page=200
+wp site list --field=url | xargs -I % wp elasticpress sync --url=% --per-page=200
 ```
 
 See `wp help elasticpress` for all available CLI commands.
+
+### Session Time Limits
+
+To ensure your [CLI Session doesn't time out](https://docs.altis-dxp.com/cloud/dashboard/cli/#session-timelimits), it is recommended to create a new `screen` session to run reindexing operations.
