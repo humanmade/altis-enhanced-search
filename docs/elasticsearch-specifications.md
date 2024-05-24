@@ -1,6 +1,6 @@
 # Elasticsearch Specifications
 
-Altis Cloud environments include Elasticsearch servers which are used by the Search module. Equivalent setups are also available with [Local Chassis](docs://local-chassis/) and [Local Server](docs://local-server/)
+Altis Cloud environments include Elasticsearch servers which are used by the Search module. An equivalent setup is also available with [Local Server](docs://local-server/)
 
 
 ## Supported Versions
