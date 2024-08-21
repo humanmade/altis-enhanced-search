@@ -35,6 +35,11 @@ class Local_Server_Extension implements Compose_Extension {
 			return $config;
 		}
 
+		$local_config = $full_config['search']['local'] ?? [];
+		if ( ! ( $local_config['enabled'] ?? true ) ) {
+			return $config;
+		}
+
 		// Handle the main ES service.
 		$config['volumes']['es-data'] = null;
 		$config['services'] = array_merge( $config['services'], $this->get_service_elasticsearch() );
@@ -52,8 +57,10 @@ class Local_Server_Extension implements Compose_Extension {
 			];
 		}
 
-		if ( $full_config['search']['kibana'] || $full_config['local-server']['kibana'] ) {
-			if ( $full_config['local-server']['kibana'] ) {
+		// Enable Kibana. (Defaults to true, but supports new + old style.)
+		$has_kibana = $local_config['kibana'] ?? $full_config['local-server']['kibana'] ?? true;
+		if ( $has_kibana ) {
+			if ( ! empty( $full_config['local-server']['kibana'] ) ) {
 				trigger_error(
 					'extra.altis.modules.local-server.kibana is deprecated, use extra.altis.modules.search.kibana instead.',
 					E_USER_DEPRECATED
@@ -198,8 +205,8 @@ class Local_Server_Extension implements Compose_Extension {
 		$full_config = Altis\get_config();
 
 		// Try new config first.
-		if ( ! empty( $full_config['modules']['search']['version'] ) ) {
-			return (string) $full_config['modules']['search']['version'];
+		if ( ! empty( $full_config['modules']['search']['local']['version'] ) ) {
+			return (string) $full_config['modules']['search']['local']['version'];
 		}
 
 		// Try legacy, and warn if it's still used.
