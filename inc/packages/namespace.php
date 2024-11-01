@@ -17,7 +17,7 @@ use WP_Error;
 const MAX_INLINE_SETTINGS_SIZE_RECOMMENDED = 100 * 1024;
 
 /**
- * Bind hooks for ElasticSearch Packages.
+ * Bind hooks for Elasticsearch Packages.
  *
  * @return void
  */
