@@ -18,6 +18,7 @@ use ElasticPress\Indexables;
 use ElasticPress\Utils;
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Message\RequestInterface;
+use ReflectionProperty;
 use WP_CLI;
 use WP_Error;
 use WP_Post;
@@ -211,6 +212,9 @@ function load_elasticpress() {
 
 	// Set up packages feature.
 	Packages\bootstrap();
+
+	// Hook the reset_elasticsearch_queries function to the ep_stop_the_insanity action
+	add_action( 'ep_stop_the_insanity', __NAMESPACE__ . '\\reset_elasticsearch_queries' );
 }
 
 /**
@@ -2193,4 +2197,18 @@ function sanitize_query_args( WP_Query $query ) : void {
 		}
 		$query->set( $key, array_values( array_filter( (array) $query->get( $key ) ) ) );
 	}
+}
+
+/**
+ * Reset Elasticsearch queries.
+ *
+ * This function resets the Elasticsearch queries by using reflection to access
+ * and modify the private 'queries' property of the \ElasticPress\Elasticsearch class.
+ *
+ * @return void
+ */
+function reset_elasticsearch_queries() {
+	$reflection = new ReflectionProperty(Elasticsearch::class, 'queries');
+	$reflection->setAccessible(true);
+	$reflection->setValue(Elasticsearch::factory(), []);
 }
