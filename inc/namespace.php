@@ -213,7 +213,7 @@ function load_elasticpress() {
 	// Set up packages feature.
 	Packages\bootstrap();
 
-	// Hook the reset_elasticsearch_queries function to the ep_stop_the_insanity action
+	// Hook the reset_elasticsearch_queries function to the ep_stop_the_insanity action.
 	add_action( 'ep_stop_the_insanity', __NAMESPACE__ . '\\reset_elasticsearch_queries' );
 }
 
@@ -2208,7 +2208,7 @@ function sanitize_query_args( WP_Query $query ) : void {
  * @return void
  */
 function reset_elasticsearch_queries() {
-	$reflection = new ReflectionProperty(Elasticsearch::class, 'queries');
-	$reflection->setAccessible(true);
-	$reflection->setValue(Elasticsearch::factory(), []);
+	$reflection = new ReflectionProperty( Elasticsearch::class, 'queries' );
+	$reflection->setAccessible( true );
+	$reflection->setValue( Elasticsearch::factory(), [] );
 }
