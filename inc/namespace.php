@@ -35,6 +35,11 @@ const SORTABLE_MAX_LENGTH = 10922;
  * @return void
  */
 function bootstrap() {
+	if ( isset( Altis\get_config()['modules']['cloud']['elasticsearch'] ) &&
+	     ( Altis\get_config()['modules']['cloud']['elasticsearch'] === false ) ) {
+		return;
+	}
+
 	add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_elasticpress', 4 );
 	add_action( 'plugins_loaded', function () {
 		// Run healthchecks on indexes after ElasticPress is loaded.
