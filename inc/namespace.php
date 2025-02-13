@@ -35,8 +35,11 @@ const SORTABLE_MAX_LENGTH = 10922;
  * @return void
  */
 function bootstrap() {
-	if ( isset( Altis\get_config()['modules']['cloud']['elasticsearch'] ) &&
-	     ( Altis\get_config()['modules']['cloud']['elasticsearch'] === false ) ) {
+
+	// Allow disabling ElasticPress for local-server and ci environments.
+	$environment = Altis\get_environment_type();
+	if ( isset( Altis\get_config()['environments'][ $environment ]['modules']['cloud']['elasticsearch'] ) &&
+	     ( Altis\get_config()['environments'][ $environment ]['modules']['cloud']['elasticsearch'] === false ) ) {
 		return;
 	}
 
