@@ -39,7 +39,7 @@ function bootstrap() {
 	// Allow disabling ElasticPress for local-server and ci environments.
 	$environment = Altis\get_environment_type();
 	if ( isset( Altis\get_config()['environments'][ $environment ]['modules']['cloud']['elasticsearch'] ) &&
-	     ( Altis\get_config()['environments'][ $environment ]['modules']['cloud']['elasticsearch'] === false ) ) {
+		( Altis\get_config()['environments'][ $environment ]['modules']['cloud']['elasticsearch'] === false ) ) {
 		return;
 	}
 
