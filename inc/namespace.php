@@ -61,6 +61,11 @@ function bootstrap() {
 		}
 		add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_debug_bar_elasticpress', 0 );
 	}
+
+	// Load instant results proxy if enabled.
+	if ( Altis\get_config()['modules']['search']['instant-results'] ?? null ) {
+		Instant_Results\boostrap();
+	}
 }
 
 /**
@@ -766,6 +771,7 @@ function override_elasticpress_feature_activation( bool $is_active, array $setti
 		'terms' => (bool) ( $config['terms'] ?? true ),
 		'users' => (bool) ( $config['users'] ?? true ),
 		'comments' => (bool) ( $config['comments'] ?? false ),
+		'instant-results' => (bool) ( $config['instant-results'] ?? false ),
 	];
 
 	if ( ! isset( $features_activated[ $feature->slug ] ) ) {
