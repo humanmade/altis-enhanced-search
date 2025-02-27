@@ -9,10 +9,8 @@ use Altis;
 use Altis\Local_Server\Composer\Compose_Extension;
 use Altis\Local_Server\Composer\Docker_Compose_Generator;
 
-
 /**
  * This class adds the Elasticsearch and Kibana services to the Local Server docker stack.
- *
  */
 class Local_Server_Extension implements Compose_Extension {
 	protected Docker_Compose_Generator $generator;
