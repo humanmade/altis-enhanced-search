@@ -9,6 +9,11 @@ use Altis;
 use Altis\Local_Server\Composer\Compose_Extension;
 use Altis\Local_Server\Composer\Docker_Compose_Generator;
 
+
+/**
+ * This class adds the Elasticsearch and Kibana services to the Local Server docker stack.
+ *
+ */
 class Local_Server_Extension implements Compose_Extension {
 	protected Docker_Compose_Generator $generator;
 
@@ -25,39 +30,40 @@ class Local_Server_Extension implements Compose_Extension {
 	/**
 	 * Filter the docker-compose.yml config.
 	 *
-	 * @param array $config Full docker-compose.yml configuration.
+	 * @param array $docker_config Full docker-compose.yml configuration.
+	 *
 	 * @return array Altered docker-compose.yml configuration.
 	 */
-	public function filter_compose( array $config ) : array {
+	public function filter_compose( array $docker_config ) : array {
 		// Skip entirely if the module is disabled.
 		$full_config = Altis\get_config()['modules'];
 		if ( ! ( $full_config['search']['enabled'] ?? true ) ) {
-			return $config;
+			return $docker_config;
 		}
 
 		$local_config = $full_config['search']['local'] ?? [];
 		if ( ! ( $local_config['enabled'] ?? true ) ) {
-			return $config;
+			return $docker_config;
 		}
 
 		// Handle the main ES service.
-		$config['volumes']['es-data'] = null;
-		$config['services'] = array_merge( $config['services'], $this->get_service_elasticsearch() );
+		$docker_config['volumes']['es-data'] = null;
+		$docker_config['services'] = array_merge( $docker_config['services'], $this->get_service_elasticsearch() );
 
 		foreach ( [ 'php', 'cavalcade' ] as $php_svc ) {
-			if ( empty( $config['services'][ $php_svc ] ) ) {
+			if ( empty( $docker_config['services'][ $php_svc ] ) ) {
 				continue;
 			}
 
-			$config['services'][ $php_svc ]['external_links'][] = "proxy:elasticsearch-{$this->generator->hostname}";
-			$config['services'][ $php_svc ]['environment']['ELASTICSEARCH_HOST'] = 'elasticsearch';
-			$config['services'][ $php_svc ]['environment']['ELASTICSEARCH_PORT'] = 9200;
-			$config['services'][ $php_svc ]['depends_on']['elasticsearch'] = [
+			$docker_config['services'][ $php_svc ]['external_links'][] = "proxy:elasticsearch-{$this->generator->hostname}";
+			$docker_config['services'][ $php_svc ]['environment']['ELASTICSEARCH_HOST'] = 'elasticsearch';
+			$docker_config['services'][ $php_svc ]['environment']['ELASTICSEARCH_PORT'] = 9200;
+			$docker_config['services'][ $php_svc ]['depends_on']['elasticsearch'] = [
 				'condition' => 'service_healthy',
 			];
 		}
 
-		// Enable Kibana. (Defaults to true, but supports new + old style.)
+		// Enable Kibana. (Defaults to true, but supports new + old style).
 		$has_kibana = $local_config['kibana'] ?? $full_config['local-server']['kibana'] ?? true;
 		if ( $has_kibana ) {
 			if ( ! empty( $full_config['local-server']['kibana'] ) ) {
@@ -67,10 +73,10 @@ class Local_Server_Extension implements Compose_Extension {
 				);
 			}
 
-			$config['services'] = array_merge( $config['services'], $this->get_service_kibana() );
+			$docker_config['services'] = array_merge( $docker_config['services'], $this->get_service_kibana() );
 		}
 
-		return $config;
+		return $docker_config;
 	}
 
 	/**
