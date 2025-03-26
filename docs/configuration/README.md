@@ -56,3 +56,8 @@ content.
 
 Depending on the configuration specified for `facets`, if the `match-type` property is set to `any`, it will force the results to
 match any selected taxonomy term. If set to `all`, it will match to results with all of the selected terms.
+
+
+## Local Server
+
+See [the Local Server documentation](docs://local-server/elasticsearch.md) for information on configuring Local Server for ES settings.
