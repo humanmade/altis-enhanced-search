@@ -10,7 +10,7 @@
 		}
 	],
 	"require": {
-		"php": ">=7.1",
+		"php": ">=8.2",
 		"10up/elasticpress": "~4.7.2",
 		"humanmade/debug-bar-elasticpress": "~1.6.3"
 	},
@@ -19,6 +19,9 @@
 			"inc/namespace.php",
 			"inc/analysis/namespace.php",
 			"inc/packages/namespace.php"
+		],
+		"classmap": [
+			"inc/"
 		]
 	},
 	"extra": {
@@ -26,7 +29,10 @@
 			"install-overrides": [
 				"10up/elasticpress",
 				"humanmade/debug-bar-elasticpress"
-			]
+			],
+			"local-server": {
+				"compose-extension": "Altis\\Enhanced_Search\\Local_Server_Extension"
+			}
 		}
 	}
 }
