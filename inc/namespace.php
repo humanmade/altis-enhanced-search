@@ -627,7 +627,7 @@ function add_elasticsearch_healthcheck( array $checks ) : array {
 }
 
 /**
- * Run ElasticSearch health check.
+ * Run Elasticsearch health check.
  */
 function run_elasticsearch_healthcheck() {
 	$host = get_elasticsearch_url();
@@ -795,7 +795,7 @@ function get_search_config_option( string $option_key, $default_value = null ) {
 /**
  * Enables the required settings for slowlog indexing / queries to be captured.
  *
- * @param array $mapping ElasticSearch index mapping.
+ * @param array $mapping Elasticsearch index mapping.
  * @return array
  */
 function enable_slowlog_thresholds( array $mapping ) : array {
@@ -1434,10 +1434,10 @@ function get_fuzziness() : array {
  *              parentheses, and, or and negation operators and
  *              prefixed wildcard queries.
  *
- * @param array $query The ElasticSearch query.
+ * @param array $query The Elasticsearch query.
  * @param array $args The WP_Query args for the current query.
  * @param string $type The type of object being searched, one of post, term or user.
- * @return array The modified ElasticSearch query.
+ * @return array The modified Elasticsearch query.
  */
 function enhance_search_query( array $query, array $args, string $type = 'post' ) : array {
 	// In some cases like user queries this field is called search rather than 's'.
@@ -1651,9 +1651,9 @@ function add_field_boost_defaults( array $fields ) : array {
 /**
  * Modify the default term search query based on the configured mode.
  *
- * @param array $query The ElasticSearch query.
+ * @param array $query The Elasticsearch query.
  * @param array $args The WP_Term_Query args for the current query.
- * @return array The modified ElasticSearch query.
+ * @return array The modified Elasticsearch query.
  */
 function enhance_term_search_query( array $query, array $args ) : array {
 	return enhance_search_query( $query, $args, 'term' );
@@ -1662,9 +1662,9 @@ function enhance_term_search_query( array $query, array $args ) : array {
 /**
  * Modify the default term search query based on the configured mode.
  *
- * @param array $query The ElasticSearch query.
+ * @param array $query The Elasticsearch query.
  * @param array $args The WP_User_Query args for the current query.
- * @return array The modified ElasticSearch query.
+ * @return array The modified Elasticsearch query.
  */
 function enhance_user_search_query( array $query, array $args ) : array {
 	return enhance_search_query( $query, $args, 'user' );
@@ -1955,7 +1955,7 @@ function custom_search_results_post_type_args( array $args, string $post_type ) 
  * to check the payload size, and split it into multiple requests if needed.
  *
  * @param WP_Error|array $request The request to replace / override.
- * @param array $query The query to ElasticSearch.
+ * @param array $query The query to Elasticsearch.
  * @param array $args The request arguments.
  * @param integer $failures The current number of failures for this request.
  * @return WP_Error|array The overriden request.
