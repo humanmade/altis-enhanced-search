@@ -38,16 +38,6 @@ The following options can be enabled/disabled via the search configuration.
 - `"terms": true (default)|false`
 - `"comments": true|false (default)`
 
-### Related Posts
-
-To find related posts leveraging Elasticsearch, use the `ep_find_related()` function.
-
-The function requires a single parameter ( `$post_id` ) with another optional parameter ( `$return` ). The `$post_id` will be used
-to find the posts that are related to it, with `$return` specifying the number of related posts to return, which defaults to 5.
-
-If an out of the box solution is desired, the "ElasticPress - Related Posts" widget can be added to your site's sidebar. In order
-for the widget to work correctly it needs to be added to the sidebar which will be displayed for a single post.
-
 ### Facets
 
 Facets are a feature in ElasticPress which add control to filter content by one or more taxonomies. A widget can be added so when
