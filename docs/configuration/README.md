@@ -38,6 +38,28 @@ The following options can be enabled/disabled via the search configuration.
 - `"terms": true (default)|false`
 - `"comments": true|false (default)`
 
+```json
+{
+    "extra": {
+        "altis": {
+            "modules": {
+                "search": {
+                    "related": "false",
+                    "facets": {
+                        "match-type": "all"
+                    },
+                    "woocommerce": "false",
+                    "autosuggest": "false",
+                    "users": "true",
+                    "terms": "true"
+                }
+            }
+        }
+    }
+}
+```
+
+
 ### Facets
 
 Facets are a feature in ElasticPress which add control to filter content by one or more taxonomies. A widget can be added so when
