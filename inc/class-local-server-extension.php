@@ -34,7 +34,7 @@ class Local_Server_Extension implements Compose_Extension {
 	 */
 	public function filter_compose( array $docker_config ) : array {
 		// Skip entirely if the module is disabled.
-		$full_config = Altis\get_config()['modules'];
+		$full_config = Altis\get_config()['modules'] ?? [];
 		if ( ! ( $full_config['search']['enabled'] ?? true ) ) {
 			return $docker_config;
 		}
