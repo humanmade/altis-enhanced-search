@@ -171,6 +171,8 @@ class Local_Server_Extension implements Compose_Extension {
 			$yml_file = 'kibana-7.yml';
 		}
 
+		$mem_limit = getenv( 'LS_MEM_LIMIT' ) ?: '256M';
+
 		return [
 			'kibana' => [
 				'image' => $image,
@@ -182,6 +184,7 @@ class Local_Server_Extension implements Compose_Extension {
 				'ports' => [
 					'5601',
 				],
+				'mem_limit' => $mem_limit,
 				'labels' => [
 					'traefik.port=5601',
 					'traefik.protocol=http',
