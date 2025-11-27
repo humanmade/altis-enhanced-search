@@ -130,11 +130,11 @@ class Local_Server_Extension implements Compose_Extension {
 					'retries' => 25,
 				],
 				'labels' => [
-					'traefik.port=9200',
-					'traefik.protocol=http',
 					'traefik.docker.network=proxy',
-					"traefik.frontend.rule=HostRegexp:elasticsearch-{$this->generator->hostname}",
-					"traefik.domain=elasticsearch-{$this->generator->hostname}",
+					"traefik.http.routers.elasticsearch.rule=HostRegexp(`elasticsearch-{$this->generator->hostname}`)",
+					'traefik.http.routers.elasticsearch.entrypoints=web,websecure',
+					'traefik.http.routers.elasticsearch.service=elasticsearch',
+					'traefik.http.services.elasticsearch.loadbalancer.server.port=9200',
 				],
 				'environment' => [
 					'http.max_content_length=10mb',
@@ -186,10 +186,11 @@ class Local_Server_Extension implements Compose_Extension {
 				],
 				'mem_limit' => $mem_limit,
 				'labels' => [
-					'traefik.port=5601',
-					'traefik.protocol=http',
 					'traefik.docker.network=proxy',
-					"traefik.frontend.rule=Host:{$this->generator->hostname};PathPrefix:/kibana",
+					"traefik.http.routers.kibana.rule=(Host(`{$this->generator->hostname}`) || HostRegexp(`{subdomain:[A-Za-z0-9-]+}.{$this->generator->hostname}`)) && PathPrefix(`/kibana`)",
+					'traefik.http.routers.kibana.entrypoints=web,websecure',
+					'traefik.http.routers.kibana.service=kibana',
+					'traefik.http.services.kibana.loadbalancer.server.port=5601',
 				],
 				'depends_on' => [
 					'elasticsearch' => [
