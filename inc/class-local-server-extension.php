@@ -130,6 +130,7 @@ class Local_Server_Extension implements Compose_Extension {
 					'retries' => 25,
 				],
 				'labels' => [
+					'traefik.enable=true',
 					'traefik.docker.network=proxy',
 					"traefik.http.routers.elasticsearch.rule=HostRegexp(`elasticsearch-{$this->generator->hostname}`)",
 					'traefik.http.routers.elasticsearch.entrypoints=web,websecure',
@@ -186,6 +187,7 @@ class Local_Server_Extension implements Compose_Extension {
 				],
 				'mem_limit' => $mem_limit,
 				'labels' => [
+					'traefik.enable=true',
 					'traefik.docker.network=proxy',
 					"traefik.http.routers.kibana.rule=(Host(`{$this->generator->hostname}`) || HostRegexp(`{subdomain:[A-Za-z0-9-]+}.{$this->generator->hostname}`)) && PathPrefix(`/kibana`)",
 					'traefik.http.routers.kibana.entrypoints=web,websecure',
