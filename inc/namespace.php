@@ -1110,15 +1110,18 @@ function elasticpress_mapping( array $mapping, ?string $index = null ) : array {
 		);
 	}
 
+	// Always ensure default_search analyzer matches default analyzer to prevent stemming mismatch.
+	// ElasticPress 5.x defines its own default_search with aggressive snowball stemming which
+	// doesn't match the light stemming used in the default analyzer, causing search failures.
+	// See: https://github.com/10up/ElasticPress/issues/4249
+	$mapping['settings']['analysis']['analyzer']['default_search'] = $mapping['settings']['analysis']['analyzer']['default'];
+
 	if ( ! empty( $synonyms ) || ! empty( $stopwords ) ) {
 		$mapping['settings']['analysis']['filter'] = array_merge(
 			$mapping['settings']['analysis']['filter'],
 			$synonyms,
 			$stopwords
 		);
-
-		// Copy default analyzer to default search.
-		$mapping['settings']['analysis']['analyzer']['default_search'] = $mapping['settings']['analysis']['analyzer']['default'];
 
 		// Add stopwords after `icu_normalizer` if present, otherwise prepend.
 		// This ensures text is lowercased and full-width characters converted to
