@@ -44,14 +44,14 @@ The following options can be enabled/disabled via the search configuration.
         "altis": {
             "modules": {
                 "search": {
-                    "related": "false",
+                    "related": false,
                     "facets": {
                         "match-type": "all"
                     },
-                    "woocommerce": "false",
-                    "autosuggest": "false",
-                    "users": "true",
-                    "terms": "true"
+                    "woocommerce": false,
+                    "autosuggest": false,
+                    "users": true,
+                    "terms": true
                 }
             }
         }
