@@ -132,10 +132,10 @@ class Local_Server_Extension implements Compose_Extension {
 				'labels' => [
 					'traefik.enable=true',
 					'traefik.docker.network=proxy',
-					"traefik.http.routers.elasticsearch.rule=HostRegexp(`elasticsearch-{$this->generator->hostname}`)",
-					'traefik.http.routers.elasticsearch.entrypoints=web,websecure',
-					'traefik.http.routers.elasticsearch.service=elasticsearch',
-					'traefik.http.services.elasticsearch.loadbalancer.server.port=9200',
+					"traefik.http.routers.{$this->generator->project_name}-elasticsearch.rule=HostRegexp(`elasticsearch-{$this->generator->hostname}`)",
+					"traefik.http.routers.{$this->generator->project_name}-elasticsearch.entrypoints=web,websecure",
+					"traefik.http.routers.{$this->generator->project_name}-elasticsearch.service={$this->generator->project_name}-elasticsearch",
+					"traefik.http.services.{$this->generator->project_name}-elasticsearch.loadbalancer.server.port=9200",
 				],
 				'environment' => [
 					'http.max_content_length=10mb',
@@ -189,10 +189,10 @@ class Local_Server_Extension implements Compose_Extension {
 				'labels' => [
 					'traefik.enable=true',
 					'traefik.docker.network=proxy',
-					"traefik.http.routers.kibana.rule=(Host(`{$this->generator->hostname}`) || HostRegexp(`{subdomain:[A-Za-z0-9-]+}.{$this->generator->hostname}`)) && PathPrefix(`/kibana`)",
-					'traefik.http.routers.kibana.entrypoints=web,websecure',
-					'traefik.http.routers.kibana.service=kibana',
-					'traefik.http.services.kibana.loadbalancer.server.port=5601',
+					"traefik.http.routers.{$this->generator->project_name}-kibana.rule=(Host(`{$this->generator->hostname}`) || HostRegexp(`{subdomain:[A-Za-z0-9-]+}.{$this->generator->hostname}`)) && PathPrefix(`/kibana`)",
+					"traefik.http.routers.{$this->generator->project_name}-kibana.entrypoints=web,websecure",
+					"traefik.http.routers.{$this->generator->project_name}-kibana.service={$this->generator->project_name}-kibana",
+					"traefik.http.services.{$this->generator->project_name}-kibana.loadbalancer.server.port=5601",
 				],
 				'depends_on' => [
 					'elasticsearch' => [
