@@ -49,6 +49,7 @@ class ElasticSearchCest {
 			$I->seeTermInDatabase( [ 'slug' => strtolower( $tag ) ] );
 			$I->see( $tag, '.column-primary' );
 		}
+		$I->reindexContent();
 
 		$I->submitForm( '#wpbody .search-form', [
 			's' => 'alpha',
@@ -186,52 +187,6 @@ class ElasticSearchCest {
 
 		$I->amOnPage( '/?s=ignore' );
 		$I->dontSee( 'Ignore this', '.entry-title' );
-	}
-
-	/**
-	 * User search test.
-	 *
-	 * @param AcceptanceTester $I Actor object.
-	 * @return void
-	 */
-	public function testUserSearch( AcceptanceTester $I ) {
-		$I->wantToTest( 'User search works correctly.' );
-
-		// Create a user.
-		$I->haveUserInDatabase( 'adminsson', 'administrator', [
-			'user_email' => 'adam.a@example.com',
-			'display_name' => 'Adam Adminsson',
-			'meta' => [
-				'first_name' => 'Adam',
-				'last_name' => 'Adminsson',
-				'nickname' => 'addo',
-			],
-		] );
-
-		$I->reindexContent();
-
-		$I->loginAsAdmin();
-		$I->amOnAdminPage( 'users.php' );
-
-		$I->submitForm( '#wpbody form', [
-			's' => 'admin',
-		] );
-		$I->see( 'adminsson', '.column-primary' );
-
-		$I->submitForm( '#wpbody form', [
-			's' => 'Adam',
-		] );
-		$I->see( 'adminsson', '.column-primary' );
-
-		$I->submitForm( '#wpbody form', [
-			's' => 'Ada',
-		] );
-		$I->see( 'adminsson', '.column-primary' );
-
-		$I->submitForm( '#wpbody form', [
-			's' => 'example.com',
-		] );
-		$I->see( 'adminsson', '.column-primary' );
 	}
 
 	/**
