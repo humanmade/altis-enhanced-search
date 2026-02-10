@@ -5,11 +5,7 @@ with [Local Server](docs://local-server/)
 
 ## Supported Versions
 
-The following versions of Elasticsearch are supported:
-
-- 7.10
-- 6.8
-- 6.3
+Altis supports Elasticsearch version 7.10
 
 We recommended using the most up-to-date version wherever possible, as new versions come with significant performance improvements
 as well as additional capabilities.

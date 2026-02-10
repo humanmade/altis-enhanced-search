@@ -34,7 +34,6 @@ The following options can be enabled/disabled via the search configuration.
 - `"facets": true|false|['match-type' => "all" (default)|...]`
 - `"woocommerce": true|false (default)`
 - `"autosuggest": true|false (default)` - See [autosuggest](../querying/autosuggest.md)
-- `"users": true (default)|false`
 - `"terms": true (default)|false`
 - `"comments": true|false (default)`
 
@@ -50,7 +49,6 @@ The following options can be enabled/disabled via the search configuration.
                     },
                     "woocommerce": false,
                     "autosuggest": false,
-                    "users": true,
                     "terms": true
                 }
             }

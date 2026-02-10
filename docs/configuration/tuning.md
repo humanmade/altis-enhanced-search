@@ -174,7 +174,7 @@ because 2 letters have been replaced.
 
 ## Max Query Length
 
-Typically search queries can be as long as the user wishes. As a preventive measure against slow queries and search request
+Typically, search queries can be as long as the user wishes. As a preventive measure against slow queries and search request
 spamming, Altis limits search query strings to **100 characters** by default.
 
 You can configure this value in 2 ways.
