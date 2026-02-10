@@ -50,5 +50,5 @@ English. Altis Partners may be able to provide consultation for these languages;
 
 ## Japanese
 
-The Search module includes the Japanese language analyzer (Kuromoji), as well as the [custom user dictionary tools](.
-/configuration/custom-dictionaries.md) designed specifically for Japanese support.
+The Search module includes the Japanese language analyzer (Kuromoji), as well as the 
+[custom user dictionary tools](./configuration/custom-dictionaries.md) designed specifically for Japanese support.
