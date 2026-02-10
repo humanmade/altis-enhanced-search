@@ -16,8 +16,6 @@ By default, Altis indexes the following types of content from your site:
 - Post Meta
 - Post Terms
 - Post Author
-- Users
-- User Meta
 - Terms
 - Term Meta
 
@@ -32,6 +30,12 @@ protected meta) or an array containing the keys of specific protected meta field
 
 When used in conjunction with the [Media Rekognition](docs://media/image-recognition.md) feature, all images are processed for
 automatic keyword detection and stored in the search index too.
+
+## User indexing
+
+Older versions of the Enhanced Search module indexed user data by default, however this was removed from ElasticPress in version 5.
+If you still wish to index user data, you can add the 10Up plugin [ElasticPress Labs](https://github.com/10up/ElasticPressLabs)
+which includes a user indexing feature along with several other specialized features.
 
 ## Document Indexing
 

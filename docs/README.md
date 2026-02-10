@@ -73,12 +73,12 @@ behaviour.
 You can also use these options to [tune relevancy scoring](./configuration/tuning.md),
 including [date-based "decay"](./configuration/date-decay.md).
 
-Users can also use the [custom user dictionary settings](./configuration/custom-dictionaries.md) to adjust how text is analyzed,
+You can use the [custom user dictionary settings](./configuration/custom-dictionaries.md) to adjust how text is analyzed,
 including support for synonyms, stop words and custom text analysis for Japanese.
 
 ## Disabling Search
 
-The Search module works by overriding default WordPress search, which uses MySQL full-text search. If you would prefer to use MySQL
+The Search module works by overriding default WordPress search, which uses MySQL full-text search. If you prefer to use MySQL
 search, you can deactivate the search module via your config:
 
 ```json
