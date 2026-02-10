@@ -146,7 +146,7 @@ class ElasticSearchCest {
 
 		$I->reindexContent();
 
-		$I->amOnPage( '/?s=loaffer' );
+		$I->amOnPage( '/?s=loafer' );
 
 		foreach ( $contents as $content ) {
 			$I->see( $content, '.entry-title' );
