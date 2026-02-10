@@ -88,9 +88,6 @@ class Local_Server_Extension implements Compose_Extension {
 		$version_map = [
 			'7.10' => 'humanmade/altis-local-server-elasticsearch:4.1.0',
 			'7' => 'humanmade/altis-local-server-elasticsearch:4.1.0',
-			'6.8' => 'humanmade/altis-local-server-elasticsearch:3.1.0',
-			'6' => 'humanmade/altis-local-server-elasticsearch:3.1.0',
-			'6.3' => 'humanmade/altis-local-server-elasticsearch:3.0.0',
 		];
 
 		$this->check_elasticsearch_version( array_keys( $version_map ) );
@@ -158,9 +155,6 @@ class Local_Server_Extension implements Compose_Extension {
 		$version_map = [
 			'7.10' => 'humanmade/altis-local-server-kibana:1.1.1',
 			'7' => 'humanmade/altis-local-server-kibana:1.1.1',
-			'6.8' => 'blacktop/kibana:6.8',
-			'6' => 'blacktop/kibana:6.8',
-			'6.3' => 'blacktop/kibana:6.3',
 		];
 
 		$this->check_elasticsearch_version( array_keys( $version_map ) );
