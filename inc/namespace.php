@@ -221,6 +221,9 @@ function load_elasticpress() {
 	// Handle autosuggest requests.
 	add_action( 'template_redirect', __NAMESPACE__ . '\\handle_autosuggest_endpoint' );
 
+	// Ease the pressure on ES during bulk indexing requests.
+	add_action( 'ep_remote_request', __NAMESPACE__ . '\\throttle_bulk_index_requests', 10, 2 );
+
 	// Set up packages feature.
 	Packages\bootstrap();
 
@@ -841,6 +844,24 @@ function setup_elasticpress_on_install() {
 	] );
 	WP_CLI::line( $response );
 	WP_CLI::line( WP_CLI::colorize( '%GElasticPress configured.%n' ) );
+}
+
+/**
+ * Throttle how quickly bulk indexing requests are sent to ES.
+ *
+ * In some cases "Too many requests" 429 errors come up when the bulk
+ * thread pool is full or not being processed quickly enough.
+ *
+ * @param array $query Remote request arguments.
+ * @param string $type Request type.
+ * @return void
+ */
+function throttle_bulk_index_requests( $query, $type ) : void {
+	if ( $type !== 'bulk_index' ) {
+		return;
+	}
+
+	sleep( defined( 'ALTIS_BULK_INDEX_INTERVAL' ) ? absint( ALTIS_BULK_INDEX_INTERVAL ) : 1 );
 }
 
 /**
