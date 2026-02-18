@@ -180,6 +180,9 @@ function load_elasticpress() {
 	// Remove Admin UI for ElasticPress.
 	remove_action( 'network_admin_menu', 'ElasticPress\\Dashboard\\action_admin_menu' );
 	remove_action( 'admin_bar_menu', 'ElasticPress\\Dashboard\\action_network_admin_bar_menu', 50 );
+	add_action( 'admin_menu', function () {
+		remove_menu_page( 'elasticpress' );
+	}, 100 );
 
 	// Don't set up features during install.
 	if ( defined( 'WP_INITIAL_INSTALL' ) && WP_INITIAL_INSTALL ) {
