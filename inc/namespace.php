@@ -49,6 +49,9 @@ function bootstrap() {
 		add_filter( 'altis_healthchecks', __NAMESPACE__ . '\\add_elasticsearch_healthcheck' );
 	} );
 
+	// Reindex on `wp altis post-sync` (provided by altis/core).
+	add_action( 'altis.post_sync', __NAMESPACE__ . '\\reindex_elasticsearch' );
+
 	// Load debug bar for ElasticPress if Query Monitor is enabled in the config and not a CLI request.
 	if (
 		( Altis\get_config()['modules']['dev-tools']['enabled'] ?? false ) &&
@@ -841,6 +844,25 @@ function setup_elasticpress_on_install() {
 	] );
 	WP_CLI::line( $response );
 	WP_CLI::line( WP_CLI::colorize( '%GElasticPress configured.%n' ) );
+}
+
+/**
+ * Reindex Elasticsearch on `wp altis post-sync`.
+ *
+ * Hooked to the `altis.post_sync` action provided by altis/core. Skips
+ * reindexing if Elasticsearch is not configured for this environment.
+ *
+ * @return void
+ */
+function reindex_elasticsearch() : void {
+	if ( ! defined( 'ELASTICSEARCH_HOST' ) || ! ELASTICSEARCH_HOST ) {
+		WP_CLI::log( 'Elasticsearch not available, skipping reindex.' );
+		return;
+	}
+
+	WP_CLI::log( 'Reindexing Elasticsearch...' );
+	WP_CLI::runcommand( 'elasticpress sync --setup --network-wide --yes' );
+	WP_CLI::success( 'Elasticsearch reindex complete.' );
 }
 
 /**
