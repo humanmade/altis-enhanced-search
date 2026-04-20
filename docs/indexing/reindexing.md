@@ -48,6 +48,16 @@ wp elasticpress sync
 **Note:** During the indexing process, the site will not use the Elasticsearch index for searches/queries, so some features like
 faceting or autosuggest will not work as expected until the process is finished.
 
+### Reindexing after an environment sync
+
+The Search module also hooks into the [`wp altis post-sync`](docs://core/cli-command.md) command, so a network-wide reindex with
+mapping setup runs automatically after you sync an environment (for example, pulling a production database to staging). If you
+prefer to manage reindexing yourself, unhook the default action:
+
+```php
+remove_action( 'altis.post_sync', 'Altis\Enhanced_Search\reindex_elasticsearch' );
+```
+
 ## Recreating Mappings
 
 If your index mapping changes, the mapping will need to be recreated. This may be needed after an Altis upgrade, when adjusting
