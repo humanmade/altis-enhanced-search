@@ -183,7 +183,7 @@ class Local_Server_Extension implements Compose_Extension {
 				'labels' => [
 					'traefik.enable=true',
 					'traefik.docker.network=proxy',
-					"traefik.http.routers.{$this->generator->project_name}-kibana.rule=(Host(`{$this->generator->hostname}`) || HostRegexp(`{subdomain:[A-Za-z0-9-]+}.{$this->generator->hostname}`)) && PathPrefix(`/kibana`)",
+					'traefik.http.routers.' . $this->generator->project_name . '-kibana.rule=(Host(`' . $this->generator->hostname . '`) || HostRegexp(`^[A-Za-z0-9-]+\\.' . str_replace( '.', '\\.', $this->generator->hostname ) . '$`)) && PathPrefix(`/kibana`)',
 					"traefik.http.routers.{$this->generator->project_name}-kibana.entrypoints=web,websecure",
 					"traefik.http.routers.{$this->generator->project_name}-kibana.service={$this->generator->project_name}-kibana",
 					"traefik.http.services.{$this->generator->project_name}-kibana.loadbalancer.server.port=5601",
