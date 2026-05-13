@@ -129,7 +129,7 @@ class Local_Server_Extension implements Compose_Extension {
 				'labels' => [
 					'traefik.enable=true',
 					'traefik.docker.network=proxy',
-					"traefik.http.routers.{$this->generator->project_name}-elasticsearch.rule=HostRegexp(`elasticsearch-{$this->generator->hostname}`)",
+					"traefik.http.routers.{$this->generator->project_name}-elasticsearch.rule=Host(`elasticsearch-{$this->generator->hostname}`)",
 					"traefik.http.routers.{$this->generator->project_name}-elasticsearch.entrypoints=web,websecure",
 					"traefik.http.routers.{$this->generator->project_name}-elasticsearch.service={$this->generator->project_name}-elasticsearch",
 					"traefik.http.services.{$this->generator->project_name}-elasticsearch.loadbalancer.server.port=9200",
@@ -183,7 +183,7 @@ class Local_Server_Extension implements Compose_Extension {
 				'labels' => [
 					'traefik.enable=true',
 					'traefik.docker.network=proxy',
-					'traefik.http.routers.' . $this->generator->project_name . '-kibana.rule=(Host(`' . $this->generator->hostname . '`) || HostRegexp(`^[A-Za-z0-9-]+\\.' . str_replace( '.', '\\.', $this->generator->hostname ) . '$`)) && PathPrefix(`/kibana`)',
+					"traefik.http.routers.{$this->generator->project_name}-kibana.rule=(Host(`{$this->generator->hostname}`) || Host(`*.{$this->generator->hostname}`)) && PathPrefix(`/kibana`)",
 					"traefik.http.routers.{$this->generator->project_name}-kibana.entrypoints=web,websecure",
 					"traefik.http.routers.{$this->generator->project_name}-kibana.service={$this->generator->project_name}-kibana",
 					"traefik.http.services.{$this->generator->project_name}-kibana.loadbalancer.server.port=5601",
