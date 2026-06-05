@@ -62,7 +62,7 @@ function bootstrap() {
 		if ( ! defined( 'WP_EP_DEBUG' ) ) {
 			define( 'WP_EP_DEBUG', true );
 		}
-		add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_debug_bar_elasticpress', 0 );
+		add_action( 'plugins_loaded', __NAMESPACE__ . '\\load_debug_bar_elasticpress', 20 );
 	}
 }
 
