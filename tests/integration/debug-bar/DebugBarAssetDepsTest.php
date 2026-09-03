@@ -83,12 +83,23 @@ class DebugBarAssetDepsTest extends \Codeception\TestCase\WPTestCase {
 	/**
 	 * Build the panel.
 	 *
+	 * Loading the plugin only hooks its `debug_bar_panels` callback -- the panel
+	 * class itself is required from inside that callback, so it doesn't exist
+	 * until the filter runs. Go through the filter, the same way Query Monitor
+	 * does, rather than requiring the class file directly.
+	 *
 	 * @return \EP_Debug_Bar_ElasticPress
 	 */
 	protected function get_panel() {
 		\Altis\Enhanced_Search\load_debug_bar_elasticpress();
 
-		return new \EP_Debug_Bar_ElasticPress();
+		foreach ( apply_filters( 'debug_bar_panels', [] ) as $panel ) {
+			if ( $panel instanceof \EP_Debug_Bar_ElasticPress ) {
+				return $panel;
+			}
+		}
+
+		$this->fail( 'The ElasticPress panel was not registered on the debug_bar_panels filter.' );
 	}
 
 	/**
