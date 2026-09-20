@@ -83,7 +83,8 @@ class Local_Server_Extension implements Compose_Extension {
 	 * @return array
 	 */
 	protected function get_service_elasticsearch() : array {
-		$mem_limit = getenv( 'ES_MEM_LIMIT' ) ?: '1g';
+		$mem_limit = $this->get_environment_variable( 'ES_MEM_LIMIT', '1g' );
+		$heap_limit = $this->get_environment_variable( 'ES_HEAP_LIMIT', $mem_limit );
 
 		$version_map = [
 			'7.10' => 'humanmade/altis-local-server-elasticsearch:4.1.0',
@@ -139,11 +140,22 @@ class Local_Server_Extension implements Compose_Extension {
 					// Force ES into single-node mode (otherwise defaults to zen discovery as
 					// network.host is set in the default config).
 					'discovery.type=single-node',
-					// Use max container memory limit as the max JVM heap allocation value.
-					"ES_JAVA_OPTS=-Xms512m -Xmx{$mem_limit}",
+					// Allow native Elasticsearch processes to use memory outside the JVM heap.
+					"ES_JAVA_OPTS=-Xms512m -Xmx{$heap_limit}",
 				],
 			],
 		];
+	}
+
+	/**
+	 * Get an environment variable with a fallback value.
+	 *
+	 * @param string $name Environment variable name.
+	 * @param string $default Default value.
+	 * @return string
+	 */
+	protected function get_environment_variable( string $name, string $default ) : string {
+		return getenv( $name ) ?: $default;
 	}
 
 	/**

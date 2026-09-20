@@ -71,3 +71,12 @@ match any selected taxonomy term. If set to `all`, it will match to results with
 ## Local Server
 
 See [the Local Server documentation](docs://local-server/elasticsearch.md) for information on configuring Local Server for ES settings.
+
+For large local index sets, Elasticsearch may need native memory in addition to its JVM heap. Set `ES_MEM_LIMIT` to the total
+container memory and `ES_HEAP_LIMIT` to a lower value to leave that headroom:
+
+```shell
+ES_MEM_LIMIT=12g ES_HEAP_LIMIT=8g composer server start
+```
+
+`ES_HEAP_LIMIT` defaults to `ES_MEM_LIMIT` to preserve the existing Local Server configuration.
