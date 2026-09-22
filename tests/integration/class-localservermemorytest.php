@@ -15,32 +15,61 @@ use Altis\Local_Server\Composer\Docker_Compose_Generator;
  */
 class LocalServerMemoryTest extends \Codeception\TestCase\WPTestCase {
 	/**
-	 * The heap can be smaller than the container memory limit.
+	 * The heap uses 50% of the container memory limit.
 	 *
 	 * @return void
 	 */
-	public function testSeparateHeapLimit() {
+	public function testHeapUsesHalfOfMemoryLimit() {
 		$service = $this->get_elasticsearch_service( [
-			'ES_MEM_LIMIT' => '12g',
-			'ES_HEAP_LIMIT' => '8g',
+			'ES_MEM_LIMIT' => '16g',
 		] );
 
-		$this->assertSame( '12g', $service['mem_limit'] );
-		$this->assertContains( 'ES_JAVA_OPTS=-Xms512m -Xmx8g', $service['environment'] );
+		$this->assertSame( '16g', $service['mem_limit'] );
+		$this->assertContains( 'ES_JAVA_OPTS=-Xms8192m -Xmx8192m', $service['environment'] );
 	}
 
 	/**
-	 * Existing configurations continue to use the container limit as the heap limit.
+	 * The default container limit provides a 512 MB heap.
 	 *
 	 * @return void
 	 */
-	public function testHeapLimitDefaultsToMemoryLimit() {
+	public function testDefaultMemoryLimitProvides512MbHeap() {
+		$service = $this->get_elasticsearch_service( [] );
+
+		$this->assertSame( '1g', $service['mem_limit'] );
+		$this->assertContains( 'ES_JAVA_OPTS=-Xms512m -Xmx512m', $service['environment'] );
+	}
+
+	/**
+	 * Docker Compose byte units are converted to JVM megabytes.
+	 *
+	 * @dataProvider provideMemoryLimits
+	 *
+	 * @param string $memory_limit Container memory limit.
+	 * @param string $heap_limit Expected JVM heap limit.
+	 * @return void
+	 */
+	public function testDockerComposeByteUnits( string $memory_limit, string $heap_limit ) {
 		$service = $this->get_elasticsearch_service( [
-			'ES_MEM_LIMIT' => '2g',
+			'ES_MEM_LIMIT' => $memory_limit,
 		] );
 
-		$this->assertSame( '2g', $service['mem_limit'] );
-		$this->assertContains( 'ES_JAVA_OPTS=-Xms512m -Xmx2g', $service['environment'] );
+		$this->assertContains( "ES_JAVA_OPTS=-Xms{$heap_limit} -Xmx{$heap_limit}", $service['environment'] );
+	}
+
+	/**
+	 * Memory limits and their expected heap limits.
+	 *
+	 * @return array
+	 */
+	public function provideMemoryLimits() : array {
+		return [
+			'bytes' => [ '2147483648b', '1024m' ],
+			'kilobytes' => [ '2097152kb', '1024m' ],
+			'megabytes' => [ '2048m', '1024m' ],
+			'gigabytes' => [ '2gb', '1024m' ],
+			'uppercase' => [ '2G', '1024m' ],
+		];
 	}
 
 	/**
