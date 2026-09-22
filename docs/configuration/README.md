@@ -71,3 +71,10 @@ match any selected taxonomy term. If set to `all`, it will match to results with
 ## Local Server
 
 See [the Local Server documentation](docs://local-server/elasticsearch.md) for information on configuring Local Server for ES settings.
+
+`ES_MEM_LIMIT` sets the total memory available to the Elasticsearch container. Local Server assigns 50% of that memory to the JVM
+heap, leaving the remainder available for native processes and the filesystem cache. For example, to run an 8 GB heap:
+
+```shell
+ES_MEM_LIMIT=16g composer server start
+```

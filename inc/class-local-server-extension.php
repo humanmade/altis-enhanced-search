@@ -8,6 +8,7 @@ namespace Altis\Enhanced_Search;
 use Altis;
 use Altis\Local_Server\Composer\Compose_Extension;
 use Altis\Local_Server\Composer\Docker_Compose_Generator;
+use InvalidArgumentException;
 
 /**
  * This class adds the Elasticsearch and Kibana services to the Local Server docker stack.
@@ -83,7 +84,8 @@ class Local_Server_Extension implements Compose_Extension {
 	 * @return array
 	 */
 	protected function get_service_elasticsearch() : array {
-		$mem_limit = getenv( 'ES_MEM_LIMIT' ) ?: '1g';
+		$mem_limit = $this->get_environment_variable( 'ES_MEM_LIMIT', '1g' );
+		$heap_limit = $this->get_elasticsearch_heap_limit( $mem_limit );
 
 		$version_map = [
 			'7.10' => 'humanmade/altis-local-server-elasticsearch:4.1.0',
@@ -139,11 +141,54 @@ class Local_Server_Extension implements Compose_Extension {
 					// Force ES into single-node mode (otherwise defaults to zen discovery as
 					// network.host is set in the default config).
 					'discovery.type=single-node',
-					// Use max container memory limit as the max JVM heap allocation value.
-					"ES_JAVA_OPTS=-Xms512m -Xmx{$mem_limit}",
+					// Limit the heap to 50% so Elasticsearch has memory for native processes and the filesystem cache.
+					// See https://www.elastic.co/guide/en/elasticsearch/reference/current/jvm-options.html#set-jvm-heap-size.
+					"ES_JAVA_OPTS=-Xms{$heap_limit} -Xmx{$heap_limit}",
 				],
 			],
 		];
+	}
+
+	/**
+	 * Calculate the Elasticsearch JVM heap limit from the container memory limit.
+	 *
+	 * @param string $memory_limit Docker Compose byte value.
+	 * @return string
+	 * @throws InvalidArgumentException If the memory limit is invalid or too small.
+	 */
+	protected function get_elasticsearch_heap_limit( string $memory_limit ) : string {
+		if ( ! preg_match( '/^(\d+)(b|k|kb|m|mb|g|gb)$/i', $memory_limit, $matches ) ) {
+			throw new InvalidArgumentException( 'ES_MEM_LIMIT must be a Docker Compose byte value, for example 1g or 2048m.' );
+		}
+
+		$unit_multipliers = [
+			'b' => 1,
+			'k' => 1024,
+			'kb' => 1024,
+			'm' => 1024 ** 2,
+			'mb' => 1024 ** 2,
+			'g' => 1024 ** 3,
+			'gb' => 1024 ** 3,
+		];
+		$memory_bytes = (int) $matches[1] * $unit_multipliers[ strtolower( $matches[2] ) ];
+		$heap_megabytes = intdiv( $memory_bytes, 2 * ( 1024 ** 2 ) );
+
+		if ( $heap_megabytes < 1 ) {
+			throw new InvalidArgumentException( 'ES_MEM_LIMIT must provide at least 2 MB of container memory.' );
+		}
+
+		return "{$heap_megabytes}m";
+	}
+
+	/**
+	 * Get an environment variable with a fallback value.
+	 *
+	 * @param string $name Environment variable name.
+	 * @param string $default Default value.
+	 * @return string
+	 */
+	protected function get_environment_variable( string $name, string $default ) : string {
+		return getenv( $name ) ?: $default;
 	}
 
 	/**
