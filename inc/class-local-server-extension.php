@@ -154,6 +154,7 @@ class Local_Server_Extension implements Compose_Extension {
 	 *
 	 * @param string $memory_limit Docker Compose byte value.
 	 * @return string
+	 * @throws InvalidArgumentException If the memory limit is invalid or too small.
 	 */
 	protected function get_elasticsearch_heap_limit( string $memory_limit ) : string {
 		if ( ! preg_match( '/^(\d+)(b|k|kb|m|mb|g|gb)$/i', $memory_limit, $matches ) ) {
